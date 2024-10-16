@@ -1,0 +1,30 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61.0", "setuptools-scm"]
+
+[project]
+classifiers = [
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "conda",
+]
+description = "Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS)."
+name = "anaconda-conda-tos"
+requires-python = ">=3.8"
+version = "0.1.0"
+
+[project.entry-points.conda]
+anaconda-conda-tos = "anaconda_conda_tos.plugin"
+
+[tool.setuptools]
+packages = ["anaconda_conda_tos"]

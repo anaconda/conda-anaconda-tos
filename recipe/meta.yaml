@@ -1,0 +1,42 @@
+{% set name = "anaconda-conda-tos" %}
+{% set version = "0.1.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  # git_url only captures committed code
+  git_url: ../
+
+build:
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv
+  number: 0
+
+requirements:
+  host:
+    - python >=3.8
+    - pip
+    - setuptools-scm
+  run:
+    - python >=3.8
+    - conda
+
+test:
+  imports:
+    - anaconda_conda_tos
+  commands:
+    - pip check
+  requires:
+    - pip
+
+about:
+  home: https://github.com/anaconda/{{ name }}
+  summary: Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS).
+  license: BSD-3-Clause
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - kenodegard
