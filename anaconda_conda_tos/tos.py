@@ -17,14 +17,8 @@ from requests import HTTPError
 from .exceptions import CondaToSError
 
 if TYPE_CHECKING:
-    from typing import Literal, Final, Iterable, TypedDict
+    from typing import Literal, Final, Iterable
     from requests import Response
-
-    class ToSMetaData(TypedDict):
-        tos_accepted: bool | None
-        tos_version: int
-        acceptance_timestamp: float
-        base_url: str | None
 
 
 # remote endpoints
