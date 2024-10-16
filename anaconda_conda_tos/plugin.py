@@ -26,49 +26,12 @@ def configure_parser(parser: ArgumentParser):
     parser.add_argument("--override-channels", action="store_true")
 
     mutex = parser.add_mutually_exclusive_group()
-    mutex.add_argument("--accept", "--agree", "--yes", action="store_true")
-    mutex.add_argument(
-        "--reject", "--disagree", "--no", "--withdraw", action="store_true"
-    )
     mutex.add_argument("--view", "--show", action="store_true")
 
 
-def accepted_mapping(
-    *, tos_accepted: bool | None, acceptance_timestamp: float, **metadata
-) -> str:
-    if tos_accepted is None:
-        return "not reviewed"
-    elif tos_accepted:
-        # convert timestamp to localized time
-        return (
-            datetime.utcfromtimestamp(acceptance_timestamp).astimezone().isoformat(" ")
-        )
-    else:
-        return "rejected"
-
-
 def execute(args: Namespace) -> int:
-    if args.accept:
-        accept_tos(*context.channels)
-    elif args.reject:
-        reject_tos(*context.channels)
-    elif args.view:
+    if args.view:
         view_tos(*context.channels)
-    else:
-        table = Table()
-        table.add_column("Channel")
-        table.add_column("Version")
-        table.add_column("Accepted")
-
-        for channel, metadata in get_tos(*context.channels):
-            table.add_row(
-                channel.base_url,
-                str(metadata["tos_version"]),
-                accepted_mapping(**metadata),
-            )
-
-        console = Console()
-        console.print(table)
     return 0
 
 
