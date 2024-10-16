@@ -7,15 +7,12 @@ ToS subcommand and settings plugins.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from datetime import datetime
 
 from conda.base.context import context
 from conda.plugins import hookimpl, CondaSubcommand, CondaSetting
 from conda.common.configuration import PrimitiveParameter
-from rich.table import Table
-from rich.console import Console
 
-from .tos import view_tos, accept_tos, reject_tos, get_tos
+from .tos import view_tos
 
 if TYPE_CHECKING:
     from argparse import Namespace, ArgumentParser

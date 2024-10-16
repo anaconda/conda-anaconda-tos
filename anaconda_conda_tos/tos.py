@@ -6,11 +6,7 @@ ToS management functions.
 
 from __future__ import annotations
 
-import hashlib
-from datetime import datetime
 from typing import TYPE_CHECKING
-from pathlib import Path
-import json
 
 from conda.base.context import context
 from conda.common.url import join_url
@@ -18,7 +14,7 @@ from conda.models.channel import Channel
 from conda.gateways.connection.session import get_session
 
 if TYPE_CHECKING:
-    from typing import Literal, Final, Iterable, TypedDict, Iterator
+    from typing import Literal, Final, Iterable, TypedDict
     from requests import Response
 
     class ToSMetaData(TypedDict):
