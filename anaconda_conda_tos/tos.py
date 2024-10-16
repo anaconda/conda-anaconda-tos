@@ -12,6 +12,9 @@ from conda.base.context import context
 from conda.common.url import join_url
 from conda.models.channel import Channel
 from conda.gateways.connection.session import get_session
+from requests import HTTPError
+
+from .exceptions import CondaToSError
 
 if TYPE_CHECKING:
     from typing import Literal, Final, Iterable, TypedDict
@@ -29,7 +32,8 @@ TOS_TEXT: Final = "tos.txt"
 
 
 def get_tos_endpoint(
-    channel: str | Channel, endpoint: Literal["tos.json", "tos.txt"]
+    channel: str | Channel,
+    endpoint: Literal["tos.json", "tos.txt"],
 ) -> Response:
     channel = Channel(channel)
     if not channel.base_url:
@@ -38,15 +42,32 @@ def get_tos_endpoint(
         )
 
     session = get_session(channel.base_url)
+    endpoint = join_url(channel.base_url, TOS_TEXT)
 
-    response = session.get(
-        join_url(channel.base_url, TOS_TEXT),
-        headers={"Content-Type": "text/plain"},
-        proxies=session.proxies,
-        auth=None,
-        timeout=(context.remote_connect_timeout_secs, context.remote_read_timeout_secs),
-    )
-    response.raise_for_status()
+    saved_token_setting = context.add_anaconda_token
+    try:
+        # do not inject conda/binstar token into URL for two reasons:
+        # 1. ToS shouldn't be a protected endpoint
+        # 2. CondaHttpAuth.add_binstar_token adds subdir to the URL which ToS don't have
+        context.add_anaconda_token = False
+        response = session.get(
+            endpoint,
+            headers={"Content-Type": "text/plain"},
+            proxies=session.proxies,
+            auth=None,
+            timeout=(
+                context.remote_connect_timeout_secs,
+                context.remote_read_timeout_secs,
+            ),
+        )
+        response.raise_for_status()
+    except HTTPError as exc:
+        if exc.response.status_code == 404:
+            raise CondaToSError(f"ToS endpoint ({endpoint}) not found")
+        else:
+            raise
+    finally:
+        context.add_anaconda_token = saved_token_setting
     return response
 
 
@@ -56,10 +77,10 @@ def get_channels(*channels: str | Channel) -> Iterable[Channel]:
     seen: set[Channel] = set()
     for multichannel in map(Channel, channels):
         for channel in map(Channel, multichannel.urls()):
-            if channel in seen:
-                continue
-            seen.add(channel)
-            yield channel
+            channel = Channel(channel.base_url)
+            if channel not in seen:
+                yield channel
+                seen.add(channel)
 
 
 def get_tos_text(channel: str | Channel) -> str:
