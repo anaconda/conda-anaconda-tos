@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import pytest
 
+import pytest
 from conda.base.context import context
 
 from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
