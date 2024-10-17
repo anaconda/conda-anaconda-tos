@@ -40,25 +40,25 @@ def test_subcommand_tos_view(
     sample_channel: str,
     tos_full_text: str,
 ) -> None:
-    sample_out, err, code = conda_cli(
+    out, err, code = conda_cli(
         "tos",
         "--view",
         "--override-channels",
         f"--channel={sample_channel}",
     )
-    sample_out.replace("\r\n", "\n")  # normalize Windows line endings
-    assert sample_out == f"viewing ToS for {sample_channel}:\nToS not found\n"
+    sample_lines = out.splitlines()
+    assert sample_lines == [f"viewing ToS for {sample_channel}:", "ToS not found"]
     # assert not err  # server log is output to stderr
     assert not code
 
-    tos_out, err, code = conda_cli(
+    out, err, code = conda_cli(
         "tos",
         "--view",
         "--override-channels",
         f"--channel={tos_channel}",
     )
-    tos_out.replace("\r\n", "\n")  # normalize Windows line endings
-    assert tos_out == f"viewing ToS for {tos_channel}:\n{tos_full_text}\n"
+    tos_lines = out.splitlines()
+    assert tos_lines == [f"viewing ToS for {tos_channel}:", tos_full_text]
     # assert not err  # server log is output to stderr
     assert not code
 
@@ -68,8 +68,7 @@ def test_subcommand_tos_view(
         return_value=(tos_channel,),
     )
     out, err, code = conda_cli("tos", "--view")
-    out.replace("\r\n", "\n")  # normalize Windows line endings
-    assert out == tos_out
+    assert out.splitlines() == tos_lines
     # assert not err  # server log is output to stderr
     assert not code
 

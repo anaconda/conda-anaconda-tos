@@ -82,7 +82,7 @@ def get_channels(*channels: str | Channel) -> Iterable[Channel]:
 
 def get_tos_text(channel: str | Channel) -> str:
     """Get the ToS full text for the given channel."""
-    return get_tos_endpoint(channel, TOS_TEXT).text
+    return get_tos_endpoint(channel, TOS_TEXT).text.rstrip()
 
 
 def view_tos(*channels: str | Channel) -> None:

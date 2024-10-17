@@ -107,4 +107,4 @@ def sample_channel() -> Iterator[str]:
 
 @pytest.fixture(scope="session")
 def tos_full_text() -> str:
-    return (TOS_DIR / "tos.txt").read_text()
+    return (TOS_DIR / "tos.txt").read_text().rstrip()
