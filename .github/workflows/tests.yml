@@ -85,7 +85,6 @@ jobs:
             python-version: '3.10'
           - os: macos-14
             python-version: '3.11'
-
     runs-on: ${{ matrix.os }}
     env:
       ErrorActionPreference: Stop  # powershell exit immediately on error
@@ -121,6 +120,10 @@ jobs:
           --file tests/requirements.txt
           --file tests/requirements-ci.txt
           python=${{ matrix.python-version }}
+
+      # TODO: how can we remove this step?
+      - name: Install Self
+        run: pip install -e .
 
       - name: Conda Info
         # view test env info (not base)

@@ -43,5 +43,19 @@ sort = "Miss"
 # store relative paths in coverage information
 relative_files = true
 
+[tool.pytest.ini_options]
+addopts = [
+  "--color=yes",
+  # "--cov=anaconda_conda_tos",  # passed in test runner scripts instead (avoid debugger)
+  "--cov-report=term",  # print summary table to screen
+  "--cov-report=xml",  # for codecov/codecov-action upload
+  "--tb=native",
+  "-vv",
+]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py38"
+
 [tool.setuptools]
 packages = ["anaconda_conda_tos"]
