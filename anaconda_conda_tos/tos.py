@@ -26,14 +26,16 @@ TOS_TEXT: Final = "tos.txt"
 
 def get_tos_endpoint(
     channel: str | Channel,
-    endpoint: Literal["tos.json", "tos.txt"],
+    endpoint: Literal["tos.txt"],
 ) -> Response:
     """Get the ToS endpoint for the given channel."""
     channel = Channel(channel)
     if not channel.base_url:
-        raise TypeError(
+        raise ValueError(
             "Channel must have a base URL. MultiChannel doesn't have endpoints."
         )
+    if endpoint not in (TOS_TEXT,):
+        raise ValueError(f"Invalid ToS endpoint: {endpoint}")
 
     session = get_session(channel.base_url)
     endpoint = join_url(channel.base_url, TOS_TEXT)
