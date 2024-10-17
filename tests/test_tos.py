@@ -79,16 +79,16 @@ def test_view_tos(
     tos_full_text: str,
 ) -> None:
     view_tos(tos_channel)
-    tos_stdout, stderr = capsys.readouterr()
-    assert tos_stdout == f"viewing ToS for {tos_channel}:\n{tos_full_text}\n"
-    # assert not stderr  # server log is output to stderr
+    tos_out, err = capsys.readouterr()
+    assert tos_out == f"viewing ToS for {tos_channel}:\n{tos_full_text}\n"
+    # assert not err  # server log is output to stderr
 
     view_tos(sample_channel)
-    sample_stdout, stderr = capsys.readouterr()
-    assert sample_stdout == f"viewing ToS for {sample_channel}:\nToS not found\n"
-    # assert not stderr  # server log is output to stderr
+    sample_out, err = capsys.readouterr()
+    assert sample_out == f"viewing ToS for {sample_channel}:\nToS not found\n"
+    # assert not err  # server log is output to stderr
 
     view_tos(tos_channel, sample_channel)
-    stdout, stderr = capsys.readouterr()
-    assert stdout == f"{tos_stdout}{sample_stdout}"
-    # assert not stderr  # server log is output to stderr
+    out, err = capsys.readouterr()
+    assert out == f"{tos_out}{sample_out}"
+    # assert not err  # server log is output to stderr
