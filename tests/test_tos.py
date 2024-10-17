@@ -55,10 +55,10 @@ def test_get_channels() -> None:
 def test_get_tos_text(
     tos_channel: str,
     sample_channel: str,
-    tos_full_text: str,
+    tos_full_lines: tuple[str, ...],
 ) -> None:
     # get full text of ToS channel
-    assert get_tos_text(tos_channel) == tos_full_text
+    assert get_tos_text(tos_channel).splitlines == tos_full_lines
 
     # no full text for sample channel
     with pytest.raises(CondaToSMissingError):
@@ -76,12 +76,12 @@ def test_view_tos(
     capsys: CaptureFixture,
     tos_channel: str,
     sample_channel: str,
-    tos_full_text: str,
+    tos_full_lines: tuple[str, ...],
 ) -> None:
     view_tos(tos_channel)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
-    assert tos_lines == [f"viewing ToS for {tos_channel}:", tos_full_text]
+    assert tos_lines == [f"viewing ToS for {tos_channel}:", *tos_full_lines]
     # assert not err  # server log is output to stderr
 
     view_tos(sample_channel)

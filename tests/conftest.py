@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import contextlib
 import http.server
+import json
 import queue
 import shutil
 import socket
 import threading
 from pathlib import Path
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 import pytest
 
@@ -27,7 +29,6 @@ pytest_plugins = (
 
 DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
-TOS_DIR = DATA_DIR / "tos"
 
 
 # See https://github.com/conda/conda/blob/c2fd056e93341a20ef7ffc33215f8aa2eb302f1d/tests/http_test_server.py
@@ -88,11 +89,16 @@ def serve_channel(path: Path) -> Iterator[str]:
 
 
 @pytest.fixture(scope="session")
-def tos_channel(tmp_path_factory: TempPathFactory) -> Iterator[str]:
+def tos_channel(
+    tmp_path_factory: TempPathFactory,
+    tos_full_lines: tuple[str, ...],
+) -> Iterator[str]:
     # Copy the sample channel to a temporary directory and add ToS files
     path = tmp_path_factory.mktemp("tos_channel")
     shutil.copytree(SAMPLE_CHANNEL_DIR, path, dirs_exist_ok=True)
-    shutil.copytree(TOS_DIR, path, dirs_exist_ok=True)
+
+    (path / "tos.txt").write_text("\n".join(tos_full_lines))
+    (path / "tos.json").write_text(json.dumps({"version": 1}))
 
     with serve_channel(path) as url:
         yield url
@@ -106,5 +112,5 @@ def sample_channel() -> Iterator[str]:
 
 
 @pytest.fixture(scope="session")
-def tos_full_text() -> str:
-    return (TOS_DIR / "tos.txt").read_text().rstrip()
+def tos_full_lines() -> tuple[str, ...]:
+    return ("ToS full text", "", uuid4().hex)

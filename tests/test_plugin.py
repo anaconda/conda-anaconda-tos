@@ -38,7 +38,7 @@ def test_subcommand_tos_view(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
-    tos_full_text: str,
+    tos_full_lines: tuple[str, ...],
 ) -> None:
     out, err, code = conda_cli(
         "tos",
@@ -58,7 +58,7 @@ def test_subcommand_tos_view(
         f"--channel={tos_channel}",
     )
     tos_lines = out.splitlines()
-    assert tos_lines == [f"viewing ToS for {tos_channel}:", tos_full_text]
+    assert tos_lines == [f"viewing ToS for {tos_channel}:", *tos_full_lines]
     # assert not err  # server log is output to stderr
     assert not code
 
