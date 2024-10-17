@@ -119,6 +119,7 @@ jobs:
           conda install
           --yes
           --file tests/requirements.txt
+          --file tests/requirements-ci.txt
           python=${{ matrix.python-version }}
 
       - name: Conda Info
