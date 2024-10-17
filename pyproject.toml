@@ -58,6 +58,8 @@ testpaths = ["tests"]
 target-version = "py38"
 
 [tool.ruff.lint]
+extend-per-file-ignores = {"tests/*" = ["D", "S101"]}
+ignore = ["D203", "D213"]
 # see https://docs.astral.sh/ruff/rules/
 select = [
   "A",  # flake8-builtins
