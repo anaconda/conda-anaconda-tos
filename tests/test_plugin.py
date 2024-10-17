@@ -38,7 +38,7 @@ def test_subcommand_tos_view(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
-    tos_full_lines: tuple[str, ...],
+    tos_full_lines: list[str],
 ) -> None:
     out, err, code = conda_cli(
         "tos",

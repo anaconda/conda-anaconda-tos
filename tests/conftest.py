@@ -91,7 +91,7 @@ def serve_channel(path: Path) -> Iterator[str]:
 @pytest.fixture(scope="session")
 def tos_channel(
     tmp_path_factory: TempPathFactory,
-    tos_full_lines: tuple[str, ...],
+    tos_full_lines: list[str],
 ) -> Iterator[str]:
     # Copy the sample channel to a temporary directory and add ToS files
     path = tmp_path_factory.mktemp("tos_channel")
@@ -112,5 +112,5 @@ def sample_channel() -> Iterator[str]:
 
 
 @pytest.fixture(scope="session")
-def tos_full_lines() -> tuple[str, ...]:
-    return ("ToS full text", "", uuid4().hex)
+def tos_full_lines() -> list[str]:
+    return ["ToS full text", "", uuid4().hex]
