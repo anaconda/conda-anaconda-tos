@@ -62,13 +62,29 @@ jobs:
         exclude:
           # Windows: only test lowest and highest Python versions
           - os: windows-latest
-            python-version: ['3.9', '3.10', '3.11']
+            python-version: '3.9'
+          - os: windows-latest
+            python-version: '3.10'
+          - os: windows-latest
+            python-version: '3.11'
           # macOS arm64: only test highest Python version
           - os: macos-14
-            python-version: ['3.8', 3.9', '3.10', '3.11']
+            python-version: '3.8'
+          - os: macos-14
+            python-version: '3.9'
+          - os: macos-14
+            python-version: '3.10'
+          - os: macos-14
+            python-version: '3.11'
           # macOS x86_64: only test lowest Python version
           - os: macos-13
-            python-version: [3.9', '3.10', '3.11', '3.12']
+            python-version: '3.9'
+          - os: macos-13
+            python-version: '3.10'
+          - os: macos-13
+            python-version: '3.11'
+          - os: macos-13
+            python-version: '3.12'
     runs-on: ${{ matrix.os }}
     env:
       ErrorActionPreference: Stop  # powershell exit immediately on error
