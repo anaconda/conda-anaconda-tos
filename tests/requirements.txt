@@ -1,2 +1,2 @@
-conda
+conda >=23.9.0
 rich
