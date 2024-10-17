@@ -5,6 +5,7 @@ from __future__ import annotations
 from conda.base.context import context
 from anaconda_conda_tos.plugin import conda_subcommands, conda_settings
 from typing import TYPE_CHECKING
+import pytest
 
 if TYPE_CHECKING:
     from pytest import MonkeyPatch
@@ -29,6 +30,11 @@ def test_settings_hook() -> None:
 
 def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
     conda_cli("tos")
+
+
+@pytest.mark.parametrize("flag", ["--view", "--show"])
+def test_subcommand_tos_view(conda_cli: CondaCLIFixture, flag: str) -> None:
+    conda_cli("tos", flag)
 
 
 def test_setting_auto_accept_tos(monkeypatch: MonkeyPatch) -> None:

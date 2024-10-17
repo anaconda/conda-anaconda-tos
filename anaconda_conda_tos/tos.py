@@ -14,7 +14,7 @@ from conda.models.channel import Channel
 from conda.gateways.connection.session import get_session
 from requests import HTTPError
 
-from .exceptions import CondaToSError
+from .exceptions import CondaToSMissing
 
 if TYPE_CHECKING:
     from typing import Literal, Final, Iterable
@@ -57,7 +57,7 @@ def get_tos_endpoint(
         response.raise_for_status()
     except HTTPError as exc:
         if exc.response.status_code == 404:
-            raise CondaToSError(f"ToS endpoint ({endpoint}) not found")
+            raise CondaToSMissing(channel)
         else:
             raise
     finally:
@@ -85,4 +85,7 @@ def view_tos(*channels: str | Channel) -> None:
     """Prints the ToS text for the given channels."""
     for channel in get_channels(*channels):
         print(f"viewing ToS for {channel}:")
-        print(get_tos_text(channel))
+        try:
+            print(get_tos_text(channel))
+        except CondaToSMissing:
+            print("ToS not found")
