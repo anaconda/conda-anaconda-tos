@@ -80,15 +80,18 @@ def test_view_tos(
 ) -> None:
     view_tos(tos_channel)
     tos_out, err = capsys.readouterr()
+    tos_out.replace("\r\n", "\n")  # normalize Windows line endings
     assert tos_out == f"viewing ToS for {tos_channel}:\n{tos_full_text}\n"
     # assert not err  # server log is output to stderr
 
     view_tos(sample_channel)
     sample_out, err = capsys.readouterr()
+    sample_out.replace("\r\n", "\n")  # normalize Windows line endings
     assert sample_out == f"viewing ToS for {sample_channel}:\nToS not found\n"
     # assert not err  # server log is output to stderr
 
     view_tos(tos_channel, sample_channel)
     out, err = capsys.readouterr()
+    out.replace("\r\n", "\n")  # normalize Windows line endings
     assert out == f"{tos_out}{sample_out}"
     # assert not err  # server log is output to stderr

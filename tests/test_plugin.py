@@ -46,6 +46,7 @@ def test_subcommand_tos_view(
         "--override-channels",
         f"--channel={sample_channel}",
     )
+    sample_out.replace("\r\n", "\n")  # normalize Windows line endings
     assert sample_out == f"viewing ToS for {sample_channel}:\nToS not found\n"
     # assert not err  # server log is output to stderr
     assert not code
@@ -56,6 +57,7 @@ def test_subcommand_tos_view(
         "--override-channels",
         f"--channel={tos_channel}",
     )
+    tos_out.replace("\r\n", "\n")  # normalize Windows line endings
     assert tos_out == f"viewing ToS for {tos_channel}:\n{tos_full_text}\n"
     # assert not err  # server log is output to stderr
     assert not code
@@ -66,6 +68,7 @@ def test_subcommand_tos_view(
         return_value=(tos_channel,),
     )
     out, err, code = conda_cli("tos", "--view")
+    out.replace("\r\n", "\n")  # normalize Windows line endings
     assert out == tos_out
     # assert not err  # server log is output to stderr
     assert not code
