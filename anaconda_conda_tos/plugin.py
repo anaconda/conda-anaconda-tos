@@ -1,24 +1,24 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""
-ToS subcommand and settings plugins.
-"""
+"""Conda ToS subcommand and settings plugins."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
-from conda.plugins import hookimpl, CondaSubcommand, CondaSetting
 from conda.common.configuration import PrimitiveParameter
+from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
 
 from .tos import view_tos
 
 if TYPE_CHECKING:
-    from argparse import Namespace, ArgumentParser
+    from argparse import ArgumentParser, Namespace
+    from typing import Iterator
 
 
-def configure_parser(parser: ArgumentParser):
+def configure_parser(parser: ArgumentParser) -> None:
+    """Configure the parser for the `tos` subcommand."""
     parser.add_argument("-c", "--channel", action="append")
     parser.add_argument("--override-channels", action="store_true")
 
@@ -27,13 +27,15 @@ def configure_parser(parser: ArgumentParser):
 
 
 def execute(args: Namespace) -> int:
+    """Execute the `tos` subcommand."""
     if args.view:
         view_tos(*context.channels)
     return 0
 
 
 @hookimpl
-def conda_subcommands():
+def conda_subcommands() -> Iterator[CondaSubcommand]:
+    """Return a list of subcommands for the anaconda-conda-tos plugin."""
     yield CondaSubcommand(
         name="tos",
         action=execute,
@@ -43,7 +45,8 @@ def conda_subcommands():
 
 
 @hookimpl
-def conda_settings():
+def conda_settings() -> Iterator[CondaSetting]:
+    """Return a list of settings for the anaconda-conda-tos plugin."""
     yield CondaSetting(
         name="auto_accept_tos",
         description="Automatically accept Terms of Service (ToS) for all channels.",
