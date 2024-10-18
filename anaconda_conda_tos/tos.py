@@ -59,5 +59,5 @@ def reject_tos(*channels: str | Channel) -> None:
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
-            print(f"declining ToS for {channel}")
+            print(f"rejecting ToS for {channel}")
             write_metadata(channel, metadata, tos_accepted=False)
