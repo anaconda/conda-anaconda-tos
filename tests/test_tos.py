@@ -48,7 +48,9 @@ def test_view_tos(
 
 
 def test_accept_tos(
-    capsys: CaptureFixture, tos_channel: str, sample_channel: str
+    capsys: CaptureFixture,
+    tos_channel: str,
+    sample_channel: str,
 ) -> None:
     accept_tos(tos_channel)
     out, err = capsys.readouterr()
@@ -69,7 +71,9 @@ def test_accept_tos(
 
 
 def test_reject_tos(
-    capsys: CaptureFixture, tos_channel: str, sample_channel: str
+    capsys: CaptureFixture,
+    tos_channel: str,
+    sample_channel: str,
 ) -> None:
     reject_tos(tos_channel)
     out, err = capsys.readouterr()
