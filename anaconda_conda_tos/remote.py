@@ -19,8 +19,6 @@ if TYPE_CHECKING:
 
     from requests import Response
 
-
-# remote endpoints
 TOS_TEXT_ENDPOINT: Final = "tos.txt"
 TOS_METADATA_ENDPOINT: Final = "tos.json"
 

@@ -14,8 +14,6 @@ from conda.models.channel import Channel
 if TYPE_CHECKING:
     from typing import Final
 
-
-# local
 TOS_DIRECTORY: Final = "conda-meta/tos"
 
 
