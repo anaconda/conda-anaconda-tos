@@ -25,21 +25,25 @@ def test_write_metadata(tos_channel: str) -> None:
         base_url=channel.base_url,
     )
 
-    print(remote)
-    print(metadata)
-
     with pytest.raises(ValueError):
         write_metadata("defaults", metadata)
+
     write_metadata(tos_channel, metadata)
+
     with pytest.raises(TypeError):
         write_metadata(tos_channel, "metadata")  # type: ignore[arg-type]
+
     with pytest.raises(ValidationError):
         write_metadata(tos_channel, remote)
+
     write_metadata(tos_channel, remote, tos_accepted=True, acceptance_timestamp=now)
+
     with pytest.raises(ValidationError):
         write_metadata(tos_channel, remote, tos_accepted=True)
+
     with pytest.raises(ValidationError):
         write_metadata(tos_channel, remote, acceptance_timestamp=now)
+
     with pytest.raises(ValidationError):
         write_metadata(
             tos_channel, remote, tos_accepted=True, acceptance_timestamp="invalid"
