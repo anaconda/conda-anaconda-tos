@@ -4,12 +4,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
-from .remote import get_tos_text
+from .metadata import write_metadata
+from .remote import get_tos_metadata, get_tos_text
 
 if TYPE_CHECKING:
     from typing import Iterable
@@ -36,3 +38,20 @@ def view_tos(*channels: str | Channel) -> None:
             print(get_tos_text(channel))
         except CondaToSMissingError:
             print("ToS not found")
+
+
+def accept_tos(*channels: str | Channel) -> None:
+    """Accept the ToS for the given channels."""
+    for channel in get_channels(*channels):
+        try:
+            metadata = get_tos_metadata(channel)
+        except CondaToSMissingError:
+            print(f"ToS not found for {channel}")
+        else:
+            print(f"accepting ToS for {channel}")
+            write_metadata(
+                channel,
+                metadata,
+                tos_accepted=True,
+                acceptance_timestamp=datetime.now(tz=timezone.utc),
+            )

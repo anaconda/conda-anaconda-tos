@@ -10,19 +10,25 @@ from conda.base.context import context
 from conda.common.url import join_url
 from conda.gateways.connection.session import get_session
 from conda.models.channel import Channel
+from pydantic import BaseModel, ConfigDict, ValidationError
 from requests import HTTPError
 
-from .exceptions import CondaToSMissingError
+from .exceptions import CondaToSInvalidError, CondaToSMissingError
 
 if TYPE_CHECKING:
     from typing import Final, Literal
 
     from requests import Response
 
-
-# remote endpoints
 TOS_TEXT_ENDPOINT: Final = "tos.txt"
 TOS_METADATA_ENDPOINT: Final = "tos.json"
+
+
+class RemoteToSMetadata(BaseModel):
+    """Conda ToS metadata schema for the remote endpoint."""
+
+    model_config = ConfigDict(extra="allow")
+    tos_version: int
 
 
 def get_tos_endpoint(
@@ -35,11 +41,11 @@ def get_tos_endpoint(
         raise ValueError(
             "Channel must have a base URL. MultiChannel doesn't have endpoints."
         )
-    if endpoint not in (TOS_TEXT_ENDPOINT,):
+    if endpoint not in (TOS_TEXT_ENDPOINT, TOS_METADATA_ENDPOINT):
         raise ValueError(f"Invalid ToS endpoint: {endpoint}")
 
     session = get_session(channel.base_url)
-    endpoint = join_url(channel.base_url, TOS_TEXT_ENDPOINT)
+    url = join_url(channel.base_url, endpoint)
 
     saved_token_setting = context.add_anaconda_token
     try:
@@ -48,7 +54,7 @@ def get_tos_endpoint(
         # 2. CondaHttpAuth.add_binstar_token adds subdir to the URL which ToS don't have
         context.add_anaconda_token = False
         response = session.get(
-            endpoint,
+            url,
             headers={"Content-Type": "text/plain"},
             proxies=session.proxies,
             auth=None,
@@ -73,6 +79,10 @@ def get_tos_text(channel: str | Channel) -> str:
     return get_tos_endpoint(channel, TOS_TEXT_ENDPOINT).text.rstrip()
 
 
-def get_tos_metadata(channel: str | Channel) -> dict:
+def get_tos_metadata(channel: str | Channel) -> RemoteToSMetadata:
     """Get the ToS metadata for the given channel."""
-    return get_tos_endpoint(channel, TOS_METADATA_ENDPOINT).json()
+    try:
+        tos_metadata = get_tos_endpoint(channel, TOS_METADATA_ENDPOINT).json()
+        return RemoteToSMetadata(**tos_metadata)
+    except (AttributeError, ValidationError) as exc:
+        raise CondaToSInvalidError(channel) from exc

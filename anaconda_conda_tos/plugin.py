@@ -10,7 +10,7 @@ from conda.base.context import context
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
 
-from .tos import view_tos
+from .tos import accept_tos, view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -23,12 +23,15 @@ def configure_parser(parser: ArgumentParser) -> None:
     parser.add_argument("--override-channels", action="store_true")
 
     mutex = parser.add_mutually_exclusive_group()
+    mutex.add_argument("--accept", "--agree", "--yes", action="store_true")
     mutex.add_argument("--view", "--show", action="store_true")
 
 
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
-    if args.view:
+    if args.accept:
+        accept_tos(*context.channels)
+    elif args.view:
         view_tos(*context.channels)
     return 0
 
