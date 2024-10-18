@@ -5,11 +5,15 @@
 from __future__ import annotations
 
 from datetime import datetime  # noqa: TCH003 # pydantic needs datetime at runtime
+from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
 
 from .path import get_tos_path
 from .remote import RemoteToSMetadata
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 class ToSMetadata(RemoteToSMetadata):
@@ -24,7 +28,7 @@ def write_metadata(
     channel: Channel,
     metadata: ToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
-    **kwargs: int | bool | datetime | float | str,
+    **kwargs: Any,  # noqa: ANN401
 ) -> None:
     """Write the ToS metadata to file."""
     # argument validation/coercion
@@ -34,7 +38,11 @@ def write_metadata(
     if not isinstance(metadata, (ToSMetadata, RemoteToSMetadata)):
         raise TypeError("`metadata` must be either a ToSMetadata or RemoteToSMetadata.")
     metadata = ToSMetadata(
-        **{**metadata.model_dump(), **kwargs, "base_url": channel.base_url}
+        **{
+            **metadata.model_dump(),
+            **kwargs,
+            "base_url": channel.base_url,
+        }
     )
 
     # write metadata to file
