@@ -14,9 +14,11 @@ from http_test_server import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Iterator
 
     from pytest import TempPathFactory
+    from pytest_mock import MockerFixture
 
     from anaconda_conda_tos.remote import RemoteToSMetadata
 
@@ -48,3 +50,9 @@ def tos_full_lines() -> list[str]:
 @pytest.fixture(scope="session")
 def tos_metadata() -> RemoteToSMetadata:
     return TOS_METADATA
+
+
+@pytest.fixture
+def mock_get_tos_root(mocker: MockerFixture, tmp_path: Path) -> Path:
+    mocker.patch("anaconda_conda_tos.path.get_tos_root", return_value=tmp_path)
+    return tmp_path

@@ -11,6 +11,7 @@ from anaconda_conda_tos.path import (
     TOS_DIRECTORY,
     get_tos_dir,
     get_tos_path,
+    get_tos_root,
     hash_channel,
 )
 
@@ -24,12 +25,12 @@ def test_hash_channel(sample_channel: str, tos_channel: str) -> None:
         hash_channel("defaults")
 
 
+def test_get_tos_root() -> None:
+    assert get_tos_root() == Path(context.target_prefix, TOS_DIRECTORY)
+
+
 def test_get_tos_dir(sample_channel: str) -> None:
-    assert get_tos_dir(sample_channel) == Path(
-        context.target_prefix,
-        TOS_DIRECTORY,
-        hash_channel(sample_channel),
-    )
+    assert get_tos_dir(sample_channel) == get_tos_root() / hash_channel(sample_channel)
 
 
 def test_get_tos_path(sample_channel: str) -> None:

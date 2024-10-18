@@ -13,6 +13,8 @@ from anaconda_conda_tos.metadata import ToSMetadata, write_metadata
 from anaconda_conda_tos.path import get_tos_path
 from anaconda_conda_tos.remote import RemoteToSMetadata
 
+pytestmark = pytest.mark.usefixtures("mock_get_tos_root")
+
 
 def test_write_metadata(tos_channel: str) -> None:
     channel = Channel(tos_channel)

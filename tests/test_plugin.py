@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from conda.base.context import context
 
 from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
@@ -11,6 +12,8 @@ from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
 if TYPE_CHECKING:
     from conda.testing.fixtures import CondaCLIFixture
     from pytest_mock import MockerFixture
+
+pytestmark = pytest.mark.usefixtures("mock_get_tos_root")
 
 
 def test_subcommands_hook() -> None:

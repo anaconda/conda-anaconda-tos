@@ -29,9 +29,14 @@ def hash_channel(channel: str | Channel) -> str:
     return hasher.hexdigest()
 
 
+def get_tos_root() -> Path:
+    """Get the root ToS directory."""
+    return Path(context.target_prefix, TOS_DIRECTORY)
+
+
 def get_tos_dir(channel: str | Channel) -> Path:
     """Get the ToS directory for the given channel."""
-    return Path(context.target_prefix, TOS_DIRECTORY, hash_channel(channel))
+    return get_tos_root() / hash_channel(channel)
 
 
 def get_tos_path(channel: str | Channel, version: int) -> Path:
