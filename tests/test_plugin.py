@@ -110,5 +110,42 @@ def test_subcommand_tos_accept(
     assert not code
 
 
+def test_subcommand_tos_reject(
+    mocker: MockerFixture,
+    conda_cli: CondaCLIFixture,
+    tos_channel: str,
+    sample_channel: str,
+) -> None:
+    out, err, code = conda_cli(
+        "tos",
+        "--reject",
+        "--override-channels",
+        f"--channel={sample_channel}",
+    )
+    assert out.splitlines() == [f"ToS not found for {sample_channel}"]
+    # assert not err  # server log is output to stderr
+    assert not code
+
+    out, err, code = conda_cli(
+        "tos",
+        "--reject",
+        "--override-channels",
+        f"--channel={tos_channel}",
+    )
+    assert out.splitlines() == [f"rejecting ToS for {tos_channel}"]
+    # assert not err  # server log is output to stderr
+    assert not code
+
+    mocker.patch(
+        "conda.base.context.Context.channels",
+        new_callable=mocker.PropertyMock,
+        return_value=(tos_channel,),
+    )
+    out, err, code = conda_cli("tos", "--reject")
+    assert out.splitlines() == [f"rejecting ToS for {tos_channel}"]
+    # assert not err  # server log is output to stderr
+    assert not code
+
+
 def test_setting_auto_accept_tos() -> None:
     assert not context.plugins.auto_accept_tos

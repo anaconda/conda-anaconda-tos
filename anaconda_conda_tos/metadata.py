@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime  # noqa: TCH003 # pydantic needs datetime at runtime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -48,10 +48,14 @@ def write_metadata(
         raise ValueError("`channel` must have a base URL.")
     if not isinstance(metadata, (ToSMetadata, RemoteToSMetadata)):
         raise TypeError("`metadata` must be either a ToSMetadata or RemoteToSMetadata.")
+
+    # create/update ToSMetadata object
     metadata = ToSMetadata(
         **{
             **metadata.model_dump(),
             **kwargs,
+            # override the following fields with the current time and channel base URL
+            "acceptance_timestamp": datetime.now(tz=timezone.utc),
             "base_url": channel.base_url,
         }
     )
