@@ -8,12 +8,14 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
+from pydantic import ValidationError
 
-from .path import get_tos_path
+from .path import get_tos_dir, get_tos_path, get_tos_root
 from .remote import RemoteToSMetadata
 
 if TYPE_CHECKING:
-    from typing import Any
+    from pathlib import Path
+    from typing import Any, Iterator
 
 
 class ToSMetadata(RemoteToSMetadata):
@@ -53,3 +55,45 @@ def write_metadata(
     path = get_tos_path(channel, metadata.tos_version)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(metadata.model_dump_json())
+
+
+def read_metadata(path: Path) -> ToSMetadata | None:
+    """Load the ToS metadata from file."""
+    try:
+        return ToSMetadata.model_validate_json(path.read_text())
+    except (OSError, ValidationError):
+        # OSError: unable to access file, ignoring
+        # ValidationError: corrupt file, ignoring
+        return None
+
+
+def get_channel_tos_metadata(channel: Channel) -> ToSMetadata | None:
+    """Get the current ToS metadata for the given channel."""
+    try:
+        # return the newest metadata
+        _, metadata = next(get_all_tos_metadatas(channel))
+        return metadata
+    except StopIteration:
+        # StopIteration: no metadata found
+        return None
+
+
+def get_all_tos_metadatas(
+    channel: Channel | None = None,
+) -> Iterator[tuple[Channel, ToSMetadata]]:
+    """Yield all ToS metadata for the given channel."""
+    if channel is None:
+        paths = get_tos_root().glob("*/*.json")
+    else:
+        paths = get_tos_dir(channel).glob("*.json")
+
+    # group metadata by channel
+    grouped_metadatas: dict[Channel, list[ToSMetadata]] = {}
+    for path in paths:
+        if metadata := read_metadata(path):
+            key = channel or Channel(metadata.base_url)
+            grouped_metadatas.setdefault(key, []).append(metadata)
+
+    # return the newest metadata for each channel
+    for channel, metadatas in grouped_metadatas.items():
+        yield channel, sorted(metadatas, key=lambda x: x.tos_version)[-1]

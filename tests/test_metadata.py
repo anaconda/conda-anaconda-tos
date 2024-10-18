@@ -9,9 +9,16 @@ import pytest
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from anaconda_conda_tos.metadata import ToSMetadata, write_metadata
+from anaconda_conda_tos.metadata import (
+    ToSMetadata,
+    get_all_tos_metadatas,
+    write_metadata,
+)
 from anaconda_conda_tos.path import get_tos_path
 from anaconda_conda_tos.remote import RemoteToSMetadata
+from anaconda_conda_tos.tos import accept_tos, reject_tos
+
+pytestmark = pytest.mark.usefixtures("mock_get_tos_root")
 
 
 def test_write_metadata(tos_channel: str) -> None:
@@ -47,3 +54,12 @@ def test_write_metadata(tos_channel: str) -> None:
         getattr(local, key) == getattr(metadata, key)
         for key in set(local.model_fields) - {"acceptance_timestamp"}
     )
+
+
+def test_get_all_tos_metadatas(tos_channel: str) -> None:
+    assert len(list(get_all_tos_metadatas())) == 0
+    assert len(list(get_all_tos_metadatas(tos_channel))) == 0
+    accept_tos(tos_channel)
+    assert len(list(get_all_tos_metadatas())) == 1
+    reject_tos(tos_channel)
+    assert len(list(get_all_tos_metadatas())) == 1

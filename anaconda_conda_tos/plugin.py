@@ -9,12 +9,16 @@ from typing import TYPE_CHECKING
 from conda.base.context import context
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
+from rich.console import Console
+from rich.table import Table
 
-from .tos import accept_tos, reject_tos, view_tos
+from .tos import accept_tos, get_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
     from typing import Iterator
+
+    from .metadata import ToSMetadata
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -23,11 +27,25 @@ def configure_parser(parser: ArgumentParser) -> None:
     parser.add_argument("--override-channels", action="store_true")
 
     mutex = parser.add_mutually_exclusive_group()
-    mutex.add_argument("--accept", "--agree", "--yes", action="store_true")
-    mutex.add_argument(
-        "--reject", "--disagree", "--no", "--withdraw", action="store_true"
-    )
+    mutex.add_argument("--accept", "--agree", action="store_true")
+    mutex.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     mutex.add_argument("--view", "--show", action="store_true")
+
+
+def version_mapping(metadata: ToSMetadata | None) -> str:
+    """Map the ToS version to a human-readable string."""
+    return str(metadata.tos_version) if metadata else "-"
+
+
+def accepted_mapping(metadata: ToSMetadata | None) -> str:
+    """Map the ToS acceptance status to a human-readable string."""
+    if metadata is None:
+        return "-"
+    elif metadata.tos_accepted:
+        # convert timestamp to localized time
+        return metadata.acceptance_timestamp.astimezone().isoformat(" ")
+    else:
+        return "rejected"
 
 
 def execute(args: Namespace) -> int:
@@ -38,6 +56,21 @@ def execute(args: Namespace) -> int:
         reject_tos(*context.channels)
     elif args.view:
         view_tos(*context.channels)
+    else:
+        table = Table()
+        table.add_column("Channel")
+        table.add_column("Version")
+        table.add_column("Accepted")
+
+        for channel, metadata in get_tos(*context.channels):
+            table.add_row(
+                channel.base_url,
+                version_mapping(metadata),
+                accepted_mapping(metadata),
+            )
+
+        console = Console()
+        console.print(table)
     return 0
 
 

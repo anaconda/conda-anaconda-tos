@@ -4,13 +4,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from anaconda_conda_tos.tos import accept_tos, get_channels, reject_tos, view_tos
+from anaconda_conda_tos.tos import (
+    accept_tos,
+    get_channels,
+    get_tos,
+    reject_tos,
+    view_tos,
+)
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
+
+pytestmark = pytest.mark.usefixtures("mock_get_tos_root")
 
 
 def test_get_channels() -> None:
@@ -91,3 +100,43 @@ def test_reject_tos(
     out, err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
+
+
+def test_get_tos(tos_channel: str, sample_channel: str) -> None:
+    # list all channels and whether their ToS has been accepted
+    tos = list(get_tos(tos_channel, sample_channel))
+    assert len(tos) == 2
+    (first_channel, first_metadata), (second_channel, second_metadata) = tos
+    assert first_channel == Channel(tos_channel)
+    assert not first_metadata
+    assert second_channel == Channel(sample_channel)
+    assert not second_metadata
+
+    # accept the ToS for a channel
+    accept_tos(tos_channel)
+    tos = list(get_tos(tos_channel, sample_channel))
+    assert len(tos) == 2
+    (first_channel, first_metadata), (second_channel, second_metadata) = tos
+    assert first_channel == Channel(tos_channel)
+    assert first_metadata
+    assert first_metadata.tos_accepted
+    assert second_channel == Channel(sample_channel)
+    assert not second_metadata
+
+    # list all channels that have been accepted even if it is not active
+    accept_tos(tos_channel)
+    tos = list(get_tos())
+    assert len(tos) == 1
+    first_channel, first_metadata = tos[0]
+    assert first_channel == Channel(tos_channel)
+    assert first_metadata
+    assert first_metadata.tos_accepted
+
+    # even rejected ToS channels are listed
+    reject_tos(tos_channel)
+    tos = list(get_tos())
+    assert len(tos) == 1
+    first_channel, first_metadata = tos[0]
+    assert first_channel == Channel(tos_channel)
+    assert first_metadata
+    assert not first_metadata.tos_accepted
