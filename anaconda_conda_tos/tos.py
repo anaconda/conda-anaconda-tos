@@ -15,7 +15,7 @@ from conda.models.channel import Channel
 from requests import HTTPError
 
 from .exceptions import CondaToSMissingError
-from .metadata import load_metadata, write_metadata
+from .metadata import read_metadata, write_metadata
 from .path import TOS_DIRECTORY, get_tos_dir
 
 if TYPE_CHECKING:
@@ -159,7 +159,7 @@ def get_tos_metadatas(
     # group metadata by channel
     grouped_metadatas: dict[Channel, list[ToSMetaData]] = {}
     for path in paths:
-        if metadata := load_metadata(path):
+        if metadata := read_metadata(path):
             key = channel or Channel(metadata["base_url"])
             grouped_metadatas.setdefault(key, []).append(metadata)
 

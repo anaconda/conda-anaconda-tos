@@ -63,7 +63,7 @@ def write_metadata(
     )
 
 
-def load_metadata(path: Path) -> ToSMetaData | None:
+def read_metadata(path: Path) -> ToSMetaData | None:
     """Load the ToS metadata from file."""
     try:
         return json.loads(path.read_text())
