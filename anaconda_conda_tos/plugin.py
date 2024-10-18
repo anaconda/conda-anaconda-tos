@@ -6,8 +6,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from conda.base.context import context
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
+
+from .tos import view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -16,12 +19,17 @@ if TYPE_CHECKING:
 
 def configure_parser(parser: ArgumentParser) -> None:
     """Configure the parser for the `tos` subcommand."""
-    parser = parser
+    parser.add_argument("-c", "--channel", action="append")
+    parser.add_argument("--override-channels", action="store_true")
+
+    mutex = parser.add_mutually_exclusive_group()
+    mutex.add_argument("--view", "--show", action="store_true")
 
 
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
-    args = args
+    if args.view:
+        view_tos(*context.channels)
     return 0
 
 

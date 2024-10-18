@@ -10,6 +10,7 @@ from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
 
 if TYPE_CHECKING:
     from conda.testing.fixtures import CondaCLIFixture
+    from pytest_mock import MockerFixture
 
 
 def test_subcommands_hook() -> None:
@@ -30,6 +31,46 @@ def test_settings_hook() -> None:
 
 def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
     conda_cli("tos")
+
+
+def test_subcommand_tos_view(
+    mocker: MockerFixture,
+    conda_cli: CondaCLIFixture,
+    tos_channel: str,
+    sample_channel: str,
+    tos_full_lines: list[str],
+) -> None:
+    out, err, code = conda_cli(
+        "tos",
+        "--view",
+        "--override-channels",
+        f"--channel={sample_channel}",
+    )
+    sample_lines = out.splitlines()
+    assert sample_lines == [f"viewing ToS for {sample_channel}:", "ToS not found"]
+    # assert not err  # server log is output to stderr
+    assert not code
+
+    out, err, code = conda_cli(
+        "tos",
+        "--view",
+        "--override-channels",
+        f"--channel={tos_channel}",
+    )
+    tos_lines = out.splitlines()
+    assert tos_lines == [f"viewing ToS for {tos_channel}:", *tos_full_lines]
+    # assert not err  # server log is output to stderr
+    assert not code
+
+    mocker.patch(
+        "conda.base.context.Context.channels",
+        new_callable=mocker.PropertyMock,
+        return_value=(tos_channel,),
+    )
+    out, err, code = conda_cli("tos", "--view")
+    assert out.splitlines() == tos_lines
+    # assert not err  # server log is output to stderr
+    assert not code
 
 
 def test_setting_auto_accept_tos() -> None:
