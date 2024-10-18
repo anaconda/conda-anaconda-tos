@@ -23,3 +23,11 @@ class CondaToSMissingError(CondaToSError):
     def __init__(self: Self, channel: str | Channel) -> None:
         """Format error message with channel base URL."""
         super().__init__(f"No ToS for {Channel(channel).base_url or channel}.")
+
+
+class CondaToSInvalidError(CondaToSError):
+    """Error class for when the ToS is invalid for a channel."""
+
+    def __init__(self: Self, channel: str | Channel) -> None:
+        """Format error message with channel base URL."""
+        super().__init__(f"Invalid ToS for {Channel(channel).base_url or channel}.")

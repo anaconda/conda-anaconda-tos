@@ -20,7 +20,7 @@ from .remote import get_tos_metadata, get_tos_text
 if TYPE_CHECKING:
     from typing import Iterable, Iterator
 
-    from .metadata import ToSMetaData
+    from .metadata import ToSMetadata
 
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:
@@ -49,14 +49,18 @@ def view_tos(*channels: str | Channel) -> None:
 def accept_tos(*channels: str | Channel) -> None:
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
-        print(f"accepting ToS for {channel}")
-        metadata = get_tos_metadata(channel)
-        write_metadata(
-            channel,
-            tos_accepted=True,
-            acceptance_timestamp=datetime.now(tz=timezone.utc),
-            **metadata,
-        )
+        try:
+            metadata = get_tos_metadata(channel)
+        except CondaToSMissingError:
+            print(f"ToS not found for {channel}")
+        else:
+            print(f"accepting ToS for {channel}")
+            write_metadata(
+                channel,
+                metadata,
+                tos_accepted=True,
+                acceptance_timestamp=datetime.now(tz=timezone.utc),
+            )
 
 
 def reject_tos(*channels: str | Channel) -> None:
@@ -67,7 +71,7 @@ def reject_tos(*channels: str | Channel) -> None:
         write_metadata(channel, tos_accepted=False, **metadata)
 
 
-def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetaData]]:
+def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetadata]]:
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()

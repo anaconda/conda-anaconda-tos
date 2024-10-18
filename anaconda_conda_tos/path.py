@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS path helpers."""
+"""Conda ToS path functions."""
 
 from __future__ import annotations
 
@@ -14,8 +14,6 @@ from conda.models.channel import Channel
 if TYPE_CHECKING:
     from typing import Final
 
-
-# local
 TOS_DIRECTORY: Final = "conda-meta/tos"
 
 
@@ -23,7 +21,7 @@ def hash_channel(channel: str | Channel) -> str:
     """Hash the channel to remove problematic characters (e.g. /)."""
     channel = Channel(channel)
     if not channel.base_url:
-        raise TypeError("Channel must have a base URL. MultiChannel cannot be hashed.")
+        raise ValueError("Channel must have a base URL. MultiChannel cannot be hashed.")
 
     hasher = hashlib.new("sha256")
     hasher.update(channel.channel_location.encode("utf-8"))
