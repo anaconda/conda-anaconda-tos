@@ -80,14 +80,20 @@ def test_subcommand_tos_accept(
     sample_channel: str,
 ) -> None:
     out, err, code = conda_cli(
-        "tos", "--accept", "--override-channels", f"--channel={sample_channel}"
+        "tos",
+        "--accept",
+        "--override-channels",
+        f"--channel={sample_channel}",
     )
     assert out.splitlines() == [f"ToS not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
 
     out, err, code = conda_cli(
-        "tos", "--accept", "--override-channels", f"--channel={tos_channel}"
+        "tos",
+        "--accept",
+        "--override-channels",
+        f"--channel={tos_channel}",
     )
     assert out.splitlines() == [f"accepting ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr

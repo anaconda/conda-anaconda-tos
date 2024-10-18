@@ -26,8 +26,10 @@ def test_hash_channel(sample_channel: str, tos_channel: str) -> None:
 
 def test_get_tos_dir(sample_channel: str) -> None:
     assert get_tos_dir(sample_channel) == Path(
-        context.target_prefix
-    ) / TOS_DIRECTORY / hash_channel(sample_channel)
+        context.target_prefix,
+        TOS_DIRECTORY,
+        hash_channel(sample_channel),
+    )
 
 
 def test_get_tos_path(sample_channel: str) -> None:
