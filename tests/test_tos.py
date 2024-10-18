@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from anaconda_conda_tos.tos import get_channels, view_tos
+from anaconda_conda_tos.tos import accept_tos, get_channels, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
@@ -42,6 +42,52 @@ def test_view_tos(
     # assert not err  # server log is output to stderr
 
     view_tos(tos_channel, sample_channel)
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [*tos_lines, *sample_lines]
+    # assert not err  # server log is output to stderr
+
+
+def test_accept_tos(
+    capsys: CaptureFixture,
+    tos_channel: str,
+    sample_channel: str,
+) -> None:
+    accept_tos(tos_channel)
+    out, err = capsys.readouterr()
+    tos_lines = out.splitlines()
+    assert tos_lines == [f"accepting ToS for {tos_channel}"]
+    # assert not err  # server log is output to stderr
+
+    accept_tos(sample_channel)
+    out, err = capsys.readouterr()
+    sample_lines = out.splitlines()
+    assert sample_lines == [f"ToS not found for {sample_channel}"]
+    # assert not err  # server log is output to stderr
+
+    accept_tos(tos_channel, sample_channel)
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [*tos_lines, *sample_lines]
+    # assert not err  # server log is output to stderr
+
+
+def test_reject_tos(
+    capsys: CaptureFixture,
+    tos_channel: str,
+    sample_channel: str,
+) -> None:
+    reject_tos(tos_channel)
+    out, err = capsys.readouterr()
+    tos_lines = out.splitlines()
+    assert tos_lines == [f"rejecting ToS for {tos_channel}"]
+    # assert not err  # server log is output to stderr
+
+    reject_tos(sample_channel)
+    out, err = capsys.readouterr()
+    sample_lines = out.splitlines()
+    assert sample_lines == [f"ToS not found for {sample_channel}"]
+    # assert not err  # server log is output to stderr
+
+    reject_tos(tos_channel, sample_channel)
     out, err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr

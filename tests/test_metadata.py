@@ -21,6 +21,7 @@ def test_write_metadata(tos_channel: str) -> None:
     metadata = ToSMetadata(
         **remote.model_dump(),
         tos_accepted=True,
+        # the following fields are overridden in write_metadata
         acceptance_timestamp=now,
         base_url=channel.base_url,
     )
@@ -36,19 +37,13 @@ def test_write_metadata(tos_channel: str) -> None:
     with pytest.raises(ValidationError):
         write_metadata(tos_channel, remote)
 
-    write_metadata(tos_channel, remote, tos_accepted=True, acceptance_timestamp=now)
-
-    with pytest.raises(ValidationError):
-        write_metadata(tos_channel, remote, tos_accepted=True)
-
-    with pytest.raises(ValidationError):
-        write_metadata(tos_channel, remote, acceptance_timestamp=now)
-
-    with pytest.raises(ValidationError):
-        write_metadata(
-            tos_channel, remote, tos_accepted=True, acceptance_timestamp="invalid"
-        )
+    write_metadata(tos_channel, remote, tos_accepted=True)
 
     write_metadata(tos_channel, metadata)
     contents = get_tos_path(tos_channel, 42).read_text()
-    assert ToSMetadata.model_validate_json(contents) == metadata
+    local = ToSMetadata.model_validate_json(contents)
+    assert local.model_fields == metadata.model_fields
+    assert all(
+        getattr(local, key) == getattr(metadata, key)
+        for key in set(local.model_fields) - {"acceptance_timestamp"}
+    )
