@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS metadata management functions."""
+"""Conda ToS metadata functions."""
 
 from __future__ import annotations
 
