@@ -6,15 +6,16 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+from conda.base.context import context
 from conda.models.channel import Channel
 
-from .path import get_tos_path
+from .path import TOS_DIRECTORY, get_tos_dir, get_tos_path
 
 if TYPE_CHECKING:
-    from pathlib import Path
-    from typing import TypedDict
+    from typing import Final, Iterator, TypedDict
 
     class ToSMetaData(TypedDict):
         """ToS metadata."""
@@ -23,6 +24,14 @@ if TYPE_CHECKING:
         tos_version: int
         acceptance_timestamp: float
         base_url: str | None
+
+
+UNDEFINED_TOS_METADATA: Final[ToSMetaData] = {
+    "tos_accepted": None,
+    "tos_version": 0,
+    "acceptance_timestamp": 0,
+    "base_url": None,
+}
 
 
 def write_metadata(
@@ -71,3 +80,35 @@ def read_metadata(path: Path) -> ToSMetaData | None:
         # OSError: unable to access file, ignoring
         # JSONDecodeError: corrupt file, ignoring
         return None
+
+
+def get_channel_tos_metadata(channel: Channel) -> ToSMetaData:
+    """Get the current ToS metadata for the given channel."""
+    try:
+        # return the newest metadata
+        _, metadata = next(get_all_tos_metadatas(channel))
+        return metadata
+    except StopIteration:
+        # StopIteration: no metadata found
+        return UNDEFINED_TOS_METADATA  # fallback metadata if none found
+
+
+def get_all_tos_metadatas(
+    channel: Channel | None = None,
+) -> Iterator[tuple[Channel, ToSMetaData]]:
+    """Yield all ToS metadata for the given channel."""
+    if channel is None:
+        paths = Path(context.target_prefix, TOS_DIRECTORY).glob("*/*.json")
+    else:
+        paths = get_tos_dir(channel).glob("*.json")
+
+    # group metadata by channel
+    grouped_metadatas: dict[Channel, list[ToSMetaData]] = {}
+    for path in paths:
+        if metadata := read_metadata(path):
+            key = channel or Channel(metadata["base_url"])
+            grouped_metadatas.setdefault(key, []).append(metadata)
+
+    # return the newest metadata for each channel
+    for channel, metadatas in grouped_metadatas.items():
+        yield channel, sorted(metadatas, key=lambda x: x["tos_version"])[-1]

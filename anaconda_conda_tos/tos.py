@@ -5,19 +5,20 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-from conda.base.context import context
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
-from .metadata import read_metadata, write_metadata
-from .path import TOS_DIRECTORY, get_tos_dir
+from .metadata import (
+    get_all_tos_metadatas,
+    get_channel_tos_metadata,
+    write_metadata,
+)
 from .remote import get_tos_metadata, get_tos_text
 
 if TYPE_CHECKING:
-    from typing import Final, Iterable, Iterator
+    from typing import Iterable, Iterator
 
     from .metadata import ToSMetaData
 
@@ -66,56 +67,16 @@ def reject_tos(*channels: str | Channel) -> None:
         write_metadata(channel, tos_accepted=False, **metadata)
 
 
-UNDEFINED_TOS_METADATA: Final[ToSMetaData] = {
-    "tos_accepted": None,
-    "tos_version": 0,
-    "acceptance_timestamp": 0,
-    "base_url": None,
-}
-
-
-def get_current_tos_metadata(channel: Channel) -> ToSMetaData:
-    """Get the current ToS metadata for the given channel."""
-    try:
-        # return the newest metadata
-        _, metadata = next(get_tos_metadatas(channel))
-        return metadata
-    except StopIteration:
-        # StopIteration: no metadata found
-        return UNDEFINED_TOS_METADATA  # fallback metadata if none found
-
-
-def get_tos_metadatas(
-    channel: Channel | None = None,
-) -> Iterator[tuple[Channel, ToSMetaData]]:
-    """Yield all ToS metadata for the given channel."""
-    if channel is None:
-        paths = Path(context.target_prefix, TOS_DIRECTORY).glob("*/*.json")
-    else:
-        paths = get_tos_dir(channel).glob("*.json")
-
-    # group metadata by channel
-    grouped_metadatas: dict[Channel, list[ToSMetaData]] = {}
-    for path in paths:
-        if metadata := read_metadata(path):
-            key = channel or Channel(metadata["base_url"])
-            grouped_metadatas.setdefault(key, []).append(metadata)
-
-    # return the newest metadata for each channel
-    for channel, metadatas in grouped_metadatas.items():
-        yield channel, sorted(metadatas, key=lambda x: x["tos_version"])[-1]
-
-
 def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetaData]]:
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()
     for channel in get_channels(*channels):
-        yield channel, get_current_tos_metadata(channel)
+        yield channel, get_channel_tos_metadata(channel)
         seen.add(channel)
 
     # list all other ToS that have been accepted
-    for channel, metadata in get_tos_metadatas():
+    for channel, metadata in get_all_tos_metadatas():
         if channel not in seen:
             yield channel, metadata
             seen.add(channel)
