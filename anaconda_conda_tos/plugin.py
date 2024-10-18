@@ -4,16 +4,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
-from rich.console import Console
-from rich.table import Table
 
-from .tos import accept_tos, get_tos, reject_tos, view_tos
+from .tos import accept_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -33,24 +30,6 @@ def configure_parser(parser: ArgumentParser) -> None:
     mutex.add_argument("--view", "--show", action="store_true")
 
 
-def accepted_mapping(
-    *,
-    tos_accepted: bool | None,
-    acceptance_timestamp: float,
-    **metadata,  # noqa: ANN003, ARG001
-) -> str:
-    """Map the acceptance status to a human-readable string."""
-    if tos_accepted is None:
-        return "not reviewed"
-    elif tos_accepted:
-        # convert timestamp to localized time
-        return (
-            datetime.utcfromtimestamp(acceptance_timestamp).astimezone().isoformat(" ")
-        )
-    else:
-        return "rejected"
-
-
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     if args.accept:
@@ -59,21 +38,6 @@ def execute(args: Namespace) -> int:
         reject_tos(*context.channels)
     elif args.view:
         view_tos(*context.channels)
-    else:
-        table = Table()
-        table.add_column("Channel")
-        table.add_column("Version")
-        table.add_column("Accepted")
-
-        for channel, metadata in get_tos(*context.channels):
-            table.add_row(
-                channel.base_url,
-                str(metadata["tos_version"]),
-                accepted_mapping(**metadata),
-            )
-
-        console = Console()
-        console.print(table)
     return 0
 
 
