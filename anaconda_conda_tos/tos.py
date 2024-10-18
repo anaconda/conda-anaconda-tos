@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -17,49 +15,20 @@ from conda.models.channel import Channel
 from requests import HTTPError
 
 from .exceptions import CondaToSMissingError
+from .metadata import load_metadata, write_metadata
+from .path import TOS_DIRECTORY, get_tos_dir
 
 if TYPE_CHECKING:
-    from typing import Final, Iterable, Iterator, Literal, TypedDict
+    from typing import Final, Iterable, Iterator, Literal
 
     from requests import Response
 
-    class ToSMetaData(TypedDict):
-        """ToS metadata."""
+    from .metadata import ToSMetaData
 
-        tos_accepted: bool | None
-        tos_version: int
-        acceptance_timestamp: float
-        base_url: str | None
-
-
-# local
-TOS_DIRECTORY: Final = "conda-meta/tos"
 
 # remote endpoints
 TOS_METADATA: Final = "tos.json"
 TOS_TEXT: Final = "tos.txt"
-
-
-def get_tos_dir(channel: str | Channel) -> Path:
-    """Get the ToS directory for the given channel."""
-    return Path(context.target_prefix, TOS_DIRECTORY, hash_channel(channel))
-
-
-def get_tos_path(channel: str | Channel, version: int) -> Path:
-    """Get the ToS file path for the given channel and version."""
-    return get_tos_dir(channel) / f"{version}.json"
-
-
-def hash_channel(channel: str | Channel) -> str:
-    """Hash the channel to remove problematic characters (e.g. /)."""
-    channel = Channel(channel)
-    if not channel.base_url:
-        raise TypeError("Channel must have a base URL. MultiChannel cannot be hashed.")
-
-    hasher = hashlib.new("sha256")
-    hasher.update(channel.channel_location.encode("utf-8"))
-    hasher.update(channel.channel_name.encode("utf-8"))
-    return hasher.hexdigest()
 
 
 def get_tos_endpoint(
@@ -138,44 +107,6 @@ def view_tos(*channels: str | Channel) -> None:
             print("ToS not found")
 
 
-def write_metadata(
-    channel: Channel,
-    *,
-    tos_version: int,
-    tos_accepted: bool,
-    acceptance_timestamp: datetime | float = 0,
-    **metadata,  # noqa: ANN003
-) -> None:
-    """Write the ToS metadata to file."""
-    # argument validation/coercion
-    channel = Channel(channel)
-    if not channel.base_url:
-        raise TypeError("`channel` must have a base URL.")
-    if not isinstance(tos_version, int):
-        raise TypeError("`tos_version` must be an `int`.")
-    tos_accepted = bool(tos_accepted)
-    if isinstance(acceptance_timestamp, datetime):
-        acceptance_timestamp = acceptance_timestamp.timestamp()
-    elif not isinstance(acceptance_timestamp, float):
-        raise TypeError("`timestamp` must be a `datetime` or a `float`.")
-
-    # write metadata to file
-    path = get_tos_path(channel, tos_version)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(
-            {
-                **metadata,
-                "tos_version": tos_version,
-                "tos_accepted": tos_accepted,
-                "acceptance_timestamp": acceptance_timestamp,
-                "base_url": channel.base_url,
-            },
-            sort_keys=True,
-        )
-    )
-
-
 def accept_tos(*channels: str | Channel) -> None:
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
@@ -203,16 +134,6 @@ UNDEFINED_TOS_METADATA: Final[ToSMetaData] = {
     "acceptance_timestamp": 0,
     "base_url": None,
 }
-
-
-def load_metadata(path: Path) -> ToSMetaData | None:
-    """Load the ToS metadata from file."""
-    try:
-        return json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError):
-        # OSError: unable to access file, ignoring
-        # JSONDecodeError: corrupt file, ignoring
-        return None
 
 
 def get_current_tos_metadata(channel: Channel) -> ToSMetaData:
