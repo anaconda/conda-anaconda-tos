@@ -27,10 +27,8 @@ def configure_parser(parser: ArgumentParser) -> None:
     parser.add_argument("--override-channels", action="store_true")
 
     mutex = parser.add_mutually_exclusive_group()
-    mutex.add_argument("--accept", "--agree", "--yes", action="store_true")
-    mutex.add_argument(
-        "--reject", "--disagree", "--no", "--withdraw", action="store_true"
-    )
+    mutex.add_argument("--accept", "--agree", action="store_true")
+    mutex.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     mutex.add_argument("--view", "--show", action="store_true")
 
 
