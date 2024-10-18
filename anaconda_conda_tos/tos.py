@@ -10,17 +10,11 @@ from typing import TYPE_CHECKING
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
-from .metadata import (
-    get_all_tos_metadatas,
-    get_channel_tos_metadata,
-    write_metadata,
-)
+from .metadata import write_metadata
 from .remote import get_tos_metadata, get_tos_text
 
 if TYPE_CHECKING:
-    from typing import Iterable, Iterator
-
-    from .metadata import ToSMetaData
+    from typing import Iterable
 
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:
@@ -57,26 +51,3 @@ def accept_tos(*channels: str | Channel) -> None:
             acceptance_timestamp=datetime.now(tz=timezone.utc),
             **metadata,
         )
-
-
-def reject_tos(*channels: str | Channel) -> None:
-    """Reject the ToS for the given channels."""
-    for channel in get_channels(*channels):
-        print(f"declining ToS for {channel}")
-        metadata = get_tos_metadata(channel)
-        write_metadata(channel, tos_accepted=False, **metadata)
-
-
-def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetaData]]:
-    """List all channels and whether their ToS has been accepted."""
-    # list all active channels
-    seen: set[Channel] = set()
-    for channel in get_channels(*channels):
-        yield channel, get_channel_tos_metadata(channel)
-        seen.add(channel)
-
-    # list all other ToS that have been accepted
-    for channel, metadata in get_all_tos_metadatas():
-        if channel not in seen:
-            yield channel, metadata
-            seen.add(channel)

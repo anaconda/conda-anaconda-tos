@@ -22,7 +22,6 @@ requirements:
   run:
     - python >=3.8
     - conda >=23.9.0
-    - rich
 
 test:
   imports:
