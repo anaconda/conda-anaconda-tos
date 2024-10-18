@@ -3,43 +3,14 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
-import pytest
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from anaconda_conda_tos.exceptions import CondaToSMissingError
-from anaconda_conda_tos.tos import (
-    TOS_TEXT,
-    get_channels,
-    get_tos_endpoint,
-    get_tos_text,
-    view_tos,
-)
+from anaconda_conda_tos.tos import get_channels, view_tos
 
 if TYPE_CHECKING:
     from pytest import CaptureFixture
-
-
-def test_get_tos_endpoint(tos_channel: str, sample_channel: str) -> None:
-    # get ToS endpoint for ToS channel
-    assert get_tos_endpoint(tos_channel, TOS_TEXT).status_code == 200
-
-    # no ToS endpoint for sample channel
-    with pytest.raises(CondaToSMissingError):
-        get_tos_endpoint(sample_channel, TOS_TEXT)
-
-    # invalid channel
-    with pytest.raises(ValueError):
-        get_tos_endpoint("defaults", TOS_TEXT)
-
-    with pytest.raises(CondaToSMissingError):
-        get_tos_endpoint(uuid4().hex, TOS_TEXT)
-
-    # invalid endpoint
-    with pytest.raises(ValueError):
-        get_tos_endpoint(sample_channel, "invalid")  # type: ignore[arg-type]
 
 
 def test_get_channels() -> None:
@@ -50,26 +21,6 @@ def test_get_channels() -> None:
     assert set(get_channels("conda-forge")) == conda_forge
 
     assert set(get_channels("defaults", "conda-forge")) == defaults | conda_forge
-
-
-def test_get_tos_text(
-    tos_channel: str,
-    sample_channel: str,
-    tos_full_lines: list[str],
-) -> None:
-    # get full text of ToS channel
-    assert get_tos_text(tos_channel).splitlines() == tos_full_lines
-
-    # no full text for sample channel
-    with pytest.raises(CondaToSMissingError):
-        get_tos_text(sample_channel)
-
-    # invalid channel
-    with pytest.raises(ValueError):
-        get_tos_text("defaults")
-
-    with pytest.raises(CondaToSMissingError):
-        get_tos_text(uuid4().hex)
 
 
 def test_view_tos(
