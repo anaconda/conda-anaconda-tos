@@ -8,6 +8,7 @@ import pytest
 from conda.base.context import context
 
 from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
+from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:
     from conda.testing.fixtures import CondaCLIFixture
@@ -146,6 +147,49 @@ def test_subcommand_tos_reject(
     )
     out, err, code = conda_cli("tos", "--reject")
     assert out.splitlines() == [f"rejecting ToS for {tos_channel}"]
+    # assert not err  # server log is output to stderr
+    assert not code
+
+
+def test_subcommand_tos_list(
+    mocker: MockerFixture,
+    conda_cli: CondaCLIFixture,
+    tos_channel: str,
+    sample_channel: str,
+) -> None:
+    out, err, code = conda_cli(
+        "tos",
+        "--override-channels",
+        f"--channel={tos_channel}",
+        f"--channel={sample_channel}",
+    )
+    assert tos_channel in out
+    assert sample_channel in out
+    # assert not err  # server log is output to stderr
+    assert not code
+
+    mocker.patch(
+        "conda.base.context.Context.channels",
+        new_callable=mocker.PropertyMock,
+        return_value=(tos_channel, sample_channel),
+    )
+    out, err, code = conda_cli("tos")
+    assert tos_channel in out
+    assert sample_channel in out
+    # assert not err  # server log is output to stderr
+    assert not code
+
+    accept_tos(tos_channel)
+    out, err, code = conda_cli("tos")
+    assert tos_channel in out
+    assert sample_channel in out
+    # assert not err  # server log is output to stderr
+    assert not code
+
+    reject_tos(tos_channel)
+    out, err, code = conda_cli("tos")
+    assert tos_channel in out
+    assert sample_channel in out
     # assert not err  # server log is output to stderr
     assert not code
 

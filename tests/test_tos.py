@@ -103,6 +103,7 @@ def test_reject_tos(
 
 
 def test_get_tos(tos_channel: str, sample_channel: str) -> None:
+    # list all channels and whether their ToS has been accepted
     tos = list(get_tos(tos_channel, sample_channel))
     assert len(tos) == 2
     (first_channel, first_metadata), (second_channel, second_metadata) = tos
@@ -111,6 +112,7 @@ def test_get_tos(tos_channel: str, sample_channel: str) -> None:
     assert second_channel == Channel(sample_channel)
     assert not second_metadata
 
+    # accept the ToS for a channel
     accept_tos(tos_channel)
     tos = list(get_tos(tos_channel, sample_channel))
     assert len(tos) == 2
@@ -120,3 +122,21 @@ def test_get_tos(tos_channel: str, sample_channel: str) -> None:
     assert first_metadata.tos_accepted
     assert second_channel == Channel(sample_channel)
     assert not second_metadata
+
+    # list all channels that have been accepted even if it is not active
+    accept_tos(tos_channel)
+    tos = list(get_tos())
+    assert len(tos) == 1
+    first_channel, first_metadata = tos[0]
+    assert first_channel == Channel(tos_channel)
+    assert first_metadata
+    assert first_metadata.tos_accepted
+
+    # even rejected ToS channels are listed
+    reject_tos(tos_channel)
+    tos = list(get_tos())
+    assert len(tos) == 1
+    first_channel, first_metadata = tos[0]
+    assert first_channel == Channel(tos_channel)
+    assert first_metadata
+    assert not first_metadata.tos_accepted

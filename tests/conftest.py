@@ -55,4 +55,5 @@ def tos_metadata() -> RemoteToSMetadata:
 @pytest.fixture
 def mock_get_tos_root(mocker: MockerFixture, tmp_path: Path) -> Path:
     mocker.patch("anaconda_conda_tos.path.get_tos_root", return_value=tmp_path)
+    mocker.patch("anaconda_conda_tos.metadata.get_tos_root", return_value=tmp_path)
     return tmp_path

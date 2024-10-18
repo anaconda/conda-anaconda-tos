@@ -77,7 +77,7 @@ def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetadata | N
         yield channel, get_channel_tos_metadata(channel)
         seen.add(channel)
 
-    # list all other ToS that have been accepted
+    # list all other ToS that have been accepted/rejected
     for channel, metadata in get_all_tos_metadatas():
         if channel not in seen:
             yield channel, metadata

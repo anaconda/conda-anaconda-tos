@@ -5,17 +5,16 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-from conda.base.context import context
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from .path import TOS_DIRECTORY, get_tos_dir, get_tos_path
+from .path import get_tos_dir, get_tos_path, get_tos_root
 from .remote import RemoteToSMetadata
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Any, Iterator
 
 
@@ -84,7 +83,7 @@ def get_all_tos_metadatas(
 ) -> Iterator[tuple[Channel, ToSMetadata]]:
     """Yield all ToS metadata for the given channel."""
     if channel is None:
-        paths = Path(context.target_prefix, TOS_DIRECTORY).glob("*/*.json")
+        paths = get_tos_root().glob("*/*.json")
     else:
         paths = get_tos_dir(channel).glob("*.json")
 
