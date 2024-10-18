@@ -69,7 +69,7 @@ def reject_tos(*channels: str | Channel) -> None:
             write_metadata(channel, metadata, tos_accepted=False)
 
 
-def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetadata]]:
+def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetadata | None]]:
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()

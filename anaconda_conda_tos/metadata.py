@@ -16,7 +16,7 @@ from .path import TOS_DIRECTORY, get_tos_dir, get_tos_path
 from .remote import RemoteToSMetadata
 
 if TYPE_CHECKING:
-    from typing import Any, Final, Iterator
+    from typing import Any, Iterator
 
 
 class ToSMetadata(RemoteToSMetadata):
@@ -25,14 +25,6 @@ class ToSMetadata(RemoteToSMetadata):
     tos_accepted: bool
     acceptance_timestamp: datetime
     base_url: str
-
-
-UNDEFINED_TOS_METADATA: Final = ToSMetadata(
-    tos_accepted=None,
-    tos_version=0,
-    acceptance_timestamp=0,
-    base_url=None,
-)
 
 
 def write_metadata(
@@ -69,14 +61,14 @@ def write_metadata(
 def read_metadata(path: Path) -> ToSMetadata | None:
     """Load the ToS metadata from file."""
     try:
-        return ToSMetadata.modle_validation_json(path.read_text())
+        return ToSMetadata.model_validate_json(path.read_text())
     except (OSError, ValidationError):
         # OSError: unable to access file, ignoring
         # ValidationError: corrupt file, ignoring
         return None
 
 
-def get_channel_tos_metadata(channel: Channel) -> ToSMetadata:
+def get_channel_tos_metadata(channel: Channel) -> ToSMetadata | None:
     """Get the current ToS metadata for the given channel."""
     try:
         # return the newest metadata
@@ -84,7 +76,7 @@ def get_channel_tos_metadata(channel: Channel) -> ToSMetadata:
         return metadata
     except StopIteration:
         # StopIteration: no metadata found
-        return UNDEFINED_TOS_METADATA  # fallback metadata if none found
+        return None
 
 
 def get_all_tos_metadatas(
@@ -100,9 +92,9 @@ def get_all_tos_metadatas(
     grouped_metadatas: dict[Channel, list[ToSMetadata]] = {}
     for path in paths:
         if metadata := read_metadata(path):
-            key = channel or Channel(metadata["base_url"])
+            key = channel or Channel(metadata.base_url)
             grouped_metadatas.setdefault(key, []).append(metadata)
 
     # return the newest metadata for each channel
     for channel, metadatas in grouped_metadatas.items():
-        yield channel, sorted(metadatas, key=lambda x: x["tos_version"])[-1]
+        yield channel, sorted(metadatas, key=lambda x: x.tos_version)[-1]

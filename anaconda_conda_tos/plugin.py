@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
@@ -18,6 +17,8 @@ from .tos import accept_tos, get_tos, reject_tos, view_tos
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
     from typing import Iterator
+
+    from .metadata import ToSMetadata
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -33,20 +34,18 @@ def configure_parser(parser: ArgumentParser) -> None:
     mutex.add_argument("--view", "--show", action="store_true")
 
 
-def accepted_mapping(
-    *,
-    tos_accepted: bool | None,
-    acceptance_timestamp: float,
-    **metadata,  # noqa: ANN003, ARG001
-) -> str:
-    """Map the acceptance status to a human-readable string."""
-    if tos_accepted is None:
-        return "not reviewed"
-    elif tos_accepted:
+def version_mapping(metadata: ToSMetadata | None) -> str:
+    """Map the ToS version to a human-readable string."""
+    return str(metadata.tos_version) if metadata else "-"
+
+
+def accepted_mapping(metadata: ToSMetadata | None) -> str:
+    """Map the ToS acceptance status to a human-readable string."""
+    if metadata is None:
+        return "-"
+    elif metadata.tos_accepted:
         # convert timestamp to localized time
-        return (
-            datetime.utcfromtimestamp(acceptance_timestamp).astimezone().isoformat(" ")
-        )
+        return metadata.acceptance_timestamp.astimezone().isoformat(" ")
     else:
         return "rejected"
 
@@ -68,8 +67,8 @@ def execute(args: Namespace) -> int:
         for channel, metadata in get_tos(*context.channels):
             table.add_row(
                 channel.base_url,
-                str(metadata["tos_version"]),
-                accepted_mapping(**metadata),
+                version_mapping(metadata),
+                accepted_mapping(metadata),
             )
 
         console = Console()
