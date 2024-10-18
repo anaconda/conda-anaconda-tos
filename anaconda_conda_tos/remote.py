@@ -11,7 +11,7 @@ from conda.common.url import join_url
 from conda.gateways.connection.session import get_session
 from conda.models.channel import Channel
 from pydantic import BaseModel, ConfigDict, ValidationError
-from requests import HTTPError
+from requests.exceptions import ConnectionError, HTTPError
 
 from .exceptions import CondaToSInvalidError, CondaToSMissingError
 
@@ -64,6 +64,8 @@ def get_tos_endpoint(
             ),
         )
         response.raise_for_status()
+    except ConnectionError as exc:
+        raise CondaToSMissingError(channel) from exc
     except HTTPError as exc:
         if exc.response.status_code == 404:
             raise CondaToSMissingError(channel) from exc
