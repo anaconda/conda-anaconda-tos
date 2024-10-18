@@ -2,17 +2,22 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
 
-from anaconda_conda_tos.exceptions import CondaToSMissingError
+from anaconda_conda_tos.exceptions import CondaToSInvalidError, CondaToSMissingError
 from anaconda_conda_tos.remote import (
     TOS_TEXT_ENDPOINT,
+    RemoteToSMetadata,
     get_tos_endpoint,
     get_tos_metadata,
     get_tos_text,
 )
+
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 
 def test_get_tos_endpoint(tos_channel: str, sample_channel: str) -> None:
@@ -58,7 +63,8 @@ def test_get_tos_text(
 def test_get_tos_metadata(
     tos_channel: str,
     sample_channel: str,
-    tos_metadata: dict,
+    tos_metadata: RemoteToSMetadata,
+    mocker: MockerFixture,
 ) -> None:
     # get metadata of ToS channel
     assert get_tos_metadata(tos_channel) == tos_metadata
@@ -73,3 +79,15 @@ def test_get_tos_metadata(
 
     with pytest.raises(CondaToSMissingError):
         get_tos_metadata(uuid4().hex)
+
+    mocker.patch("anaconda_conda_tos.remote.get_tos_endpoint", return_value=None)
+    with pytest.raises(CondaToSInvalidError):
+        get_tos_metadata("channel")
+
+    mocker.patch("anaconda_conda_tos.remote.get_tos_endpoint", return_value=42)
+    with pytest.raises(CondaToSInvalidError):
+        get_tos_metadata("channel")
+
+    mocker.patch("anaconda_conda_tos.remote.get_tos_endpoint", return_value={})
+    with pytest.raises(CondaToSInvalidError):
+        get_tos_metadata("channel")

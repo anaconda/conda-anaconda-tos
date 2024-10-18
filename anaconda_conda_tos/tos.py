@@ -51,7 +51,7 @@ def accept_tos(*channels: str | Channel) -> None:
             print(f"accepting ToS for {channel}")
             write_metadata(
                 channel,
+                metadata,
                 tos_accepted=True,
                 acceptance_timestamp=datetime.now(tz=timezone.utc),
-                **metadata,
             )

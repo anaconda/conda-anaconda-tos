@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import contextlib
 import http.server
-import json
 import queue
 import shutil
 import socket
@@ -15,6 +14,8 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
+
+from anaconda_conda_tos.remote import RemoteToSMetadata
 
 if TYPE_CHECKING:
     import os
@@ -92,14 +93,14 @@ def serve_channel(path: Path) -> Iterator[str]:
 def tos_channel(
     tmp_path_factory: TempPathFactory,
     tos_full_lines: list[str],
-    tos_metadata: dict,
+    tos_metadata: RemoteToSMetadata,
 ) -> Iterator[str]:
     # Copy the sample channel to a temporary directory and add ToS files
     path = tmp_path_factory.mktemp("tos_channel")
     shutil.copytree(SAMPLE_CHANNEL_DIR, path, dirs_exist_ok=True)
 
     (path / "tos.txt").write_text("\n".join(tos_full_lines))
-    (path / "tos.json").write_text(json.dumps(tos_metadata))
+    (path / "tos.json").write_text(tos_metadata.model_dump_json())
 
     with serve_channel(path) as url:
         yield url
@@ -118,5 +119,5 @@ def tos_full_lines() -> list[str]:
 
 
 @pytest.fixture(scope="session")
-def tos_metadata() -> dict:
-    return {"tos_version": 1}
+def tos_metadata() -> RemoteToSMetadata:
+    return RemoteToSMetadata(tos_version=1)

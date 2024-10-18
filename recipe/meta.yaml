@@ -23,6 +23,7 @@ requirements:
     - python >=3.8
     - conda >=23.9.0
     - rich
+    - pydantic
 
 test:
   imports:
