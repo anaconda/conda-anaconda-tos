@@ -24,7 +24,7 @@ def write_metadata(
     # argument validation/coercion
     channel = Channel(channel)
     if not channel.base_url:
-        raise TypeError("`channel` must have a base URL.")
+        raise ValueError("`channel` must have a base URL.")
     if not isinstance(tos_version, int):
         raise TypeError("`tos_version` must be an `int`.")
     tos_accepted = bool(tos_accepted)

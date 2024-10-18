@@ -21,7 +21,7 @@ def hash_channel(channel: str | Channel) -> str:
     """Hash the channel to remove problematic characters (e.g. /)."""
     channel = Channel(channel)
     if not channel.base_url:
-        raise TypeError("Channel must have a base URL. MultiChannel cannot be hashed.")
+        raise ValueError("Channel must have a base URL. MultiChannel cannot be hashed.")
 
     hasher = hashlib.new("sha256")
     hasher.update(channel.channel_location.encode("utf-8"))

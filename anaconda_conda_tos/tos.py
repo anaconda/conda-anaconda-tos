@@ -43,11 +43,15 @@ def view_tos(*channels: str | Channel) -> None:
 def accept_tos(*channels: str | Channel) -> None:
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
-        print(f"accepting ToS for {channel}")
-        metadata = get_tos_metadata(channel)
-        write_metadata(
-            channel,
-            tos_accepted=True,
-            acceptance_timestamp=datetime.now(tz=timezone.utc),
-            **metadata,
-        )
+        try:
+            metadata = get_tos_metadata(channel)
+        except CondaToSMissingError:
+            print(f"ToS not found for {channel}")
+        else:
+            print(f"accepting ToS for {channel}")
+            write_metadata(
+                channel,
+                tos_accepted=True,
+                acceptance_timestamp=datetime.now(tz=timezone.utc),
+                **metadata,
+            )

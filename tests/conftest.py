@@ -92,13 +92,14 @@ def serve_channel(path: Path) -> Iterator[str]:
 def tos_channel(
     tmp_path_factory: TempPathFactory,
     tos_full_lines: list[str],
+    tos_metadata: dict,
 ) -> Iterator[str]:
     # Copy the sample channel to a temporary directory and add ToS files
     path = tmp_path_factory.mktemp("tos_channel")
     shutil.copytree(SAMPLE_CHANNEL_DIR, path, dirs_exist_ok=True)
 
     (path / "tos.txt").write_text("\n".join(tos_full_lines))
-    (path / "tos.json").write_text(json.dumps({"version": 1}))
+    (path / "tos.json").write_text(json.dumps(tos_metadata))
 
     with serve_channel(path) as url:
         yield url
@@ -114,3 +115,8 @@ def sample_channel() -> Iterator[str]:
 @pytest.fixture(scope="session")
 def tos_full_lines() -> list[str]:
     return ["ToS full text", "", uuid4().hex]
+
+
+@pytest.fixture(scope="session")
+def tos_metadata() -> dict:
+    return {"tos_version": 1}
