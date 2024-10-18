@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime  # noqa: TCH003 # pydantic needs datetime at runtime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
@@ -41,6 +41,7 @@ def write_metadata(
         **{
             **metadata.model_dump(),
             **kwargs,
+            "acceptance_timestamp": datetime.now(tz=timezone.utc),
             "base_url": channel.base_url,
         }
     )
