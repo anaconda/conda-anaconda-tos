@@ -13,12 +13,13 @@ from http_test_server import (
     serve_tos_channel,
 )
 
+from anaconda_conda_tos import path
+
 if TYPE_CHECKING:
     from pathlib import Path
     from typing import Iterator
 
-    from pytest import TempPathFactory
-    from pytest_mock import MockerFixture
+    from pytest import MonkeyPatch, TempPathFactory
 
     from anaconda_conda_tos.remote import RemoteToSMetadata
 
@@ -53,7 +54,13 @@ def tos_metadata() -> RemoteToSMetadata:
 
 
 @pytest.fixture
-def mock_get_tos_root(mocker: MockerFixture, tmp_path: Path) -> Path:
-    mocker.patch("anaconda_conda_tos.path.get_tos_root", return_value=tmp_path)
-    mocker.patch("anaconda_conda_tos.metadata.get_tos_root", return_value=tmp_path)
-    return tmp_path
+def mock_tos_search_path(
+    monkeypatch: MonkeyPatch, tmp_path_factory: TempPathFactory
+) -> tuple[Path, Path]:
+    tos_root = tmp_path_factory.mktemp("tos")
+    (system_tos_root := tos_root / "system").mkdir()
+    (user_tos_root := tos_root / "user").mkdir()
+    monkeypatch.setattr(
+        path, "SEARCH_PATH", (tos_root / "other", system_tos_root, user_tos_root)
+    )
+    return (system_tos_root, user_tos_root)
