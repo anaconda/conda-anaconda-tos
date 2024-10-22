@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
@@ -167,6 +168,8 @@ def test_subcommand_tos_list(
     mock_tos_search_path: tuple[Path, Path],
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
+
+    mocker.patch("os.get_terminal_size", return_value=os.terminal_size((100, 100)))
 
     out, err, code = conda_cli(
         "tos",
