@@ -61,6 +61,8 @@ def mock_tos_search_path(
     (system_tos_root := tos_root / "system").mkdir()
     (user_tos_root := tos_root / "user").mkdir()
     monkeypatch.setattr(
-        path, "SEARCH_PATH", (tos_root / "other", system_tos_root, user_tos_root)
+        path,
+        "SEARCH_PATH",
+        (tos_root / "other", system_tos_root, user_tos_root, "$CONDATOS"),
     )
     return (system_tos_root, user_tos_root)
