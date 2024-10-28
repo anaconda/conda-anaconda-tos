@@ -71,7 +71,7 @@ def read_metadata(path: Path) -> ToSMetadata | None:
 
 def get_channel_tos_metadata(
     channel: Channel,
-) -> tuple[ToSMetadata | None, Path | None]:
+) -> tuple[ToSMetadata, Path] | tuple[None, None]:
     """Get the current ToS metadata for the given channel."""
     try:
         # return the newest metadata
