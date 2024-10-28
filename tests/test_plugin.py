@@ -2,19 +2,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
-import pytest
 from conda.base.context import context
 
 from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
 from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from conda.testing.fixtures import CondaCLIFixture
     from pytest_mock import MockerFixture
-
-pytestmark = pytest.mark.usefixtures("mock_get_tos_root")
 
 
 def test_subcommands_hook() -> None:
@@ -34,7 +34,10 @@ def test_settings_hook() -> None:
 
 
 def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
-    conda_cli("tos")
+    out, err, code = conda_cli("tos")
+    assert out
+    # assert not err  # server log is output to stderr
+    assert not code
 
 
 def test_subcommand_tos_view(
@@ -82,12 +85,14 @@ def test_subcommand_tos_accept(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
+    tmp_path: Path,
 ) -> None:
     out, err, code = conda_cli(
         "tos",
         "--accept",
         "--override-channels",
         f"--channel={sample_channel}",
+        f"--file={tmp_path}",
     )
     assert out.splitlines() == [f"ToS not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
@@ -98,6 +103,7 @@ def test_subcommand_tos_accept(
         "--accept",
         "--override-channels",
         f"--channel={tos_channel}",
+        f"--file={tmp_path}",
     )
     assert out.splitlines() == [f"accepting ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
@@ -108,7 +114,7 @@ def test_subcommand_tos_accept(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--accept")
+    out, err, code = conda_cli("tos", "--accept", f"--file={tmp_path}")
     assert out.splitlines() == [f"accepting ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
@@ -119,12 +125,14 @@ def test_subcommand_tos_reject(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
+    tmp_path: Path,
 ) -> None:
     out, err, code = conda_cli(
         "tos",
         "--reject",
         "--override-channels",
         f"--channel={sample_channel}",
+        f"--file={tmp_path}",
     )
     assert out.splitlines() == [f"ToS not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
@@ -135,6 +143,7 @@ def test_subcommand_tos_reject(
         "--reject",
         "--override-channels",
         f"--channel={tos_channel}",
+        f"--file={tmp_path}",
     )
     assert out.splitlines() == [f"rejecting ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
@@ -145,7 +154,7 @@ def test_subcommand_tos_reject(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--reject")
+    out, err, code = conda_cli("tos", "--reject", f"--file={tmp_path}")
     assert out.splitlines() == [f"rejecting ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
@@ -156,7 +165,12 @@ def test_subcommand_tos_list(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
+    mock_tos_search_path: tuple[Path, Path],
 ) -> None:
+    system_tos_root, user_tos_root = mock_tos_search_path
+
+    mocker.patch("os.get_terminal_size", return_value=os.terminal_size((100, 100)))
+
     out, err, code = conda_cli(
         "tos",
         "--override-channels",
@@ -179,14 +193,14 @@ def test_subcommand_tos_list(
     # assert not err  # server log is output to stderr
     assert not code
 
-    accept_tos(tos_channel)
+    accept_tos(system_tos_root, tos_channel)
     out, err, code = conda_cli("tos")
     assert tos_channel in out
     assert sample_channel in out
     # assert not err  # server log is output to stderr
     assert not code
 
-    reject_tos(tos_channel)
+    reject_tos(user_tos_root, tos_channel)
     out, err, code = conda_cli("tos")
     assert tos_channel in out
     assert sample_channel in out

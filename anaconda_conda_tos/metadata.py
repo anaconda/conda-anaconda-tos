@@ -10,10 +10,11 @@ from typing import TYPE_CHECKING
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from .path import get_tos_dir, get_tos_path, get_tos_root
+from .path import get_tos_dir, get_tos_path, get_tos_root, get_tos_search_path
 from .remote import RemoteToSMetadata
 
 if TYPE_CHECKING:
+    import os
     from pathlib import Path
     from typing import Any, Iterator
 
@@ -27,6 +28,7 @@ class ToSMetadata(RemoteToSMetadata):
 
 
 def write_metadata(
+    tos_root: str | os.PathLike[str] | Path,
     channel: Channel,
     metadata: ToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
@@ -52,7 +54,7 @@ def write_metadata(
     )
 
     # write metadata to file
-    path = get_tos_path(channel, metadata.tos_version)
+    path = get_tos_path(tos_root, channel, metadata.tos_version)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(metadata.model_dump_json())
 
@@ -67,33 +69,36 @@ def read_metadata(path: Path) -> ToSMetadata | None:
         return None
 
 
-def get_channel_tos_metadata(channel: Channel) -> ToSMetadata | None:
+def get_channel_tos_metadata(
+    channel: Channel,
+) -> tuple[ToSMetadata, Path] | tuple[None, None]:
     """Get the current ToS metadata for the given channel."""
     try:
         # return the newest metadata
-        _, metadata = next(get_all_tos_metadatas(channel))
-        return metadata
+        _, metadata, path = next(get_all_tos_metadatas(channel))
+        return metadata, path
     except StopIteration:
         # StopIteration: no metadata found
-        return None
+        return None, None
 
 
 def get_all_tos_metadatas(
     channel: Channel | None = None,
-) -> Iterator[tuple[Channel, ToSMetadata]]:
+) -> Iterator[tuple[Channel, ToSMetadata, Path]]:
     """Yield all ToS metadata for the given channel."""
-    if channel is None:
-        paths = get_tos_root().glob("*/*.json")
-    else:
-        paths = get_tos_dir(channel).glob("*.json")
-
     # group metadata by channel
-    grouped_metadatas: dict[Channel, list[ToSMetadata]] = {}
-    for path in paths:
-        if metadata := read_metadata(path):
-            key = channel or Channel(metadata.base_url)
-            grouped_metadatas.setdefault(key, []).append(metadata)
+    grouped_metadatas: dict[Channel, list[tuple[ToSMetadata, Path]]] = {}
+    for tos_root in get_tos_search_path():
+        if channel is None:
+            paths = get_tos_root(tos_root).glob("*/*.json")
+        else:
+            paths = get_tos_dir(tos_root, channel).glob("*.json")
+
+        for path in paths:
+            if metadata := read_metadata(path):
+                key = channel or Channel(metadata.base_url)
+                grouped_metadatas.setdefault(key, []).append((metadata, path))
 
     # return the newest metadata for each channel
-    for channel, metadatas in grouped_metadatas.items():
-        yield channel, sorted(metadatas, key=lambda x: x.tos_version)[-1]
+    for channel, metadata_tuples in grouped_metadatas.items():
+        yield (channel, *sorted(metadata_tuples, key=lambda x: x[0].tos_version)[-1])

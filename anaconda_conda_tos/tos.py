@@ -17,6 +17,8 @@ from .metadata import (
 from .remote import get_tos_metadata, get_tos_text
 
 if TYPE_CHECKING:
+    import os
+    from pathlib import Path
     from typing import Iterable, Iterator
 
     from .metadata import ToSMetadata
@@ -45,7 +47,7 @@ def view_tos(*channels: str | Channel) -> None:
             print("ToS not found")
 
 
-def accept_tos(*channels: str | Channel) -> None:
+def accept_tos(tos_root: str | os.PathLike | Path, *channels: str | Channel) -> None:
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
@@ -54,10 +56,10 @@ def accept_tos(*channels: str | Channel) -> None:
             print(f"ToS not found for {channel}")
         else:
             print(f"accepting ToS for {channel}")
-            write_metadata(channel, metadata, tos_accepted=True)
+            write_metadata(tos_root, channel, metadata, tos_accepted=True)
 
 
-def reject_tos(*channels: str | Channel) -> None:
+def reject_tos(tos_root: str | os.PathLike | Path, *channels: str | Channel) -> None:
     """Reject the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
@@ -66,19 +68,21 @@ def reject_tos(*channels: str | Channel) -> None:
             print(f"ToS not found for {channel}")
         else:
             print(f"rejecting ToS for {channel}")
-            write_metadata(channel, metadata, tos_accepted=False)
+            write_metadata(tos_root, channel, metadata, tos_accepted=False)
 
 
-def get_tos(*channels: str | Channel) -> Iterator[tuple[Channel, ToSMetadata | None]]:
+def get_tos(
+    *channels: str | Channel,
+) -> Iterator[tuple[Channel, ToSMetadata | None, Path | None]]:
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()
     for channel in get_channels(*channels):
-        yield channel, get_channel_tos_metadata(channel)
+        yield channel, *get_channel_tos_metadata(channel)
         seen.add(channel)
 
     # list all other ToS that have been accepted/rejected
-    for channel, metadata in get_all_tos_metadatas():
+    for channel, metadata, path in get_all_tos_metadatas():
         if channel not in seen:
-            yield channel, metadata
+            yield channel, metadata, path
             seen.add(channel)
