@@ -16,10 +16,10 @@ from conda.models.channel import Channel
 if TYPE_CHECKING:
     from typing import Final, Iterator
 
-# mirrors conda.base.contest.sys_rc_path
+# mirrors conda.base.context.sys_rc_path
 SYSTEM_TOS_ROOT: Final[str] = "$CONDA_ROOT/conda-meta/tos"
 
-# mirrors conda.base.contest.user_rc_path
+# mirrors conda.base.context.user_rc_path
 USER_TOS_ROOT: Final[str] = "~/.conda/tos"
 
 # mirrors conda.base.constants.SEARCH_PATH locations
