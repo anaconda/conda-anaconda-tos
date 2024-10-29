@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 from http_test_server import (
-    TOS_FULL_TEXT,
     TOS_METADATA,
+    TOS_TEXT,
     serve_sample_channel,
     serve_tos_channel,
 )
@@ -45,7 +45,7 @@ def sample_channel() -> Iterator[str]:
 
 @pytest.fixture(scope="session")
 def tos_full_lines() -> list[str]:
-    return TOS_FULL_TEXT.splitlines()
+    return TOS_TEXT.splitlines()
 
 
 @pytest.fixture(scope="session")

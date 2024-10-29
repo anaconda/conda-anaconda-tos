@@ -16,12 +16,11 @@ from requests.exceptions import ConnectionError, HTTPError
 from .exceptions import CondaToSInvalidError, CondaToSMissingError
 
 if TYPE_CHECKING:
-    from typing import Final, Literal
+    from typing import Final
 
     from requests import Response
 
-TOS_TEXT_ENDPOINT: Final = "tos.txt"
-TOS_METADATA_ENDPOINT: Final = "tos.json"
+TOS_ENDPOINT: Final = "tos.json"
 
 
 class RemoteToSMetadata(BaseModel):
@@ -29,23 +28,19 @@ class RemoteToSMetadata(BaseModel):
 
     model_config = ConfigDict(extra="allow")
     tos_version: int
+    text: str
 
 
-def get_tos_endpoint(
-    channel: str | Channel,
-    endpoint: Literal["tos.txt", "tos.json"],
-) -> Response:
+def get_endpoint(channel: str | Channel) -> Response:
     """Get the ToS endpoint for the given channel."""
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError(
             "Channel must have a base URL. MultiChannel doesn't have endpoints."
         )
-    if endpoint not in (TOS_TEXT_ENDPOINT, TOS_METADATA_ENDPOINT):
-        raise ValueError(f"Invalid ToS endpoint: {endpoint}")
 
     session = get_session(channel.base_url)
-    url = join_url(channel.base_url, endpoint)
+    url = join_url(channel.base_url, TOS_ENDPOINT)
 
     saved_token_setting = context.add_anaconda_token
     try:
@@ -76,15 +71,9 @@ def get_tos_endpoint(
     return response
 
 
-def get_tos_text(channel: str | Channel) -> str:
-    """Get the ToS full text for the given channel."""
-    return get_tos_endpoint(channel, TOS_TEXT_ENDPOINT).text.rstrip()
-
-
-def get_tos_metadata(channel: str | Channel) -> RemoteToSMetadata:
+def get_metadata(channel: str | Channel) -> RemoteToSMetadata:
     """Get the ToS metadata for the given channel."""
     try:
-        tos_metadata = get_tos_endpoint(channel, TOS_METADATA_ENDPOINT).json()
-        return RemoteToSMetadata(**tos_metadata)
+        return RemoteToSMetadata(**get_endpoint(channel).json())
     except (AttributeError, ValidationError) as exc:
         raise CondaToSInvalidError(channel) from exc

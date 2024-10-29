@@ -14,7 +14,7 @@ from .metadata import (
     get_channel_tos_metadata,
     write_metadata,
 )
-from .remote import get_tos_metadata, get_tos_text
+from .remote import get_metadata
 
 if TYPE_CHECKING:
     import os
@@ -42,7 +42,7 @@ def view_tos(*channels: str | Channel) -> None:
     for channel in get_channels(*channels):
         print(f"viewing ToS for {channel}:")
         try:
-            print(get_tos_text(channel))
+            print(get_metadata(channel).text)
         except CondaToSMissingError:
             print("ToS not found")
 
@@ -51,7 +51,7 @@ def accept_tos(tos_root: str | os.PathLike | Path, *channels: str | Channel) -> 
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata = get_tos_metadata(channel)
+            metadata = get_metadata(channel)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
@@ -63,7 +63,7 @@ def reject_tos(tos_root: str | os.PathLike | Path, *channels: str | Channel) -> 
     """Reject the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata = get_tos_metadata(channel)
+            metadata = get_metadata(channel)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:

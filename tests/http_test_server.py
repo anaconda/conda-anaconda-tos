@@ -26,8 +26,8 @@ DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
 
 
-TOS_FULL_TEXT = "\n".join(("ToS full text", "", uuid4().hex))
-TOS_METADATA = RemoteToSMetadata(tos_version=1)
+TOS_TEXT = "\n".join(("ToS full text", "", uuid4().hex))
+TOS_METADATA = RemoteToSMetadata(tos_version=1, text=TOS_TEXT)
 
 
 def run_test_server(
@@ -92,7 +92,6 @@ def serve_tos_channel(path: str | os.PathLike | Path) -> ContextManager[str]:
     # Copy the sample channel to a temporary directory and add ToS files
     shutil.copytree(SAMPLE_CHANNEL_DIR, path, dirs_exist_ok=True)
 
-    (path / "tos.txt").write_text(TOS_FULL_TEXT)
     (path / "tos.json").write_text(TOS_METADATA.model_dump_json())
 
     return serve_channel(path)

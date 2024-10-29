@@ -28,7 +28,11 @@ if TYPE_CHECKING:
 def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
     channel = Channel(tos_channel)
     now = datetime.now(tz=timezone.utc).timestamp()
-    remote = RemoteToSMetadata(tos_version=42, **{uuid4().hex: uuid4().hex})
+    remote = RemoteToSMetadata(
+        tos_version=42,
+        text=f"ToS full text\n\n{uuid4().hex}",
+        **{uuid4().hex: uuid4().hex},
+    )
     metadata = ToSMetadata(
         **remote.model_dump(),
         tos_accepted=True,
