@@ -14,7 +14,7 @@ from .metadata import (
     get_channel_tos_metadata,
     write_metadata,
 )
-from .remote import get_tos_metadata, get_tos_text
+from .remote import get_tos_metadata
 
 if TYPE_CHECKING:
     import os
@@ -42,7 +42,7 @@ def view_tos(*channels: str | Channel) -> None:
     for channel in get_channels(*channels):
         print(f"viewing ToS for {channel}:")
         try:
-            print(get_tos_text(channel))
+            print(get_tos_metadata(channel).text)
         except CondaToSMissingError:
             print("ToS not found")
 
