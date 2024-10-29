@@ -71,7 +71,7 @@ def get_endpoint(channel: str | Channel) -> Response:
     return response
 
 
-def get_tos_metadata(channel: str | Channel) -> RemoteToSMetadata:
+def get_metadata(channel: str | Channel) -> RemoteToSMetadata:
     """Get the ToS metadata for the given channel."""
     try:
         return RemoteToSMetadata(**get_endpoint(channel).json())
