@@ -76,7 +76,8 @@ def get_tos_search_path(
 
 
 def get_tos_dir(
-    tos_root: str | os.PathLike[str] | Path, channel: str | Channel
+    tos_root: str | os.PathLike[str] | Path,
+    channel: str | Channel,
 ) -> Path:
     """Get the ToS directory for the given channel."""
     return get_tos_root(tos_root) / hash_channel(channel)

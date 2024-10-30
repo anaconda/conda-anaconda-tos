@@ -11,6 +11,9 @@ from conda.base.context import context
 from anaconda_conda_tos.path import (
     SYSTEM_TOS_ROOT,
     USER_TOS_ROOT,
+    get_all_paths,
+    get_cache_path,
+    get_channel_paths,
     get_metadata_path,
     get_tos_dir,
     get_tos_root,
@@ -20,6 +23,7 @@ from anaconda_conda_tos.path import (
 
 if TYPE_CHECKING:
     from pytest import MonkeyPatch
+    from pytest_mock import MockerFixture
 
 
 def test_hash_channel(sample_channel: str, tos_channel: str) -> None:
@@ -54,8 +58,39 @@ def test_get_tos_dir(tmp_path: Path, sample_channel: str) -> None:
     ) / hash_channel(sample_channel)
 
 
-def test_get_tos_path(tmp_path: Path, sample_channel: str) -> None:
+def test_get_metadata_path(tmp_path: Path, sample_channel: str) -> None:
     assert (
         get_metadata_path(tmp_path, sample_channel, 42)
         == get_tos_dir(tmp_path, sample_channel) / "42.json"
+    )
+
+
+def test_get_cache_path(
+    mocker: MockerFixture, tmp_path: Path, sample_channel: str
+) -> None:
+    mocker.patch("anaconda_conda_tos.path.user_cache_dir", return_value=str(tmp_path))
+    assert (
+        get_cache_path(sample_channel)
+        == tmp_path / f"{hash_channel(sample_channel)}.cache"
+    )
+
+
+def test_get_all_paths(tmp_path: Path) -> None:
+    (channel1 := tmp_path / "channel1").mkdir()
+    (channel1json1 := channel1 / "1.json").touch()
+    (channel1json2 := channel1 / "2.json").touch()
+    (channel2 := tmp_path / "channel2").mkdir()
+    (channel2json1 := channel2 / "1.json").touch()
+    (channel2json2 := channel2 / "2.json").touch()
+    assert sorted(get_all_paths(tmp_path)) == sorted(
+        (channel1json1, channel1json2, channel2json1, channel2json2)
+    )
+
+
+def test_get_channel_paths(tmp_path: Path, sample_channel: str) -> None:
+    (channel1 := tmp_path / hash_channel(sample_channel)).mkdir()
+    (channel1json1 := channel1 / "1.json").touch()
+    (channel1json2 := channel1 / "2.json").touch()
+    assert sorted(get_channel_paths(tmp_path, sample_channel)) == sorted(
+        (channel1json1, channel1json2)
     )
