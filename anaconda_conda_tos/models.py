@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime  # noqa: TCH003 # needed for pydantic model
 from typing import TYPE_CHECKING
 
 from pydantic import (
@@ -14,7 +15,6 @@ from pydantic import (
 )
 
 if TYPE_CHECKING:
-    from datetime import datetime
     from typing import Self
 
 
