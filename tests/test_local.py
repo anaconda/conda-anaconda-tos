@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 
 
 def test_touch_cache(
-    mocker: MockerFixture, tmp_path: Path, sample_channel: str
+    mocker: MockerFixture,
+    tmp_path: Path,
+    sample_channel: str,
 ) -> None:
     path = tmp_path / "cache"
     mocker.patch("anaconda_conda_tos.local.get_cache_path", return_value=path)
