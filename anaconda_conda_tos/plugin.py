@@ -13,7 +13,7 @@ from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
 from rich.console import Console
 from rich.table import Table
 
-from .path import SYSTEM_TOS_ROOT, USER_TOS_ROOT
+from .path import SYSTEM_TOS_ROOT, USER_TOS_ROOT, get_cache_path
 from .tos import accept_tos, get_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Iterator
 
-    from .metadata import ToSMetadata
+    from .local import LocalToSMetadata
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -51,26 +51,40 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
 
+    parser.add_argument("--cache-timeout", action="store", type=int)
+    parser.add_argument(
+        "--ignore-cache",
+        dest="cache_timeout",
+        action="store_const",
+        const=0,
+    )
+    parser.set_defaults(cache_timeout=24 * 60 * 60)
 
-def version_mapping(metadata: ToSMetadata | None) -> str:
+
+def version_mapping(metadata: LocalToSMetadata | None) -> str:
     """Map the ToS version to a human-readable string."""
     return str(metadata.tos_version) if metadata else "-"
 
 
-def accepted_mapping(metadata: ToSMetadata | None) -> str:
+def accepted_mapping(metadata: LocalToSMetadata | None) -> str:
     """Map the ToS acceptance status to a human-readable string."""
-    if metadata is None:
+    if (
+        metadata is None
+        or (tos_accepted := getattr(metadata, "tos_accepted", None)) is None
+    ):
         return "-"
-    elif metadata.tos_accepted:
+    elif tos_accepted:
         # convert timestamp to localized time
         return metadata.acceptance_timestamp.astimezone().isoformat(" ")
     else:
         return "rejected"
 
 
-def path_mapping(path: Path | None) -> str:
+def path_mapping(path: Path | None, parent: int | None = None) -> str:
     """Map the ToS path to a human-readable string."""
-    return str(path.parent.parent) if path else "-"
+    if not path:
+        return "-"
+    return str(path if parent is None else path.parents[parent])
 
 
 def execute(args: Namespace) -> int:
@@ -78,24 +92,30 @@ def execute(args: Namespace) -> int:
     validate_prefix_exists(context.target_prefix)
 
     if args.accept:
-        accept_tos(args.tos_root, *context.channels)
+        accept_tos(args.tos_root, *context.channels, cache_timeout=args.cache_timeout)
     elif args.reject:
-        reject_tos(args.tos_root, *context.channels)
+        reject_tos(args.tos_root, *context.channels, cache_timeout=args.cache_timeout)
     elif args.view:
-        view_tos(*context.channels)
+        view_tos(*context.channels, cache_timeout=args.cache_timeout)
     else:
         table = Table()
         table.add_column("Channel")
         table.add_column("Version")
         table.add_column("Accepted")
         table.add_column("Location")
+        table.add_column("Cache")
 
-        for channel, metadata, path in get_tos(*context.channels):
+        for channel, metadata, path in get_tos(
+            args.tos_root,
+            *context.channels,
+            cache_timeout=args.cache_timeout,
+        ):
             table.add_row(
                 channel.base_url,
                 version_mapping(metadata),
                 accepted_mapping(metadata),
-                path_mapping(path),
+                path_mapping(path, 1),
+                path_mapping(get_cache_path(channel)),
             )
 
         console = Console()

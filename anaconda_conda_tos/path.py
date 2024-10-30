@@ -12,9 +12,12 @@ from typing import TYPE_CHECKING
 from conda.common.compat import on_win
 from conda.common.configuration import custom_expandvars
 from conda.models.channel import Channel
+from platformdirs import user_cache_dir
+
+from . import APP_NAME
 
 if TYPE_CHECKING:
-    from typing import Final, Iterator
+    from typing import Final, Iterable, Iterator
 
 # mirrors conda.base.context.sys_rc_path
 SYSTEM_TOS_ROOT: Final[str] = "$CONDA_ROOT/conda-meta/tos"
@@ -41,6 +44,8 @@ SEARCH_PATH: Final[tuple[str, ...]] = tuple(
     ),
 )
 
+TOS_GLOB: Final = "*.json"
+
 
 def hash_channel(channel: str | Channel) -> str:
     """Hash the channel to remove problematic characters (e.g. /)."""
@@ -61,10 +66,12 @@ def get_tos_root(path: str | os.PathLike[str] | Path) -> Path:
     return Path(path).expanduser()
 
 
-def get_tos_search_path() -> Iterator[Path]:
+def get_tos_search_path(
+    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> Iterator[Path]:
     """Get all root ToS directories."""
-    for search_path in SEARCH_PATH:
-        if (path := get_tos_root(search_path)).is_dir():
+    for tos_root in SEARCH_PATH if search_path is None else search_path:
+        if (path := get_tos_root(tos_root)).is_dir():
             yield path
 
 
@@ -75,8 +82,28 @@ def get_tos_dir(
     return get_tos_root(tos_root) / hash_channel(channel)
 
 
-def get_tos_path(
-    tos_root: str | os.PathLike[str] | Path, channel: str | Channel, version: int
+def get_metadata_path(
+    tos_root: str | os.PathLike[str] | Path,
+    channel: str | Channel,
+    version: int,
 ) -> Path:
     """Get the ToS file path for the given channel and version."""
     return get_tos_dir(tos_root, channel) / f"{version}.json"
+
+
+def get_cache_path(channel: str | Channel) -> Path:
+    """Get the ToS cache file path for the given channel."""
+    return Path(
+        user_cache_dir(APP_NAME, appauthor=APP_NAME),
+        f"{hash_channel(channel)}.cache",
+    )
+
+
+def get_all_paths(tos_root: Path) -> Iterator[Path]:
+    """Get all local ToS file paths."""
+    return get_tos_root(tos_root).glob(f"*/{TOS_GLOB}")
+
+
+def get_channel_paths(tos_root: Path, channel: Channel) -> Iterator[Path]:
+    """Get all local ToS file paths for the given channel."""
+    return get_tos_dir(tos_root, channel).glob(TOS_GLOB)
