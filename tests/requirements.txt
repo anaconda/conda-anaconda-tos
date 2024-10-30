@@ -1,3 +1,5 @@
 conda >=23.9.0
+platformdirs
 pydantic
+python >=3.8
 rich
