@@ -34,7 +34,7 @@ def test_get_endpoint(tos_channel: str, sample_channel: str) -> None:
         get_endpoint(uuid4().hex)
 
 
-def test_get_tos_metadata(
+def test_get_remote_metadata(
     tos_channel: str,
     sample_channel: str,
     tos_metadata: RemoteToSMetadata,
