@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Iterable, Iterator
 
-    from .local import LocalToSMetadata
+    from .models import LocalToSMetadata
 
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:

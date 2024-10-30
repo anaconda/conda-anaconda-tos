@@ -6,39 +6,14 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
 
 from anaconda_conda_tos.exceptions import CondaToSInvalidError, CondaToSMissingError
-from anaconda_conda_tos.remote import (
-    RemoteToSMetadata,
-    get_endpoint,
-    get_remote_metadata,
-)
+from anaconda_conda_tos.remote import get_endpoint, get_remote_metadata
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
-
-def test_RemoteToSMetadata() -> None:  # noqa: N802
-    with pytest.raises(ValidationError):
-        RemoteToSMetadata()
-
-    with pytest.raises(ValidationError):
-        RemoteToSMetadata(tos_version=1)
-
-    with pytest.raises(ValidationError):
-        RemoteToSMetadata(tos_version=object())
-
-    with pytest.raises(ValidationError):
-        RemoteToSMetadata(text="ToS full text")
-
-    with pytest.raises(ValidationError):
-        RemoteToSMetadata(text=object())
-
-    with pytest.raises(ValidationError):
-        RemoteToSMetadata(tos_version=object(), text=object())
-
-    RemoteToSMetadata(tos_version=42, text="ToS full text")
+    from anaconda_conda_tos.models import RemoteToSMetadata
 
 
 def test_get_endpoint(tos_channel: str, sample_channel: str) -> None:

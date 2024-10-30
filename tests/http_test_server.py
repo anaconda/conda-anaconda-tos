@@ -16,7 +16,7 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from anaconda_conda_tos.remote import RemoteToSMetadata
+from anaconda_conda_tos.models import RemoteToSMetadata
 
 if TYPE_CHECKING:
     import os

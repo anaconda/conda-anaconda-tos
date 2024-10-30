@@ -8,8 +8,9 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
-from pydantic import Field, ValidationError, ValidationInfo, field_validator
+from pydantic import ValidationError
 
+from .models import LocalToSMetadata, RemoteToSMetadata
 from .path import (
     get_all_paths,
     get_cache_path,
@@ -17,37 +18,11 @@ from .path import (
     get_metadata_path,
     get_tos_search_path,
 )
-from .remote import RemoteToSMetadata
 
 if TYPE_CHECKING:
     import os
     from pathlib import Path
     from typing import Any, Iterator
-
-
-class LocalToSMetadata(RemoteToSMetadata):
-    """Conda ToS metadata schema with acceptance fields."""
-
-    base_url: str
-    tos_accepted: bool | None = Field(None)
-    acceptance_timestamp: datetime | None = Field(None)
-
-    @field_validator("tos_accepted", "acceptance_timestamp")
-    @classmethod
-    def _mutex_acceptance_timestamp(
-        cls: LocalToSMetadata, value: bool | datetime, info: ValidationInfo
-    ) -> bool | datetime:
-        if not (
-            (info.field_name == "tos_accepted" and "acceptance_timestamp" in info.data)
-            or (
-                info.field_name == "acceptance_timestamp"
-                and "tos_accepted" in info.data
-            )
-        ):
-            raise ValueError(
-                "`tos_accepted` and `acceptance_timestamp` must be provided together."
-            )
-        return value
 
 
 def touch_cache(channel: str | Channel) -> None:

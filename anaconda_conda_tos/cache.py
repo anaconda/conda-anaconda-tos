@@ -19,8 +19,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Iterator
 
-    from .local import LocalToSMetadata
-    from .remote import RemoteToSMetadata
+    from .models import LocalToSMetadata, RemoteToSMetadata
 
 
 def is_cache_stale(channel: str | Channel, cache_timeout: int) -> bool:

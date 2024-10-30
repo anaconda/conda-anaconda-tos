@@ -8,21 +8,37 @@ from uuid import uuid4
 
 import pytest
 from conda.models.channel import Channel
-from pydantic import ValidationError
 
 from anaconda_conda_tos.local import (
-    LocalToSMetadata,
     get_all_local_metadatas,
     get_local_metadata,
     read_metadata,
+    touch_cache,
     write_metadata,
 )
+from anaconda_conda_tos.models import LocalToSMetadata, RemoteToSMetadata
 from anaconda_conda_tos.path import get_metadata_path
-from anaconda_conda_tos.remote import RemoteToSMetadata
 from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from pytest_mock import MockerFixture
+
+
+def test_touch_cache(
+    mocker: MockerFixture, tmp_path: Path, sample_channel: str
+) -> None:
+    path = tmp_path / "cache"
+    mocker.patch("anaconda_conda_tos.local.get_cache_path", return_value=path)
+
+    now = datetime.now().timestamp()  # noqa: DTZ005
+    touch_cache(sample_channel)
+    assert now < path.stat().st_mtime
+
+    now = datetime.now().timestamp()  # noqa: DTZ005
+    touch_cache(sample_channel)
+    assert now < path.stat().st_mtime
 
 
 def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
@@ -49,8 +65,7 @@ def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
     with pytest.raises(TypeError):
         write_metadata(tmp_path, tos_channel, "metadata")  # type: ignore[arg-type]
 
-    with pytest.raises(ValidationError):
-        write_metadata(tmp_path, tos_channel, remote)
+    write_metadata(tmp_path, tos_channel, remote)
 
     write_metadata(tmp_path, tos_channel, remote, tos_accepted=True)
 
@@ -65,34 +80,34 @@ def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
 
 
 def test_read_metadata(
-    mock_tos_search_path: tuple[Path, Path], tos_channel: str
+    mock_tos_search_path: tuple[Path, Path],
+    tos_channel: str,
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
     assert not read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
-    accept_tos(system_tos_root, tos_channel)
+    accept_tos(system_tos_root, tos_channel, cache_timeout=0)
     assert read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
 
 
-def test_get_channel_tos_metadata(
+def test_get_local_metadata(
     mock_tos_search_path: tuple[Path, Path],
     tos_channel: str,
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
     assert get_local_metadata(tos_channel) == (None, None)
-    accept_tos(system_tos_root, tos_channel)
+    accept_tos(system_tos_root, tos_channel, cache_timeout=0)
     assert len(get_local_metadata(tos_channel))
-    reject_tos(user_tos_root, tos_channel)
+    reject_tos(user_tos_root, tos_channel, cache_timeout=0)
     assert len(get_local_metadata(tos_channel))
 
 
-def test_get_all_tos_metadatas(
+def test_get_all_local_metadatas(
     mock_tos_search_path: tuple[Path, Path],
     tos_channel: str,
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
     assert len(list(get_all_local_metadatas())) == 0
-    assert len(list(get_all_local_metadatas(tos_channel))) == 0
-    accept_tos(system_tos_root, tos_channel)
+    accept_tos(system_tos_root, tos_channel, cache_timeout=0)
     assert len(list(get_all_local_metadatas())) == 1
-    reject_tos(user_tos_root, tos_channel)
+    reject_tos(user_tos_root, tos_channel, cache_timeout=0)
     assert len(list(get_all_local_metadatas())) == 1

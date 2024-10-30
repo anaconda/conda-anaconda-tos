@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Iterator
 
-    from .local import LocalToSMetadata
+    from .models import LocalToSMetadata
 
 
 def configure_parser(parser: ArgumentParser) -> None:
