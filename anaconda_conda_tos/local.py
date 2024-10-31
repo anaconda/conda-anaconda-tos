@@ -10,21 +10,13 @@ from typing import TYPE_CHECKING
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
+from .models import LocalToSMetadata, RemoteToSMetadata
 from .path import get_tos_dir, get_tos_path, get_tos_root, get_tos_search_path
-from .remote import RemoteToSMetadata
 
 if TYPE_CHECKING:
     import os
     from pathlib import Path
     from typing import Any, Iterator
-
-
-class LocalToSMetadata(RemoteToSMetadata):
-    """Conda ToS metadata schema with acceptance fields."""
-
-    tos_accepted: bool
-    acceptance_timestamp: datetime
-    base_url: str
 
 
 def write_metadata(

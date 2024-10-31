@@ -8,10 +8,12 @@ from uuid import uuid4
 import pytest
 
 from anaconda_conda_tos.exceptions import CondaToSInvalidError, CondaToSMissingError
-from anaconda_conda_tos.remote import RemoteToSMetadata, get_endpoint, get_metadata
+from anaconda_conda_tos.remote import get_endpoint, get_metadata
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
+
+    from anaconda_conda_tos.models import RemoteToSMetadata
 
 
 def test_get_endpoint(tos_channel: str, sample_channel: str) -> None:
