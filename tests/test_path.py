@@ -13,10 +13,10 @@ from anaconda_conda_tos.path import (
     USER_TOS_ROOT,
     get_all_channel_paths,
     get_channel_paths,
+    get_metadata_path,
     get_path,
     get_search_path,
     get_tos_dir,
-    get_tos_path,
     hash_channel,
 )
 
@@ -56,7 +56,7 @@ def test_get_tos_dir(tmp_path: Path, sample_channel: str) -> None:
 
 def test_get_tos_path(tmp_path: Path, sample_channel: str) -> None:
     assert (
-        get_tos_path(tmp_path, sample_channel, 42)
+        get_metadata_path(tmp_path, sample_channel, 42)
         == get_tos_dir(tmp_path, sample_channel) / "42.json"
     )
 
