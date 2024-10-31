@@ -54,8 +54,8 @@ def hash_channel(channel: str | Channel) -> str:
     return hasher.hexdigest()
 
 
-def get_tos_root(path: str | os.PathLike[str] | Path) -> Path:
-    """Get the root ToS directory."""
+def get_path(path: str | os.PathLike[str] | Path) -> Path:
+    """Expand environment variables and user home in the path."""
     if isinstance(path, str):
         path = custom_expandvars(path, os.environ)
     return Path(path).expanduser()
@@ -64,7 +64,7 @@ def get_tos_root(path: str | os.PathLike[str] | Path) -> Path:
 def get_tos_search_path() -> Iterator[Path]:
     """Get all root ToS directories."""
     for search_path in SEARCH_PATH:
-        if (path := get_tos_root(search_path)).is_dir():
+        if (path := get_path(search_path)).is_dir():
             yield path
 
 
@@ -72,7 +72,7 @@ def get_tos_dir(
     tos_root: str | os.PathLike[str] | Path, channel: str | Channel
 ) -> Path:
     """Get the ToS directory for the given channel."""
-    return get_tos_root(tos_root) / hash_channel(channel)
+    return get_path(tos_root) / hash_channel(channel)
 
 
 def get_tos_path(
