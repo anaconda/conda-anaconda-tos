@@ -14,7 +14,7 @@ from conda.common.configuration import custom_expandvars
 from conda.models.channel import Channel
 
 if TYPE_CHECKING:
-    from typing import Final, Iterator
+    from typing import Final, Iterable, Iterator
 
 # mirrors conda.base.context.sys_rc_path
 SYSTEM_TOS_ROOT: Final[str] = "$CONDA_ROOT/conda-meta/tos"
@@ -61,10 +61,12 @@ def get_path(path: str | os.PathLike[str] | Path) -> Path:
     return Path(path).expanduser()
 
 
-def get_tos_search_path() -> Iterator[Path]:
+def get_search_path(
+    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> Iterator[Path]:
     """Get all root ToS directories."""
-    for search_path in SEARCH_PATH:
-        if (path := get_path(search_path)).is_dir():
+    for tos_root in SEARCH_PATH if search_path is None else search_path:
+        if (path := get_path(tos_root)).is_dir():
             yield path
 
 

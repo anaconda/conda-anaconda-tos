@@ -12,9 +12,9 @@ from anaconda_conda_tos.path import (
     SYSTEM_TOS_ROOT,
     USER_TOS_ROOT,
     get_path,
+    get_search_path,
     get_tos_dir,
     get_tos_path,
-    get_tos_search_path,
     hash_channel,
 )
 
@@ -43,7 +43,7 @@ def test_get_tos_search_path(
     mock_tos_search_path: tuple[Path, Path],
 ) -> None:
     monkeypatch.setenv("CONDATOS", str(tmp_path))
-    assert tuple(get_tos_search_path()) == (*mock_tos_search_path, tmp_path)
+    assert tuple(get_search_path()) == (*mock_tos_search_path, tmp_path)
 
 
 def test_get_tos_dir(tmp_path: Path, sample_channel: str) -> None:
