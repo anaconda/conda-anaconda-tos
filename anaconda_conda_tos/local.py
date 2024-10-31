@@ -11,7 +11,11 @@ from conda.models.channel import Channel
 from pydantic import ValidationError
 
 from .models import LocalToSMetadata, RemoteToSMetadata
-from .path import get_path, get_search_path, get_tos_dir, get_tos_path
+from .path import (
+    get_all_channel_paths,
+    get_channel_paths,
+    get_tos_path,
+)
 
 if TYPE_CHECKING:
     import os
@@ -80,16 +84,12 @@ def get_all_tos_metadatas(
     """Yield all ToS metadata for the given channel."""
     # group metadata by channel
     grouped_metadatas: dict[Channel, list[tuple[LocalToSMetadata, Path]]] = {}
-    for tos_root in get_search_path():
-        if channel is None:
-            paths = get_path(tos_root).glob("*/*.json")
-        else:
-            paths = get_tos_dir(tos_root, channel).glob("*.json")
 
-        for path in paths:
-            if metadata := read_metadata(path):
-                key = channel or Channel(metadata.base_url)
-                grouped_metadatas.setdefault(key, []).append((metadata, path))
+    get_paths = get_channel_paths(channel) if channel else get_all_channel_paths()
+    for path in get_paths:
+        if metadata := read_metadata(path):
+            key = channel or Channel(metadata.base_url)
+            grouped_metadatas.setdefault(key, []).append((metadata, path))
 
     # return the newest metadata for each channel
     for channel, metadata_tuples in grouped_metadatas.items():

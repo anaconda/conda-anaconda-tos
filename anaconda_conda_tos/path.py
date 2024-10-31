@@ -17,13 +17,13 @@ if TYPE_CHECKING:
     from typing import Final, Iterable, Iterator
 
 # mirrors conda.base.context.sys_rc_path
-SYSTEM_TOS_ROOT: Final[str] = "$CONDA_ROOT/conda-meta/tos"
+SYSTEM_TOS_ROOT: Final = "$CONDA_ROOT/conda-meta/tos"
 
 # mirrors conda.base.context.user_rc_path
-USER_TOS_ROOT: Final[str] = "~/.conda/tos"
+USER_TOS_ROOT: Final = "~/.conda/tos"
 
 # mirrors conda.base.constants.SEARCH_PATH locations
-SEARCH_PATH: Final[tuple[str, ...]] = tuple(
+SEARCH_PATH: Final = tuple(
     filter(
         None,
         (
@@ -40,6 +40,8 @@ SEARCH_PATH: Final[tuple[str, ...]] = tuple(
         ),
     ),
 )
+
+TOS_GLOB: Final = "*.json"
 
 
 def hash_channel(channel: str | Channel) -> str:
@@ -82,3 +84,20 @@ def get_tos_path(
 ) -> Path:
     """Get the ToS file path for the given channel and version."""
     return get_tos_dir(tos_root, channel) / f"{version}.json"
+
+
+def get_all_channel_paths(
+    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> Iterator[Path]:
+    """Get all local ToS file paths."""
+    for path in get_search_path(search_path):
+        yield from get_path(path).glob(f"*/{TOS_GLOB}")
+
+
+def get_channel_paths(
+    channel: str | Channel,
+    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> Iterator[Path]:
+    """Get all local ToS file paths for the given channel."""
+    for path in get_search_path(search_path):
+        yield from get_tos_dir(path, channel).glob(TOS_GLOB)
