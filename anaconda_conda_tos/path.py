@@ -62,7 +62,7 @@ def hash_channel(channel: str | Channel) -> str:
 
 
 def get_path(path: str | os.PathLike[str] | Path) -> Path:
-    """Get the root ToS directory."""
+    """Expand environment variables and user home in the path."""
     if isinstance(path, str):
         path = custom_expandvars(path, os.environ)
     return Path(path).expanduser()
@@ -103,8 +103,8 @@ def get_all_channel_paths(
     search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
     """Get all local ToS file paths."""
-    for tos_root in get_search_path(search_path):
-        yield from get_path(tos_root).glob(f"*/{TOS_GLOB}")
+    for path in get_search_path(search_path):
+        yield from get_path(path).glob(f"*/{TOS_GLOB}")
 
 
 def get_channel_paths(
@@ -112,8 +112,8 @@ def get_channel_paths(
     search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
     """Get all local ToS file paths for the given channel."""
-    for tos_root in get_search_path(search_path):
-        yield from get_tos_dir(tos_root, channel).glob(TOS_GLOB)
+    for path in get_search_path(search_path):
+        yield from get_tos_dir(path, channel).glob(TOS_GLOB)
 
 
 def get_cache_paths() -> Iterator[Path]:

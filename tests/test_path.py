@@ -13,6 +13,7 @@ from anaconda_conda_tos.path import (
     USER_TOS_ROOT,
     get_all_channel_paths,
     get_cache_path,
+    get_cache_paths,
     get_channel_paths,
     get_metadata_path,
     get_path,
@@ -34,13 +35,13 @@ def test_hash_channel(sample_channel: str, tos_channel: str) -> None:
         hash_channel("defaults")
 
 
-def test_get_tos_root(tmp_path: Path) -> None:
+def test_get_path(tmp_path: Path) -> None:
     assert get_path(SYSTEM_TOS_ROOT) == Path(context.conda_prefix, "conda-meta", "tos")
     assert get_path(USER_TOS_ROOT) == Path.home() / ".conda" / "tos"
     assert get_path(tmp_path) == tmp_path
 
 
-def test_get_tos_search_path(
+def test_get_search_path(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
     mock_tos_search_path: tuple[Path, Path],
@@ -69,22 +70,25 @@ def test_get_cache_path(sample_channel: str, mock_cache_dir: Path) -> None:
     )
 
 
-def test_get_all_paths(tmp_path: Path) -> None:
+def test_get_all_channel_paths(tmp_path: Path) -> None:
     (channel1 := tmp_path / "channel1").mkdir()
-    (channel1json1 := channel1 / "1.json").touch()
-    (channel1json2 := channel1 / "2.json").touch()
+    (json1 := channel1 / "1.json").touch()
+    (json2 := channel1 / "2.json").touch()
     (channel2 := tmp_path / "channel2").mkdir()
-    (channel2json1 := channel2 / "1.json").touch()
-    (channel2json2 := channel2 / "2.json").touch()
-    assert sorted(get_all_channel_paths([tmp_path])) == sorted(
-        (channel1json1, channel1json2, channel2json1, channel2json2)
-    )
+    (json3 := channel2 / "1.json").touch()
+    (json4 := channel2 / "2.json").touch()
+    assert sorted(get_all_channel_paths([tmp_path])) == [json1, json2, json3, json4]
 
 
 def test_get_channel_paths(tmp_path: Path, sample_channel: str) -> None:
     (channel1 := tmp_path / hash_channel(sample_channel)).mkdir()
-    (channel1json1 := channel1 / "1.json").touch()
-    (channel1json2 := channel1 / "2.json").touch()
-    assert sorted(get_channel_paths(tmp_path, sample_channel)) == sorted(
-        (channel1json1, channel1json2)
-    )
+    (json1 := channel1 / "1.json").touch()
+    (json2 := channel1 / "2.json").touch()
+    assert sorted(get_channel_paths(sample_channel, [tmp_path])) == [json1, json2]
+
+
+def test_get_cache_paths(mock_cache_dir: Path) -> None:
+    assert list(get_cache_paths()) == []
+    (cache1 := mock_cache_dir / "cache1.cache").touch()
+    (cache2 := mock_cache_dir / "cache2.cache").touch()
+    assert sorted(get_cache_paths()) == [cache1, cache2]
