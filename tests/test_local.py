@@ -10,8 +10,8 @@ import pytest
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from anaconda_conda_tos.metadata import (
-    ToSMetadata,
+from anaconda_conda_tos.local import (
+    LocalToSMetadata,
     get_all_tos_metadatas,
     get_channel_tos_metadata,
     read_metadata,
@@ -33,7 +33,7 @@ def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
         text=f"ToS full text\n\n{uuid4().hex}",
         **{uuid4().hex: uuid4().hex},
     )
-    metadata = ToSMetadata(
+    metadata = LocalToSMetadata(
         **remote.model_dump(),
         tos_accepted=True,
         # the following fields are overridden in write_metadata
@@ -56,7 +56,7 @@ def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
 
     write_metadata(tmp_path, tos_channel, metadata)
     contents = get_tos_path(tmp_path, tos_channel, 42).read_text()
-    local = ToSMetadata.model_validate_json(contents)
+    local = LocalToSMetadata.model_validate_json(contents)
     assert local.model_fields == metadata.model_fields
     assert all(
         getattr(local, key) == getattr(metadata, key)

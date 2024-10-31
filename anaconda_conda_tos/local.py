@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from typing import Any, Iterator
 
 
-class ToSMetadata(RemoteToSMetadata):
+class LocalToSMetadata(RemoteToSMetadata):
     """Conda ToS metadata schema with acceptance fields."""
 
     tos_accepted: bool
@@ -30,7 +30,7 @@ class ToSMetadata(RemoteToSMetadata):
 def write_metadata(
     tos_root: str | os.PathLike[str] | Path,
     channel: Channel,
-    metadata: ToSMetadata | RemoteToSMetadata,
+    metadata: LocalToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
 ) -> None:
@@ -39,11 +39,11 @@ def write_metadata(
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError("`channel` must have a base URL.")
-    if not isinstance(metadata, (ToSMetadata, RemoteToSMetadata)):
+    if not isinstance(metadata, (LocalToSMetadata, RemoteToSMetadata)):
         raise TypeError("`metadata` must be either a ToSMetadata or RemoteToSMetadata.")
 
     # create/update ToSMetadata object
-    metadata = ToSMetadata(
+    metadata = LocalToSMetadata(
         **{
             **metadata.model_dump(),
             **kwargs,
@@ -59,10 +59,10 @@ def write_metadata(
     path.write_text(metadata.model_dump_json())
 
 
-def read_metadata(path: Path) -> ToSMetadata | None:
+def read_metadata(path: Path) -> LocalToSMetadata | None:
     """Load the ToS metadata from file."""
     try:
-        return ToSMetadata.model_validate_json(path.read_text())
+        return LocalToSMetadata.model_validate_json(path.read_text())
     except (OSError, ValidationError):
         # OSError: unable to access file, ignoring
         # ValidationError: corrupt file, ignoring
@@ -71,7 +71,7 @@ def read_metadata(path: Path) -> ToSMetadata | None:
 
 def get_channel_tos_metadata(
     channel: Channel,
-) -> tuple[ToSMetadata, Path] | tuple[None, None]:
+) -> tuple[LocalToSMetadata, Path] | tuple[None, None]:
     """Get the current ToS metadata for the given channel."""
     try:
         # return the newest metadata
@@ -84,10 +84,10 @@ def get_channel_tos_metadata(
 
 def get_all_tos_metadatas(
     channel: Channel | None = None,
-) -> Iterator[tuple[Channel, ToSMetadata, Path]]:
+) -> Iterator[tuple[Channel, LocalToSMetadata, Path]]:
     """Yield all ToS metadata for the given channel."""
     # group metadata by channel
-    grouped_metadatas: dict[Channel, list[tuple[ToSMetadata, Path]]] = {}
+    grouped_metadatas: dict[Channel, list[tuple[LocalToSMetadata, Path]]] = {}
     for tos_root in get_tos_search_path():
         if channel is None:
             paths = get_tos_root(tos_root).glob("*/*.json")
