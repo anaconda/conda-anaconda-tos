@@ -84,9 +84,7 @@ def get_all_tos_metadatas(
     """Yield all ToS metadata for the given channel."""
     # group metadata by channel
     grouped_metadatas: dict[Channel, list[tuple[LocalToSMetadata, Path]]] = {}
-
-    get_paths = get_channel_paths(channel) if channel else get_all_channel_paths()
-    for path in get_paths:
+    for path in get_channel_paths(channel) if channel else get_all_channel_paths():
         if metadata := read_metadata(path):
             key = channel or Channel(metadata.base_url)
             grouped_metadatas.setdefault(key, []).append((metadata, path))
