@@ -33,8 +33,8 @@ def test_settings_hook() -> None:
     assert settings[0].name == "auto_accept_tos"
 
 
-def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
-    out, err, code = conda_cli("tos")
+def test_subcommand_tos(conda_cli: CondaCLIFixture, tmp_path: Path) -> None:
+    out, err, code = conda_cli("tos", f"--file={tmp_path}")
     assert out
     # assert not err  # server log is output to stderr
     assert not code
@@ -45,6 +45,7 @@ def test_subcommand_tos_view(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
+    tmp_path: Path,
     tos_full_lines: list[str],
 ) -> None:
     out, err, code = conda_cli(
@@ -52,6 +53,7 @@ def test_subcommand_tos_view(
         "--view",
         "--override-channels",
         f"--channel={sample_channel}",
+        f"--file={tmp_path}",
     )
     sample_lines = out.splitlines()
     assert sample_lines == [f"viewing ToS for {sample_channel}:", "ToS not found"]
@@ -63,6 +65,7 @@ def test_subcommand_tos_view(
         "--view",
         "--override-channels",
         f"--channel={tos_channel}",
+        f"--file={tmp_path}",
     )
     tos_lines = out.splitlines()
     assert tos_lines == [f"viewing ToS for {tos_channel}:", *tos_full_lines]
@@ -74,7 +77,7 @@ def test_subcommand_tos_view(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--view")
+    out, err, code = conda_cli("tos", "--view", f"--file={tmp_path}")
     assert out.splitlines() == tos_lines
     # assert not err  # server log is output to stderr
     assert not code
@@ -165,6 +168,7 @@ def test_subcommand_tos_list(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
+    tmp_path: Path,
     mock_tos_search_path: tuple[Path, Path],
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
@@ -176,6 +180,7 @@ def test_subcommand_tos_list(
         "--override-channels",
         f"--channel={tos_channel}",
         f"--channel={sample_channel}",
+        f"--file={tmp_path}",
     )
     assert tos_channel in out
     assert sample_channel in out
@@ -187,21 +192,21 @@ def test_subcommand_tos_list(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel, sample_channel),
     )
-    out, err, code = conda_cli("tos")
+    out, err, code = conda_cli("tos", f"--file={tmp_path}")
     assert tos_channel in out
     assert sample_channel in out
     # assert not err  # server log is output to stderr
     assert not code
 
     accept_tos(system_tos_root, tos_channel, cache_timeout=0)
-    out, err, code = conda_cli("tos")
+    out, err, code = conda_cli("tos", f"--file={tmp_path}")
     assert tos_channel in out
     assert sample_channel in out
     # assert not err  # server log is output to stderr
     assert not code
 
     reject_tos(user_tos_root, tos_channel, cache_timeout=0)
-    out, err, code = conda_cli("tos")
+    out, err, code = conda_cli("tos", f"--file={tmp_path}")
     assert tos_channel in out
     assert sample_channel in out
     # assert not err  # server log is output to stderr
