@@ -76,7 +76,7 @@ def execute(args: Namespace) -> int:
         clean_cache()
     elif args.clean_tos:
         # TODO: refactor info `conda clean` plugin
-        clean_tos()
+        clean_tos(extend_search_path=[args.tos_root])
     else:
         action = list_tos
         if args.accept:

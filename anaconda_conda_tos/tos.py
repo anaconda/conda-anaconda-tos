@@ -117,9 +117,11 @@ def clean_cache() -> None:
             cache.unlink()
 
 
-def clean_tos() -> None:
+def clean_tos(
+    *, extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None
+) -> None:
     """Remove the ToS files."""
-    paths = tuple(get_all_channel_paths())
+    paths = tuple(get_all_channel_paths(extend_search_path=extend_search_path))
     if not paths:
         return
 

@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -34,22 +33,6 @@ def is_cache_stale(channel: str | Channel, cache_timeout: int) -> bool:
         return (now - cache) >= cache_timeout
 
 
-def _cache_remote_metadata(
-    tos_root: str | os.PathLike[str] | Path,
-    channel: str | Channel,
-) -> MetadataPathPair:
-    try:
-        # fetch remote metadata
-        metadata = get_remote_metadata(channel)
-    except CondaToSMissingError:
-        # CondaToSMissingError: no ToS for this channel
-        touch_cache(channel)
-        raise
-    else:
-        # cache metadata for future use
-        return write_metadata(tos_root, channel, metadata)
-
-
 def get_metadata(
     channel: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
@@ -58,18 +41,18 @@ def get_metadata(
     """Get the ToS metadata for the given channel."""
     if not is_cache_stale(channel, cache_timeout):
         # return cached metadata
-        return get_local_metadata(channel)
+        return get_local_metadata(channel, extend_search_path=[tos_root])
 
     try:
         remote_metadata = get_remote_metadata(channel)
     except CondaToSMissingError:
         # CondaToSMissingError: no ToS for this channel
         touch_cache(channel)
-        return get_local_metadata(channel)
+        return get_local_metadata(channel, extend_search_path=[tos_root])
 
-    # attempt to fetch local ToS metadata, if it exists we return the
+    # return the local ToS metadata unless the remote has a newer version
     try:
-        local_tuple = get_local_metadata(channel)
+        local_tuple = get_local_metadata(channel, extend_search_path=[tos_root])
     except CondaToSMissingError:
         pass
     else:
@@ -85,13 +68,12 @@ def get_metadata(
 
 
 def get_all_metadatas(
-    tos_root: str | os.PathLike[str] | Path,
-    cache_timeout: int,
+    tos_root: str | os.PathLike[str] | Path, cache_timeout: int
 ) -> Iterator[tuple[Channel, MetadataPathPair]]:
     """Yield all ToS metadatas."""
     # group all ToS metadata files by their channel
     channel_metadata_pairs: dict[Channel, list[MetadataPathPair]] = {}
-    for path in get_all_channel_paths():
+    for path in get_all_channel_paths(extend_search_path=[tos_root]):
         if metadata := read_metadata(path):
             channel = Channel(metadata.base_url)
             metadata_pair = MetadataPathPair(metadata=metadata, path=path)
@@ -108,7 +90,12 @@ def get_all_metadatas(
                     key=lambda metadata_pair: metadata_pair.metadata.tos_version,
                 )[-1],
             )
-        # return remote metadata if it exists
-        with suppress(CondaToSMissingError):
-            yield channel, _cache_remote_metadata(tos_root, channel)
-        # otherwise skip
+        try:
+            # fetch remote metadata
+            metadata = get_remote_metadata(channel)
+        except CondaToSMissingError:
+            # CondaToSMissingError: no ToS for this channel
+            touch_cache(channel)
+        else:
+            # cache metadata for future use
+            yield channel, write_metadata(tos_root, channel, metadata)

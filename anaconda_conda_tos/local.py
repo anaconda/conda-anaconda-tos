@@ -22,7 +22,7 @@ from .path import (
 if TYPE_CHECKING:
     import os
     from pathlib import Path
-    from typing import Any
+    from typing import Any, Iterable
 
 
 def touch_cache(channel: str | Channel) -> None:
@@ -78,12 +78,16 @@ def read_metadata(path: str | os.PathLike[str] | Path) -> LocalToSMetadata | Non
         return None
 
 
-def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
+def get_local_metadata(
+    channel: str | Channel,
+    *,
+    extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> MetadataPathPair:
     """Get the latest ToS metadata for the given channel."""
     # find all ToS metadata files for the given channel
     metadata_pairs = [
         MetadataPathPair(metadata=metadata, path=path)
-        for path in get_channel_paths(channel)
+        for path in get_channel_paths(channel, extend_search_path=extend_search_path)
         if (metadata := read_metadata(path))
     ]
 

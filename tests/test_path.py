@@ -70,14 +70,22 @@ def test_get_all_channel_paths(tmp_path: Path) -> None:
     (channel2 := tmp_path / "channel2").mkdir()
     (json3 := channel2 / "1.json").touch()
     (json4 := channel2 / "2.json").touch()
-    assert sorted(get_all_channel_paths([tmp_path])) == [json1, json2, json3, json4]
+    assert sorted(get_all_channel_paths(extend_search_path=[tmp_path])) == [
+        json1,
+        json2,
+        json3,
+        json4,
+    ]
 
 
 def test_get_channel_paths(tmp_path: Path, sample_channel: str) -> None:
     (channel1 := tmp_path / hash_channel(sample_channel)).mkdir()
     (json1 := channel1 / "1.json").touch()
     (json2 := channel1 / "2.json").touch()
-    assert sorted(get_channel_paths(sample_channel, [tmp_path])) == [json1, json2]
+    assert sorted(get_channel_paths(sample_channel, extend_search_path=[tmp_path])) == [
+        json1,
+        json2,
+    ]
 
 
 def test_get_cache_path(sample_channel: str, mock_cache_dir: Path) -> None:

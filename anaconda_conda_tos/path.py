@@ -69,12 +69,14 @@ def get_path(path: str | os.PathLike[str] | Path) -> Path:
 
 
 def get_search_path(
-    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+    extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
     """Get all root ToS directories."""
-    for tos_root in SEARCH_PATH if search_path is None else search_path:
-        if (path := get_path(tos_root)).is_dir():
+    seen: set[Path] = set()
+    for tos_root in (*SEARCH_PATH, *(extend_search_path or ())):
+        if (path := get_path(tos_root)).is_dir() and path not in seen:
             yield path
+            seen.add(path)
 
 
 def get_tos_dir(
@@ -95,19 +97,21 @@ def get_metadata_path(
 
 
 def get_all_channel_paths(
-    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+    *,
+    extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
     """Get all local ToS file paths."""
-    for path in get_search_path(search_path):
+    for path in get_search_path(extend_search_path):
         yield from get_path(path).glob(f"*/{TOS_GLOB}")
 
 
 def get_channel_paths(
     channel: str | Channel,
-    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+    *,
+    extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
     """Get all local ToS file paths for the given channel."""
-    for path in get_search_path(search_path):
+    for path in get_search_path(extend_search_path):
         yield from get_tos_dir(path, channel).glob(TOS_GLOB)
 
 
