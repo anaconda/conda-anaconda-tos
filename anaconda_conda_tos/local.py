@@ -12,7 +12,12 @@ from pydantic import ValidationError
 
 from .exceptions import CondaToSMissingError
 from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
-from .path import get_cache_path, get_channel_paths, get_metadata_path, get_path
+from .path import (
+    get_cache_path,
+    get_channel_paths,
+    get_metadata_path,
+    get_path,
+)
 
 if TYPE_CHECKING:
     import os
