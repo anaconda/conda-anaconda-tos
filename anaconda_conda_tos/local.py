@@ -5,12 +5,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from .models import LocalToSMetadata, RemoteToSMetadata
+from .exceptions import CondaToSMissingError
+from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
 from .path import (
     get_all_channel_paths,
     get_channel_paths,
@@ -19,7 +21,6 @@ from .path import (
 
 if TYPE_CHECKING:
     import os
-    from pathlib import Path
     from typing import Any, Iterator
 
 
@@ -29,7 +30,7 @@ def write_metadata(
     metadata: LocalToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
-) -> None:
+) -> MetadataPathPair:
     """Write the ToS metadata to file."""
     # argument validation/coercion
     channel = Channel(channel)
@@ -54,41 +55,61 @@ def write_metadata(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(metadata.model_dump_json())
 
+    return MetadataPathPair(metadata=metadata, path=path)
 
-def read_metadata(path: Path) -> LocalToSMetadata | None:
+
+def read_metadata(path: str | os.PathLike[str] | Path) -> LocalToSMetadata | None:
     """Load the ToS metadata from file."""
     try:
-        return LocalToSMetadata.model_validate_json(path.read_text())
+        return LocalToSMetadata.model_validate_json(Path(path).read_text())
     except (OSError, ValidationError):
         # OSError: unable to access file, ignoring
         # ValidationError: corrupt file, ignoring
         return None
 
 
-def get_channel_tos_metadata(
-    channel: Channel,
-) -> tuple[LocalToSMetadata, Path] | tuple[None, None]:
-    """Get the current ToS metadata for the given channel."""
-    try:
-        # return the newest metadata
-        _, metadata, path = next(get_all_tos_metadatas(channel))
-        return metadata, path
-    except StopIteration:
-        # StopIteration: no metadata found
-        return None, None
+def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
+    """Get the latest ToS metadata for the given channel."""
+    # find all ToS metadata files for the given channel
+    metadata_pairs = [
+        MetadataPathPair(metadata=metadata, path=path)
+        for path in get_channel_paths(channel)
+        if (metadata := read_metadata(path))
+    ]
+
+    # return if no metadata found
+    if not metadata_pairs:
+        raise CondaToSMissingError(f"No ToS metadata found for {channel}")
+
+    # sort metadatas by version
+    sorted_pairs = sorted(
+        metadata_pairs,
+        key=lambda metadata_pair: metadata_pair.metadata.tos_version,
+    )
+
+    # return newest metadata for channel
+    return sorted_pairs[-1]
 
 
-def get_all_tos_metadatas(
+def get_all_local_metadatas(
     channel: Channel | None = None,
-) -> Iterator[tuple[Channel, LocalToSMetadata, Path]]:
+) -> Iterator[tuple[Channel, MetadataPathPair]]:
     """Yield all ToS metadata for the given channel."""
     # group metadata by channel
-    grouped_metadatas: dict[Channel, list[tuple[LocalToSMetadata, Path]]] = {}
+    grouped_metadatas: dict[Channel, list[MetadataPathPair]] = {}
     for path in get_channel_paths(channel) if channel else get_all_channel_paths():
         if metadata := read_metadata(path):
             key = channel or Channel(metadata.base_url)
-            grouped_metadatas.setdefault(key, []).append((metadata, path))
+            grouped_metadatas.setdefault(key, []).append(
+                MetadataPathPair(metadata=metadata, path=path)
+            )
 
     # return the newest metadata for each channel
-    for channel, metadata_tuples in grouped_metadatas.items():
-        yield (channel, *sorted(metadata_tuples, key=lambda x: x[0].tos_version)[-1])
+    for channel, metadata_pairs in grouped_metadatas.items():
+        yield (
+            channel,
+            sorted(
+                metadata_pairs,
+                key=lambda metadata_pair: metadata_pair.metadata.tos_version,
+            )[-1],
+        )

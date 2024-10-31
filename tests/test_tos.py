@@ -112,43 +112,40 @@ def test_get_tos(
     # list all channels and whether their ToS has been accepted
     tos = list(get_tos(tos_channel, sample_channel))
     assert len(tos) == 2
-    (channel1, metadata1, path1), (channel2, metadata2, path2) = tos
+    (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
-    assert not metadata1
-    assert not path1
+    assert not metadata_pair1
     assert channel2 == Channel(sample_channel)
-    assert not metadata2
-    assert not path2
+    assert not metadata_pair2
 
     # accept the ToS for a channel
     accept_tos(user_tos_root, tos_channel)
     tos = list(get_tos(tos_channel, sample_channel))
     assert len(tos) == 2
-    (channel1, metadata1, path1), (channel2, metadata2, path2) = tos
+    (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
-    assert metadata1
-    assert metadata1.tos_accepted
-    assert path1 == get_tos_path(user_tos_root, tos_channel, 1)
+    assert metadata_pair1
+    assert metadata_pair1.metadata.tos_accepted
+    assert metadata_pair1.path == get_tos_path(user_tos_root, tos_channel, 1)
     assert channel2 == Channel(sample_channel)
-    assert not metadata2
-    assert not path2
+    assert not metadata_pair2
 
     # list all channels that have been accepted even if it is not active
     accept_tos(user_tos_root, tos_channel)
     tos = list(get_tos())
     assert len(tos) == 1
-    channel1, metadata1, path1 = tos[0]
+    channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)
-    assert metadata1
-    assert metadata1.tos_accepted
-    assert path1 == get_tos_path(user_tos_root, tos_channel, 1)
+    assert metadata_pair1
+    assert metadata_pair1.metadata.tos_accepted
+    assert metadata_pair1.path == get_tos_path(user_tos_root, tos_channel, 1)
 
     # even rejected ToS channels are listed
     reject_tos(user_tos_root, tos_channel)
     tos = list(get_tos())
     assert len(tos) == 1
-    channel1, metadata1, path1 = tos[0]
+    channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)
-    assert metadata1
-    assert not metadata1.tos_accepted
-    assert path1 == get_tos_path(user_tos_root, tos_channel, 1)
+    assert metadata_pair1
+    assert not metadata_pair1.metadata.tos_accepted
+    assert metadata_pair1.path == get_tos_path(user_tos_root, tos_channel, 1)

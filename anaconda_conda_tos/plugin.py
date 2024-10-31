@@ -18,10 +18,9 @@ from .tos import accept_tos, get_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-    from pathlib import Path
     from typing import Iterator
 
-    from .metadata import ToSMetadata
+    from .models import MetadataPathPair
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -52,25 +51,39 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--view", "--show", action="store_true")
 
 
-def version_mapping(metadata: ToSMetadata | None) -> str:
+def version_mapping(metadata_pair: MetadataPathPair | None) -> str:
     """Map the ToS version to a human-readable string."""
-    return str(metadata.tos_version) if metadata else "-"
-
-
-def accepted_mapping(metadata: ToSMetadata | None) -> str:
-    """Map the ToS acceptance status to a human-readable string."""
-    if metadata is None:
+    if not metadata_pair or metadata_pair.metadata.tos_version is None:
         return "-"
-    elif metadata.tos_accepted:
-        # convert timestamp to localized time
-        return metadata.acceptance_timestamp.astimezone().isoformat(" ")
+    return str(metadata_pair.metadata.tos_version)
+
+
+def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
+    """Map the ToS acceptance status to a human-readable string."""
+    if not metadata_pair:
+        return "-"
+
+    tos_accepted = metadata_pair.metadata.tos_accepted
+    acceptance_timestamp = metadata_pair.metadata.acceptance_timestamp
+    if tos_accepted is None:
+        # neither accepted nor rejected
+        return "-"
+    elif tos_accepted:
+        if acceptance_timestamp:
+            # convert timestamp to localized time
+            return acceptance_timestamp.astimezone().isoformat(" ")
+        else:
+            # accepted but no timestamp
+            return "unknown"
     else:
         return "rejected"
 
 
-def path_mapping(path: Path | None) -> str:
+def path_mapping(metadata_pair: MetadataPathPair | None) -> str:
     """Map the ToS path to a human-readable string."""
-    return str(path.parent.parent) if path else "-"
+    if not metadata_pair:
+        return "-"
+    return str(metadata_pair.path.parent.parent)
 
 
 def execute(args: Namespace) -> int:
@@ -90,12 +103,12 @@ def execute(args: Namespace) -> int:
         table.add_column("Accepted")
         table.add_column("Location")
 
-        for channel, metadata, path in get_tos(*context.channels):
+        for channel, metadata_pair in get_tos(*context.channels):
             table.add_row(
                 channel.base_url,
-                version_mapping(metadata),
-                accepted_mapping(metadata),
-                path_mapping(path),
+                version_mapping(metadata_pair),
+                accepted_mapping(metadata_pair),
+                path_mapping(metadata_pair),
             )
 
         console = Console()
