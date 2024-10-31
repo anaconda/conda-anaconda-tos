@@ -10,10 +10,11 @@ from conda.base.context import context
 from conda.common.url import join_url
 from conda.gateways.connection.session import get_session
 from conda.models.channel import Channel
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import ValidationError
 from requests.exceptions import ConnectionError, HTTPError
 
 from .exceptions import CondaToSInvalidError, CondaToSMissingError
+from .models import RemoteToSMetadata
 
 if TYPE_CHECKING:
     from typing import Final
@@ -21,14 +22,6 @@ if TYPE_CHECKING:
     from requests import Response
 
 TOS_ENDPOINT: Final = "tos.json"
-
-
-class RemoteToSMetadata(BaseModel):
-    """Conda ToS metadata schema for the remote endpoint."""
-
-    model_config = ConfigDict(extra="allow")
-    tos_version: int
-    text: str
 
 
 def get_endpoint(channel: str | Channel) -> Response:

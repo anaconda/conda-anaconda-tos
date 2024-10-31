@@ -17,8 +17,8 @@ from anaconda_conda_tos.local import (
     read_metadata,
     write_metadata,
 )
+from anaconda_conda_tos.models import RemoteToSMetadata
 from anaconda_conda_tos.path import get_tos_path
-from anaconda_conda_tos.remote import RemoteToSMetadata
 from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:

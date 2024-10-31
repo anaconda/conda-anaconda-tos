@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from pytest import MonkeyPatch, TempPathFactory
 
-    from anaconda_conda_tos.remote import RemoteToSMetadata
+    from anaconda_conda_tos.models import RemoteToSMetadata
 
 pytest_plugins = (
     # Add testing fixtures and internal pytest plugins here
