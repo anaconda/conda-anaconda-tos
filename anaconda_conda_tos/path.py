@@ -79,7 +79,7 @@ def get_tos_dir(
     return get_path(tos_root) / hash_channel(channel)
 
 
-def get_tos_path(
+def get_metadata_path(
     tos_root: str | os.PathLike[str] | Path, channel: str | Channel, version: int
 ) -> Path:
     """Get the ToS file path for the given channel and version."""

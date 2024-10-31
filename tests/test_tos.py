@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from anaconda_conda_tos.path import get_tos_path
+from anaconda_conda_tos.path import get_metadata_path
 from anaconda_conda_tos.tos import (
     accept_tos,
     get_channels,
@@ -126,7 +126,7 @@ def test_get_tos(
     assert channel1 == Channel(tos_channel)
     assert metadata_pair1
     assert metadata_pair1.metadata.tos_accepted
-    assert metadata_pair1.path == get_tos_path(user_tos_root, tos_channel, 1)
+    assert metadata_pair1.path == get_metadata_path(user_tos_root, tos_channel, 1)
     assert channel2 == Channel(sample_channel)
     assert not metadata_pair2
 
@@ -138,7 +138,7 @@ def test_get_tos(
     assert channel1 == Channel(tos_channel)
     assert metadata_pair1
     assert metadata_pair1.metadata.tos_accepted
-    assert metadata_pair1.path == get_tos_path(user_tos_root, tos_channel, 1)
+    assert metadata_pair1.path == get_metadata_path(user_tos_root, tos_channel, 1)
 
     # even rejected ToS channels are listed
     reject_tos(user_tos_root, tos_channel)
@@ -148,4 +148,4 @@ def test_get_tos(
     assert channel1 == Channel(tos_channel)
     assert metadata_pair1
     assert not metadata_pair1.metadata.tos_accepted
-    assert metadata_pair1.path == get_tos_path(user_tos_root, tos_channel, 1)
+    assert metadata_pair1.path == get_metadata_path(user_tos_root, tos_channel, 1)

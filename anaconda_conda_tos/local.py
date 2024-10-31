@@ -12,7 +12,7 @@ from pydantic import ValidationError
 
 from .exceptions import CondaToSMissingError
 from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
-from .path import get_all_channel_paths, get_channel_paths, get_path, get_tos_path
+from .path import get_all_channel_paths, get_channel_paths, get_metadata_path, get_path
 
 if TYPE_CHECKING:
     import os
@@ -47,7 +47,7 @@ def write_metadata(
     )
 
     # write metadata to file
-    path = get_tos_path(tos_root, channel, metadata.tos_version)
+    path = get_metadata_path(tos_root, channel, metadata.tos_version)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(metadata.model_dump_json())
 

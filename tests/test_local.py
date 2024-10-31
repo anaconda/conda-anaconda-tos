@@ -19,7 +19,7 @@ from anaconda_conda_tos.local import (
     write_metadata,
 )
 from anaconda_conda_tos.models import MetadataPathPair, RemoteToSMetadata
-from anaconda_conda_tos.path import get_tos_path
+from anaconda_conda_tos.path import get_metadata_path
 from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
     write_metadata(tmp_path, tos_channel, remote, tos_accepted=True)
 
     write_metadata(tmp_path, tos_channel, metadata)
-    contents = get_tos_path(tmp_path, tos_channel, 42).read_text()
+    contents = get_metadata_path(tmp_path, tos_channel, 42).read_text()
     local = LocalToSMetadata.model_validate_json(contents)
     assert local.model_fields == metadata.model_fields
     assert all(
@@ -69,9 +69,9 @@ def test_read_metadata(
     mock_tos_search_path: tuple[Path, Path], tos_channel: str
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
-    assert not read_metadata(get_tos_path(system_tos_root, tos_channel, 1))
+    assert not read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
     accept_tos(system_tos_root, tos_channel)
-    assert read_metadata(get_tos_path(system_tos_root, tos_channel, 1))
+    assert read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
 
 
 def test_get_channel_tos_metadata(
