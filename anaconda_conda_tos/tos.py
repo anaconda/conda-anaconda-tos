@@ -42,8 +42,8 @@ def view_tos(
     for channel in get_channels(*channels):
         print(f"viewing ToS for {channel}:")
         try:
-            metadata, _ = get_metadata(tos_root, channel, cache_timeout)
-            print(metadata.text)
+            metadata_tuple = get_metadata(tos_root, channel, cache_timeout)
+            print(metadata_tuple.metadata.text)
         except CondaToSMissingError:
             print("ToS not found")
 
@@ -54,12 +54,14 @@ def accept_tos(
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata, _ = get_metadata(tos_root, channel, cache_timeout)
+            metadata_tuple = get_metadata(tos_root, channel, cache_timeout)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
             print(f"accepting ToS for {channel}")
-            write_metadata(tos_root, channel, metadata, tos_accepted=True)
+            write_metadata(
+                tos_root, channel, metadata_tuple.metadata, tos_accepted=True
+            )
 
 
 def reject_tos(
@@ -68,12 +70,14 @@ def reject_tos(
     """Reject the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata, _ = get_metadata(tos_root, channel, cache_timeout)
+            metadata_tuple = get_metadata(tos_root, channel, cache_timeout)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
             print(f"rejecting ToS for {channel}")
-            write_metadata(tos_root, channel, metadata, tos_accepted=False)
+            write_metadata(
+                tos_root, channel, metadata_tuple.metadata, tos_accepted=False
+            )
 
 
 def get_tos(
@@ -89,7 +93,7 @@ def get_tos(
         seen.add(channel)
 
     # list all other ToS that have been accepted/rejected
-    for channel, metadata, path in get_all_metadatas(tos_root, cache_timeout):
+    for channel, metadata_tuple in get_all_metadatas(tos_root, cache_timeout):
         if channel not in seen:
-            yield channel, metadata, path
+            yield channel, *metadata_tuple
             seen.add(channel)

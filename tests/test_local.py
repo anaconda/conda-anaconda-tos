@@ -10,7 +10,6 @@ import pytest
 from conda.models.channel import Channel
 
 from anaconda_conda_tos.local import (
-    get_all_local_metadatas,
     get_local_metadata,
     read_metadata,
     touch_cache,
@@ -101,15 +100,3 @@ def test_get_local_metadata(
     assert len(get_local_metadata(tos_channel))
     reject_tos(user_tos_root, tos_channel, cache_timeout=0)
     assert len(get_local_metadata(tos_channel))
-
-
-def test_get_all_local_metadatas(
-    mock_tos_search_path: tuple[Path, Path],
-    tos_channel: str,
-) -> None:
-    system_tos_root, user_tos_root = mock_tos_search_path
-    assert len(list(get_all_local_metadatas())) == 0
-    accept_tos(system_tos_root, tos_channel, cache_timeout=0)
-    assert len(list(get_all_local_metadatas())) == 1
-    reject_tos(user_tos_root, tos_channel, cache_timeout=0)
-    assert len(list(get_all_local_metadatas())) == 1

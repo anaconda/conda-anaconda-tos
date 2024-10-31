@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from datetime import datetime  # noqa: TCH003 # needed for pydantic model
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from pydantic import (
     BaseModel,
@@ -15,6 +15,7 @@ from pydantic import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Self
 
 
@@ -40,3 +41,10 @@ class LocalToSMetadata(RemoteToSMetadata):
                 "`tos_accepted` and `acceptance_timestamp` must be provided together."
             )
         return self
+
+
+class MetadataTuple(NamedTuple):
+    """Tuple of ToS metadata and path."""
+
+    metadata: LocalToSMetadata
+    path: Path

@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from .models import LocalToSMetadata, RemoteToSMetadata
+from .exceptions import CondaToSMissingError
+from .models import LocalToSMetadata, MetadataTuple, RemoteToSMetadata
 from .path import (
-    get_all_paths,
     get_cache_path,
     get_channel_paths,
     get_metadata_path,
@@ -22,7 +22,7 @@ from .path import (
 if TYPE_CHECKING:
     import os
     from pathlib import Path
-    from typing import Any, Iterator
+    from typing import Any
 
 
 def touch_cache(channel: str | Channel) -> None:
@@ -38,7 +38,7 @@ def write_metadata(
     metadata: LocalToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
-) -> Path:
+) -> MetadataTuple:
     """Write the ToS metadata to file."""
     # argument validation/coercion
     channel = Channel(channel)
@@ -65,7 +65,7 @@ def write_metadata(
     # update cache timestamp for channel
     touch_cache(channel)
 
-    return path
+    return MetadataTuple(metadata, path)
 
 
 def read_metadata(path: Path) -> LocalToSMetadata | None:
@@ -78,39 +78,25 @@ def read_metadata(path: Path) -> LocalToSMetadata | None:
         return None
 
 
-def _get_all_local_metadatas(
-    channel: Channel | None,
-) -> Iterator[tuple[Channel, LocalToSMetadata, Path]]:
-    get_paths = (
-        get_channel_paths if channel else lambda tos_root, _: get_all_paths(tos_root)
+def get_local_metadata(channel: Channel) -> MetadataTuple:
+    """Get the latest ToS metadata for the given channel."""
+    # find all ToS metadata files for the given channel
+    metadata_tuples = [
+        MetadataTuple(metadata, path)
+        for tos_root in get_tos_search_path()
+        for path in get_channel_paths(tos_root, channel)
+        if (metadata := read_metadata(path))
+    ]
+
+    # return if no metadata found
+    if not metadata_tuples:
+        raise CondaToSMissingError(f"No ToS metadata found for {channel}")
+
+    # sort metadatas by version
+    sorted_tuples = sorted(
+        metadata_tuples,
+        key=lambda metadata_tuple: metadata_tuple.metadata.tos_version,
     )
 
-    # group metadata by channel
-    grouped_metadatas: dict[Channel, list[tuple[LocalToSMetadata, Path]]] = {}
-    for tos_root in get_tos_search_path():
-        for path in get_paths(tos_root, channel):
-            if metadata := read_metadata(path):
-                key = channel or Channel(metadata.base_url)
-                grouped_metadatas.setdefault(key, []).append((metadata, path))
-
-    # return the newest metadata for each channel
-    for channel, metadata_tuples in grouped_metadatas.items():
-        yield (channel, *sorted(metadata_tuples, key=lambda x: x[0].tos_version)[-1])
-
-
-def get_local_metadata(
-    channel: Channel,
-) -> tuple[LocalToSMetadata, Path] | tuple[None, None]:
-    """Get the current ToS metadata for the given channel."""
-    try:
-        # return the newest metadata
-        _, metadata, path = next(_get_all_local_metadatas(channel))
-        return metadata, path
-    except StopIteration:
-        # StopIteration: no metadata found
-        return None, None
-
-
-def get_all_local_metadatas() -> Iterator[tuple[Channel, LocalToSMetadata, Path]]:
-    """Yield all ToS metadatas."""
-    return _get_all_local_metadatas(None)
+    # return newest metadata for channel
+    return sorted_tuples[-1]
