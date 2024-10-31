@@ -14,7 +14,7 @@ from rich.table import Table
 from .cache import get_all_metadatas, get_metadata
 from .exceptions import CondaToSMissingError
 from .local import write_metadata
-from .path import SEARCH_PATH, get_all_channel_paths, get_cache_dir, get_cache_paths
+from .path import CACHE_DIR, SEARCH_PATH, get_all_channel_paths, get_cache_paths
 
 if TYPE_CHECKING:
     import os
@@ -115,7 +115,7 @@ def info_tos() -> None:
     table.add_column("Value")
 
     table.add_row("Search Path", "\n".join(SEARCH_PATH))
-    table.add_row("Cache Dir", str(get_cache_dir()))
+    table.add_row("Cache Dir", str(CACHE_DIR))
 
     console = Console()
     console.print(table)

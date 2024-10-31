@@ -46,6 +46,8 @@ SEARCH_PATH: Final = tuple(
 
 TOS_GLOB: Final = "*.json"
 
+CACHE_DIR: Final = Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
+
 
 def hash_channel(channel: str | Channel) -> str:
     """Hash the channel to remove problematic characters (e.g. /)."""
@@ -92,14 +94,9 @@ def get_metadata_path(
     return get_tos_dir(tos_root, channel) / f"{version}.json"
 
 
-def get_cache_dir() -> Path:
-    """Get the ToS cache directory."""
-    return Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
-
-
 def get_cache_path(channel: str | Channel) -> Path:
     """Get the ToS cache file path for the given channel."""
-    return get_cache_dir() / f"{hash_channel(channel)}.cache"
+    return CACHE_DIR / f"{hash_channel(channel)}.cache"
 
 
 def get_all_channel_paths(
@@ -121,4 +118,4 @@ def get_channel_paths(
 
 def get_cache_paths() -> Iterator[Path]:
     """Get all local ToS cache file paths."""
-    return get_cache_dir().glob("*.cache")
+    return CACHE_DIR.glob("*.cache")
