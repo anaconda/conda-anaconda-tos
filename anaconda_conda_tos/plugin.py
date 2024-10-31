@@ -60,14 +60,18 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--clean-cache", action="store_true")
     action.add_argument("--clean-tos", action="store_true")
 
-    parser.add_argument("--cache-timeout", action="store", type=int)
+    parser.add_argument(
+        "--cache-timeout",
+        action="store",
+        type=int,
+        default=24 * 60 * 60,
+    )
     parser.add_argument(
         "--ignore-cache",
         dest="cache_timeout",
         action="store_const",
         const=0,
     )
-    parser.set_defaults(cache_timeout=24 * 60 * 60)
 
 
 def execute(args: Namespace) -> int:
