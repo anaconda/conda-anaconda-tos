@@ -10,8 +10,8 @@ from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
 from .local import (
-    get_all_tos_metadatas,
-    get_channel_tos_metadata,
+    get_all_local_metadatas,
+    get_local_metadata,
     write_metadata,
 )
 from .remote import get_metadata
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Iterable, Iterator
 
-    from .models import LocalToSMetadata
+    from .models import MetadataPathPair
 
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:
@@ -73,16 +73,19 @@ def reject_tos(tos_root: str | os.PathLike | Path, *channels: str | Channel) -> 
 
 def get_tos(
     *channels: str | Channel,
-) -> Iterator[tuple[Channel, LocalToSMetadata | None, Path | None]]:
+) -> Iterator[tuple[Channel, MetadataPathPair | None]]:
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()
     for channel in get_channels(*channels):
-        yield channel, *get_channel_tos_metadata(channel)
+        try:
+            yield channel, get_local_metadata(channel)
+        except CondaToSMissingError:
+            yield channel, None
         seen.add(channel)
 
     # list all other ToS that have been accepted/rejected
-    for channel, metadata, path in get_all_tos_metadatas():
+    for channel, metadata_pair in get_all_local_metadatas():
         if channel not in seen:
-            yield channel, metadata, path
+            yield channel, metadata_pair
             seen.add(channel)

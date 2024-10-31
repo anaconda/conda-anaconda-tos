@@ -10,14 +10,15 @@ import pytest
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
+from anaconda_conda_tos.exceptions import CondaToSMissingError
 from anaconda_conda_tos.local import (
     LocalToSMetadata,
-    get_all_tos_metadatas,
-    get_channel_tos_metadata,
+    get_all_local_metadatas,
+    get_local_metadata,
     read_metadata,
     write_metadata,
 )
-from anaconda_conda_tos.models import RemoteToSMetadata
+from anaconda_conda_tos.models import MetadataPathPair, RemoteToSMetadata
 from anaconda_conda_tos.path import get_tos_path
 from anaconda_conda_tos.tos import accept_tos, reject_tos
 
@@ -78,11 +79,12 @@ def test_get_channel_tos_metadata(
     tos_channel: str,
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
-    assert get_channel_tos_metadata(tos_channel) == (None, None)
+    with pytest.raises(CondaToSMissingError):
+        get_local_metadata(tos_channel)
     accept_tos(system_tos_root, tos_channel)
-    assert len(get_channel_tos_metadata(tos_channel))
+    assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)
     reject_tos(user_tos_root, tos_channel)
-    assert len(get_channel_tos_metadata(tos_channel))
+    assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)
 
 
 def test_get_all_tos_metadatas(
@@ -90,9 +92,9 @@ def test_get_all_tos_metadatas(
     tos_channel: str,
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
-    assert len(list(get_all_tos_metadatas())) == 0
-    assert len(list(get_all_tos_metadatas(tos_channel))) == 0
+    assert len(list(get_all_local_metadatas())) == 0
+    assert len(list(get_all_local_metadatas(tos_channel))) == 0
     accept_tos(system_tos_root, tos_channel)
-    assert len(list(get_all_tos_metadatas())) == 1
+    assert len(list(get_all_local_metadatas())) == 1
     reject_tos(user_tos_root, tos_channel)
-    assert len(list(get_all_tos_metadatas())) == 1
+    assert len(list(get_all_local_metadatas())) == 1

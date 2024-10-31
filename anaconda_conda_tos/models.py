@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from datetime import datetime  # noqa: TCH003 # needed for Pydantic model
+from pathlib import Path  # noqa: TCH003 # needed for Pydantic model
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import (
@@ -42,3 +43,10 @@ class LocalToSMetadata(RemoteToSMetadata):
                 "`tos_accepted` and `acceptance_timestamp` must be provided together."
             )
         return self
+
+
+class MetadataPathPair(BaseModel):
+    """Tuple of ToS metadata and path."""
+
+    metadata: LocalToSMetadata
+    path: Path
