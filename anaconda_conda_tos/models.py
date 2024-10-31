@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime  # noqa: TCH003 # needed for pydantic model
-from pathlib import Path  # noqa: TCH003 # needed for pydantic model
-from typing import TYPE_CHECKING
+from datetime import datetime  # noqa: TCH003 # needed for Pydantic model
+from pathlib import Path  # noqa: TCH003 # needed for Pydantic model
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import (
     BaseModel,
@@ -31,8 +31,10 @@ class LocalToSMetadata(RemoteToSMetadata):
     """Conda ToS metadata schema with acceptance fields."""
 
     base_url: str
-    tos_accepted: bool | None = Field(None)
-    acceptance_timestamp: datetime | None = Field(None)
+    # FUTURE: Python 3.10+, switch to `bool | None`
+    tos_accepted: Optional[bool] = Field(None)  # noqa: UP007
+    # FUTURE: Python 3.10+, switch to `datetime | None`
+    acceptance_timestamp: Optional[datetime] = Field(None)  # noqa: UP007
 
     @model_validator(mode="after")
     def _required(self: Self) -> Self:
