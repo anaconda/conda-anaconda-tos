@@ -46,7 +46,7 @@ def view_tos(
     for channel in get_channels(*channels):
         print(f"viewing ToS for {channel}:")
         try:
-            metadata_pair = get_metadata(tos_root, channel, cache_timeout)
+            metadata_pair = get_metadata(channel, tos_root, cache_timeout)
             print(metadata_pair.metadata.text)
         except CondaToSMissingError:
             print("ToS not found")
@@ -60,7 +60,7 @@ def accept_tos(
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata_pair = get_metadata(tos_root, channel, cache_timeout)
+            metadata_pair = get_metadata(channel, tos_root, cache_timeout)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
@@ -76,7 +76,7 @@ def reject_tos(
     """Reject the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata_pair = get_metadata(tos_root, channel, cache_timeout)
+            metadata_pair = get_metadata(channel, tos_root, cache_timeout)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
@@ -96,7 +96,7 @@ def get_tos(
     seen: set[Channel] = set()
     for channel in get_channels(*channels):
         try:
-            yield channel, get_metadata(tos_root, channel, cache_timeout)
+            yield channel, get_metadata(channel, tos_root, cache_timeout)
         except CondaToSMissingError:
             yield channel, None
         seen.add(channel)

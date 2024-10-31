@@ -94,7 +94,7 @@ def test_read_metadata(
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
     assert not read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
-    accept_tos(system_tos_root, tos_channel, cache_timeout=0)
+    accept_tos(tos_channel, tos_root=system_tos_root, cache_timeout=0)
     assert read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
 
 
@@ -105,7 +105,7 @@ def test_get_local_metadata(
     system_tos_root, user_tos_root = mock_tos_search_path
     with pytest.raises(CondaToSMissingError):
         get_local_metadata(tos_channel)
-    accept_tos(system_tos_root, tos_channel, cache_timeout=0)
+    accept_tos(tos_channel, tos_root=system_tos_root, cache_timeout=0)
     assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)
-    reject_tos(user_tos_root, tos_channel, cache_timeout=0)
+    reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
     assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)
