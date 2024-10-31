@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
@@ -13,14 +12,11 @@ from pydantic import ValidationError
 
 from .exceptions import CondaToSMissingError
 from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
-from .path import (
-    get_all_channel_paths,
-    get_channel_paths,
-    get_tos_path,
-)
+from .path import get_all_channel_paths, get_channel_paths, get_path, get_tos_path
 
 if TYPE_CHECKING:
     import os
+    from pathlib import Path
     from typing import Any, Iterator
 
 
@@ -61,7 +57,7 @@ def write_metadata(
 def read_metadata(path: str | os.PathLike[str] | Path) -> LocalToSMetadata | None:
     """Load the ToS metadata from file."""
     try:
-        return LocalToSMetadata.model_validate_json(Path(path).read_text())
+        return LocalToSMetadata.model_validate_json(get_path(path).read_text())
     except (OSError, ValidationError):
         # OSError: unable to access file, ignoring
         # ValidationError: corrupt file, ignoring
