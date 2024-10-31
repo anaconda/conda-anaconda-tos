@@ -90,6 +90,8 @@ def get_all_metadatas(
                     key=lambda metadata_pair: metadata_pair.metadata.tos_version,
                 )[-1],
             )
+            continue
+
         try:
             # fetch remote metadata
             metadata = get_remote_metadata(channel)
