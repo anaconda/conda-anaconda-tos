@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from typing import Iterator
 
     from pytest import MonkeyPatch, TempPathFactory
+    from pytest_mock import MockerFixture
 
     from anaconda_conda_tos.models import RemoteToSMetadata
 
@@ -66,3 +67,10 @@ def mock_tos_search_path(
         (tos_root / "other", system_tos_root, user_tos_root, "$CONDATOS"),
     )
     return (system_tos_root, user_tos_root)
+
+
+@pytest.fixture(autouse=True)
+def mock_cache_dir(mocker: MockerFixture, tmp_path_factory: TempPathFactory) -> Path:
+    cache_dir = tmp_path_factory.mktemp("cache")
+    mocker.patch("anaconda_conda_tos.path.user_cache_dir", return_value=str(cache_dir))
+    return cache_dir

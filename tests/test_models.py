@@ -9,9 +9,14 @@ from typing import TYPE_CHECKING
 import pytest
 from pydantic import ValidationError
 
-from anaconda_conda_tos.models import LocalToSMetadata, RemoteToSMetadata
+from anaconda_conda_tos.models import (
+    LocalToSMetadata,
+    MetadataPathPair,
+    RemoteToSMetadata,
+)
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Final
 
 
@@ -67,8 +72,8 @@ def test_LocalToSMetadata(  # noqa: N802
     raises: bool,
 ) -> None:
     local = {
-        "tos_version": 1,  # see tests/test_remote.py::test_RemoteToSMetadata
-        "text": "ToS",  # see tests/test_remote.py::test_RemoteToSMetadata
+        "tos_version": 1,  # tested in test_RemoteToSMetadata
+        "text": "ToS",  # tested in test_RemoteToSMetadata
         "base_url": base_url,
         "tos_accepted": tos_accepted,
         "acceptance_timestamp": acceptance_timestamp,
@@ -76,4 +81,33 @@ def test_LocalToSMetadata(  # noqa: N802
     with pytest.raises(ValidationError) if raises else nullcontext():
         LocalToSMetadata(
             **{key: value for key, value in local.items() if value is not None},
+        )
+
+
+METADATA = LocalToSMetadata(
+    tos_version=1,
+    text="ToS",
+    base_url="url",
+    tos_accepted=True,
+    acceptance_timestamp=NOW,
+)
+
+
+@pytest.mark.parametrize(
+    "metadata,path,raises",
+    [
+        pytest.param(None, None, True, id="missing"),
+        pytest.param(METADATA, None, True, id="only metadata"),
+        pytest.param(None, "path", True, id="only path"),
+        pytest.param(METADATA, "path", False, id="complete"),
+    ],
+)
+def test_MetadataPathPair(metadata: LocalToSMetadata, path: Path, raises: bool) -> None:  # noqa: N802
+    pair = {
+        "metadata": metadata,
+        "path": path,
+    }
+    with pytest.raises(ValidationError) if raises else nullcontext():
+        MetadataPathPair(
+            **{key: value for key, value in pair.items() if value is not None},
         )

@@ -9,13 +9,18 @@ from uuid import uuid4
 import pytest
 from conda.models.channel import Channel
 
+from anaconda_conda_tos.exceptions import CondaToSMissingError
 from anaconda_conda_tos.local import (
     get_local_metadata,
     read_metadata,
     touch_cache,
     write_metadata,
 )
-from anaconda_conda_tos.models import LocalToSMetadata, RemoteToSMetadata
+from anaconda_conda_tos.models import (
+    LocalToSMetadata,
+    MetadataPathPair,
+    RemoteToSMetadata,
+)
 from anaconda_conda_tos.path import get_metadata_path
 from anaconda_conda_tos.tos import accept_tos, reject_tos
 
@@ -61,16 +66,19 @@ def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         write_metadata(tmp_path, "defaults", metadata)
 
-    write_metadata(tmp_path, tos_channel, metadata)
+    assert isinstance(write_metadata(tmp_path, tos_channel, metadata), MetadataPathPair)
 
     with pytest.raises(TypeError):
         write_metadata(tmp_path, tos_channel, "metadata")  # type: ignore[arg-type]
 
-    write_metadata(tmp_path, tos_channel, remote)
+    assert isinstance(write_metadata(tmp_path, tos_channel, remote), MetadataPathPair)
 
-    write_metadata(tmp_path, tos_channel, remote, tos_accepted=True)
+    assert isinstance(
+        write_metadata(tmp_path, tos_channel, remote, tos_accepted=True),
+        MetadataPathPair,
+    )
 
-    write_metadata(tmp_path, tos_channel, metadata)
+    assert isinstance(write_metadata(tmp_path, tos_channel, metadata), MetadataPathPair)
     contents = get_metadata_path(tmp_path, tos_channel, 42).read_text()
     local = LocalToSMetadata.model_validate_json(contents)
     assert local.model_fields == metadata.model_fields
@@ -95,8 +103,9 @@ def test_get_local_metadata(
     tos_channel: str,
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
-    assert get_local_metadata(tos_channel) == (None, None)
+    with pytest.raises(CondaToSMissingError):
+        get_local_metadata(tos_channel)
     accept_tos(system_tos_root, tos_channel, cache_timeout=0)
-    assert len(get_local_metadata(tos_channel))
+    assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)
     reject_tos(user_tos_root, tos_channel, cache_timeout=0)
-    assert len(get_local_metadata(tos_channel))
+    assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)

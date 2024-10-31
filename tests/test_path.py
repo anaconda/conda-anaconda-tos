@@ -23,7 +23,6 @@ from anaconda_conda_tos.path import (
 
 if TYPE_CHECKING:
     from pytest import MonkeyPatch
-    from pytest_mock import MockerFixture
 
 
 def test_hash_channel(sample_channel: str, tos_channel: str) -> None:
@@ -65,13 +64,10 @@ def test_get_metadata_path(tmp_path: Path, sample_channel: str) -> None:
     )
 
 
-def test_get_cache_path(
-    mocker: MockerFixture, tmp_path: Path, sample_channel: str
-) -> None:
-    mocker.patch("anaconda_conda_tos.path.user_cache_dir", return_value=str(tmp_path))
+def test_get_cache_path(sample_channel: str, mock_cache_dir: Path) -> None:
     assert (
         get_cache_path(sample_channel)
-        == tmp_path / f"{hash_channel(sample_channel)}.cache"
+        == mock_cache_dir / f"{hash_channel(sample_channel)}.cache"
     )
 
 

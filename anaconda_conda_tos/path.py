@@ -20,13 +20,13 @@ if TYPE_CHECKING:
     from typing import Final, Iterable, Iterator
 
 # mirrors conda.base.context.sys_rc_path
-SYSTEM_TOS_ROOT: Final[str] = "$CONDA_ROOT/conda-meta/tos"
+SYSTEM_TOS_ROOT: Final = "$CONDA_ROOT/conda-meta/tos"
 
 # mirrors conda.base.context.user_rc_path
-USER_TOS_ROOT: Final[str] = "~/.conda/tos"
+USER_TOS_ROOT: Final = "~/.conda/tos"
 
 # mirrors conda.base.constants.SEARCH_PATH locations
-SEARCH_PATH: Final[tuple[str, ...]] = tuple(
+SEARCH_PATH: Final = tuple(
     filter(
         None,
         (
@@ -105,6 +105,6 @@ def get_all_paths(tos_root: Path) -> Iterator[Path]:
     return get_tos_root(tos_root).glob(f"*/{TOS_GLOB}")
 
 
-def get_channel_paths(tos_root: Path, channel: Channel) -> Iterator[Path]:
+def get_channel_paths(tos_root: Path, channel: str | Channel) -> Iterator[Path]:
     """Get all local ToS file paths for the given channel."""
     return get_tos_dir(tos_root, channel).glob(TOS_GLOB)

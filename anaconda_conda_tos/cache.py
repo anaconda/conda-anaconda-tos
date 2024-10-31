@@ -8,11 +8,11 @@ from contextlib import suppress
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from conda.common.iterators import groupby_to_dict
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
 from .local import get_local_metadata, read_metadata, touch_cache, write_metadata
+from .models import MetadataPathPair
 from .path import get_all_paths, get_cache_path, get_tos_search_path
 from .remote import get_remote_metadata
 
@@ -20,8 +20,6 @@ if TYPE_CHECKING:
     import os
     from pathlib import Path
     from typing import Iterator
-
-    from .models import MetadataTuple
 
 
 def is_cache_stale(channel: str | Channel, cache_timeout: int) -> bool:
@@ -39,7 +37,7 @@ def is_cache_stale(channel: str | Channel, cache_timeout: int) -> bool:
 def _cache_remote_metadata(
     tos_root: str | os.PathLike[str] | Path,
     channel: str | Channel,
-) -> MetadataTuple:
+) -> MetadataPathPair:
     try:
         # fetch remote metadata
         metadata = get_remote_metadata(channel)
@@ -56,7 +54,7 @@ def get_metadata(
     tos_root: str | os.PathLike[str] | Path,
     channel: str | Channel,
     cache_timeout: int,
-) -> MetadataTuple:
+) -> MetadataPathPair:
     """Get the ToS metadata for the given channel."""
     if not is_cache_stale(channel, cache_timeout):
         # return cached metadata
@@ -89,24 +87,28 @@ def get_metadata(
 def get_all_metadatas(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int,
-) -> Iterator[tuple[Channel, MetadataTuple]]:
+) -> Iterator[tuple[Channel, MetadataPathPair]]:
     """Yield all ToS metadatas."""
     # group all ToS metadata files by their channel
-    channel_metadata_tuples = groupby_to_dict(
-        lambda x: x[0],
-        [
-            (Channel(metadata.base_url), (metadata, path))
-            for tos_root in get_tos_search_path()
-            for path in get_all_paths(tos_root)
-            if (metadata := read_metadata(path))
-        ],
-    )
+    channel_metadata_pairs: dict[Channel, list[MetadataPathPair]] = {}
+    for tos_root in get_tos_search_path():
+        for path in get_all_paths(tos_root):
+            if metadata := read_metadata(path):
+                channel = Channel(metadata.base_url)
+                metadata_pair = MetadataPathPair(metadata=metadata, path=path)
+                channel_metadata_pairs.setdefault(channel, []).append(metadata_pair)
 
     # yield the latest ToS metadata for each channel
-    for channel, metadata_tuples in channel_metadata_tuples.items():
+    for channel, metadata_pairs in channel_metadata_pairs.items():
         # return cached metadata if not stale
         if not is_cache_stale(channel, cache_timeout):
-            yield channel, sorted(metadata_tuples, key=lambda x: x[0].tos_version)[-1]
+            yield (
+                channel,
+                sorted(
+                    metadata_pairs,
+                    key=lambda metadata_pair: metadata_pair.metadata.tos_version,
+                )[-1],
+            )
         # return remote metadata if it exists
         with suppress(CondaToSMissingError):
             yield channel, _cache_remote_metadata(tos_root, channel)

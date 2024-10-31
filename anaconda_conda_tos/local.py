@@ -11,7 +11,7 @@ from conda.models.channel import Channel
 from pydantic import ValidationError
 
 from .exceptions import CondaToSMissingError
-from .models import LocalToSMetadata, MetadataTuple, RemoteToSMetadata
+from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
 from .path import (
     get_cache_path,
     get_channel_paths,
@@ -38,7 +38,7 @@ def write_metadata(
     metadata: LocalToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
-) -> MetadataTuple:
+) -> MetadataPathPair:
     """Write the ToS metadata to file."""
     # argument validation/coercion
     channel = Channel(channel)
@@ -65,7 +65,7 @@ def write_metadata(
     # update cache timestamp for channel
     touch_cache(channel)
 
-    return MetadataTuple(metadata, path)
+    return MetadataPathPair(metadata=metadata, path=path)
 
 
 def read_metadata(path: Path) -> LocalToSMetadata | None:
@@ -78,24 +78,24 @@ def read_metadata(path: Path) -> LocalToSMetadata | None:
         return None
 
 
-def get_local_metadata(channel: Channel) -> MetadataTuple:
+def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
     """Get the latest ToS metadata for the given channel."""
     # find all ToS metadata files for the given channel
-    metadata_tuples = [
-        MetadataTuple(metadata, path)
+    metadata_pairs = [
+        MetadataPathPair(metadata=metadata, path=path)
         for tos_root in get_tos_search_path()
         for path in get_channel_paths(tos_root, channel)
         if (metadata := read_metadata(path))
     ]
 
     # return if no metadata found
-    if not metadata_tuples:
+    if not metadata_pairs:
         raise CondaToSMissingError(f"No ToS metadata found for {channel}")
 
     # sort metadatas by version
     sorted_tuples = sorted(
-        metadata_tuples,
-        key=lambda metadata_tuple: metadata_tuple.metadata.tos_version,
+        metadata_pairs,
+        key=lambda metadata_pair: metadata_pair.metadata.tos_version,
     )
 
     # return newest metadata for channel

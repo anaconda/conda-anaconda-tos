@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import Iterable, Iterator
 
-    from .models import LocalToSMetadata
+    from .models import MetadataPathPair
 
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:
@@ -42,8 +42,8 @@ def view_tos(
     for channel in get_channels(*channels):
         print(f"viewing ToS for {channel}:")
         try:
-            metadata_tuple = get_metadata(tos_root, channel, cache_timeout)
-            print(metadata_tuple.metadata.text)
+            metadata_pair = get_metadata(tos_root, channel, cache_timeout)
+            print(metadata_pair.metadata.text)
         except CondaToSMissingError:
             print("ToS not found")
 
@@ -54,14 +54,12 @@ def accept_tos(
     """Accept the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata_tuple = get_metadata(tos_root, channel, cache_timeout)
+            metadata_pair = get_metadata(tos_root, channel, cache_timeout)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
             print(f"accepting ToS for {channel}")
-            write_metadata(
-                tos_root, channel, metadata_tuple.metadata, tos_accepted=True
-            )
+            write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=True)
 
 
 def reject_tos(
@@ -70,13 +68,13 @@ def reject_tos(
     """Reject the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
-            metadata_tuple = get_metadata(tos_root, channel, cache_timeout)
+            metadata_pair = get_metadata(tos_root, channel, cache_timeout)
         except CondaToSMissingError:
             print(f"ToS not found for {channel}")
         else:
             print(f"rejecting ToS for {channel}")
             write_metadata(
-                tos_root, channel, metadata_tuple.metadata, tos_accepted=False
+                tos_root, channel, metadata_pair.metadata, tos_accepted=False
             )
 
 
@@ -84,16 +82,19 @@ def get_tos(
     tos_root: str | os.PathLike[str] | Path,
     *channels: str | Channel,
     cache_timeout: int,
-) -> Iterator[tuple[Channel, LocalToSMetadata, Path] | tuple[Channel, None, None]]:
+) -> Iterator[tuple[Channel, MetadataPathPair | None]]:
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()
     for channel in get_channels(*channels):
-        yield channel, *get_metadata(tos_root, channel, cache_timeout)
+        try:
+            yield channel, get_metadata(tos_root, channel, cache_timeout)
+        except CondaToSMissingError:
+            yield channel, None
         seen.add(channel)
 
     # list all other ToS that have been accepted/rejected
-    for channel, metadata_tuple in get_all_metadatas(tos_root, cache_timeout):
+    for channel, metadata_pair in get_all_metadatas(tos_root, cache_timeout):
         if channel not in seen:
-            yield channel, *metadata_tuple
+            yield channel, metadata_pair
             seen.add(channel)

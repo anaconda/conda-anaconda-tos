@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 from datetime import datetime  # noqa: TCH003 # needed for pydantic model
-from typing import TYPE_CHECKING, NamedTuple
+from pathlib import Path  # noqa: TCH003 # needed for pydantic model
+from typing import TYPE_CHECKING
 
 from pydantic import (
     BaseModel,
@@ -15,7 +16,6 @@ from pydantic import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from typing import Self
 
 
@@ -43,7 +43,7 @@ class LocalToSMetadata(RemoteToSMetadata):
         return self
 
 
-class MetadataTuple(NamedTuple):
+class MetadataPathPair(BaseModel):
     """Tuple of ToS metadata and path."""
 
     metadata: LocalToSMetadata

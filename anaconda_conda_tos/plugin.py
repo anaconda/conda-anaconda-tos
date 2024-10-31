@@ -18,10 +18,11 @@ from .tos import accept_tos, get_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-    from pathlib import Path
     from typing import Iterator
 
-    from .models import LocalToSMetadata
+    from conda.models.channel import Channel
+
+    from .models import MetadataPathPair
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -61,30 +62,43 @@ def configure_parser(parser: ArgumentParser) -> None:
     parser.set_defaults(cache_timeout=24 * 60 * 60)
 
 
-def version_mapping(metadata: LocalToSMetadata | None) -> str:
+def version_mapping(metadata_pair: MetadataPathPair | None) -> str:
     """Map the ToS version to a human-readable string."""
-    return str(metadata.tos_version) if metadata else "-"
+    if not metadata_pair or not metadata_pair.metadata:
+        return "-"
+    return str(metadata_pair.metadata.tos_version)
 
 
-def accepted_mapping(metadata: LocalToSMetadata | None) -> str:
+def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
     """Map the ToS acceptance status to a human-readable string."""
     if (
-        metadata is None
-        or (tos_accepted := getattr(metadata, "tos_accepted", None)) is None
+        not metadata_pair
+        or not metadata_pair.metadata
+        or (tos_accepted := metadata_pair.metadata.tos_accepted) is None
     ):
         return "-"
     elif tos_accepted:
-        # convert timestamp to localized time
-        return metadata.acceptance_timestamp.astimezone().isoformat(" ")
+        if (
+            acceptance_timestamp := metadata_pair.metadata.acceptance_timestamp
+        ) is None:
+            return "unknown"
+        else:
+            # convert timestamp to localized time
+            return acceptance_timestamp.astimezone().isoformat(" ")
     else:
         return "rejected"
 
 
-def path_mapping(path: Path | None, parent: int | None = None) -> str:
+def location_mapping(metadata_pair: MetadataPathPair | None) -> str:
     """Map the ToS path to a human-readable string."""
-    if not path:
+    if not metadata_pair or not metadata_pair.path:
         return "-"
-    return str(path if parent is None else path.parents[parent])
+    return str(metadata_pair.path.parent.parent)
+
+
+def cache_mapping(channel: str | Channel) -> str:
+    """Map the ToS cache path to a human-readable string."""
+    return str(get_cache_path(channel))
 
 
 def execute(args: Namespace) -> int:
@@ -105,17 +119,17 @@ def execute(args: Namespace) -> int:
         table.add_column("Location")
         table.add_column("Cache")
 
-        for channel, metadata, path in get_tos(
+        for channel, metadata_pair in get_tos(
             args.tos_root,
             *context.channels,
             cache_timeout=args.cache_timeout,
         ):
             table.add_row(
                 channel.base_url,
-                version_mapping(metadata),
-                accepted_mapping(metadata),
-                path_mapping(path, 1),
-                path_mapping(get_cache_path(channel)),
+                version_mapping(metadata_pair),
+                accepted_mapping(metadata_pair),
+                location_mapping(metadata_pair),
+                cache_mapping(channel),
             )
 
         console = Console()
