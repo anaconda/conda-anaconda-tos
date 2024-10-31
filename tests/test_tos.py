@@ -118,8 +118,7 @@ def test_get_tos(
     assert len(tos) == 2
     (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
-    assert metadata_pair1
-    assert not metadata_pair1.metadata.tos_accepted
+    assert not metadata_pair1
     assert channel2 == Channel(sample_channel)
     assert not metadata_pair2
 

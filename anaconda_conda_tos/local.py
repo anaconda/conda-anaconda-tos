@@ -12,12 +12,7 @@ from pydantic import ValidationError
 
 from .exceptions import CondaToSMissingError
 from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
-from .path import (
-    get_cache_path,
-    get_channel_paths,
-    get_metadata_path,
-    get_path,
-)
+from .path import get_cache_path, get_channel_paths, get_metadata_path, get_path
 
 if TYPE_CHECKING:
     import os
@@ -92,10 +87,10 @@ def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
         raise CondaToSMissingError(f"No ToS metadata found for {channel}")
 
     # sort metadatas by version
-    sorted_tuples = sorted(
+    sorted_pairs = sorted(
         metadata_pairs,
         key=lambda metadata_pair: metadata_pair.metadata.tos_version,
     )
 
     # return newest metadata for channel
-    return sorted_tuples[-1]
+    return sorted_pairs[-1]
