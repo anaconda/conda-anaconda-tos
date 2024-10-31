@@ -11,13 +11,13 @@ from conda.base.context import context
 from anaconda_conda_tos.path import (
     SYSTEM_TOS_ROOT,
     USER_TOS_ROOT,
-    get_all_paths,
+    get_all_channel_paths,
     get_cache_path,
     get_channel_paths,
     get_metadata_path,
+    get_path,
+    get_search_path,
     get_tos_dir,
-    get_tos_root,
-    get_tos_search_path,
     hash_channel,
 )
 
@@ -35,11 +35,9 @@ def test_hash_channel(sample_channel: str, tos_channel: str) -> None:
 
 
 def test_get_tos_root(tmp_path: Path) -> None:
-    assert get_tos_root(SYSTEM_TOS_ROOT) == Path(
-        context.conda_prefix, "conda-meta", "tos"
-    )
-    assert get_tos_root(USER_TOS_ROOT) == Path.home() / ".conda" / "tos"
-    assert get_tos_root(tmp_path) == tmp_path
+    assert get_path(SYSTEM_TOS_ROOT) == Path(context.conda_prefix, "conda-meta", "tos")
+    assert get_path(USER_TOS_ROOT) == Path.home() / ".conda" / "tos"
+    assert get_path(tmp_path) == tmp_path
 
 
 def test_get_tos_search_path(
@@ -48,13 +46,13 @@ def test_get_tos_search_path(
     mock_tos_search_path: tuple[Path, Path],
 ) -> None:
     monkeypatch.setenv("CONDATOS", str(tmp_path))
-    assert tuple(get_tos_search_path()) == (*mock_tos_search_path, tmp_path)
+    assert tuple(get_search_path()) == (*mock_tos_search_path, tmp_path)
 
 
 def test_get_tos_dir(tmp_path: Path, sample_channel: str) -> None:
-    assert get_tos_dir(tmp_path, sample_channel) == get_tos_root(
-        tmp_path
-    ) / hash_channel(sample_channel)
+    assert get_tos_dir(tmp_path, sample_channel) == get_path(tmp_path) / hash_channel(
+        sample_channel
+    )
 
 
 def test_get_metadata_path(tmp_path: Path, sample_channel: str) -> None:
@@ -78,7 +76,7 @@ def test_get_all_paths(tmp_path: Path) -> None:
     (channel2 := tmp_path / "channel2").mkdir()
     (channel2json1 := channel2 / "1.json").touch()
     (channel2json2 := channel2 / "2.json").touch()
-    assert sorted(get_all_paths(tmp_path)) == sorted(
+    assert sorted(get_all_channel_paths([tmp_path])) == sorted(
         (channel1json1, channel1json2, channel2json1, channel2json2)
     )
 

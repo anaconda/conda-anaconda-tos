@@ -13,7 +13,7 @@ from conda.models.channel import Channel
 from .exceptions import CondaToSMissingError
 from .local import get_local_metadata, read_metadata, touch_cache, write_metadata
 from .models import MetadataPathPair
-from .path import get_all_paths, get_cache_path, get_tos_search_path
+from .path import get_all_channel_paths, get_cache_path
 from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
@@ -51,8 +51,8 @@ def _cache_remote_metadata(
 
 
 def get_metadata(
-    tos_root: str | os.PathLike[str] | Path,
     channel: str | Channel,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int,
 ) -> MetadataPathPair:
     """Get the ToS metadata for the given channel."""
@@ -91,12 +91,11 @@ def get_all_metadatas(
     """Yield all ToS metadatas."""
     # group all ToS metadata files by their channel
     channel_metadata_pairs: dict[Channel, list[MetadataPathPair]] = {}
-    for tos_root in get_tos_search_path():
-        for path in get_all_paths(tos_root):
-            if metadata := read_metadata(path):
-                channel = Channel(metadata.base_url)
-                metadata_pair = MetadataPathPair(metadata=metadata, path=path)
-                channel_metadata_pairs.setdefault(channel, []).append(metadata_pair)
+    for path in get_all_channel_paths():
+        if metadata := read_metadata(path):
+            channel = Channel(metadata.base_url)
+            metadata_pair = MetadataPathPair(metadata=metadata, path=path)
+            channel_metadata_pairs.setdefault(channel, []).append(metadata_pair)
 
     # yield the latest ToS metadata for each channel
     for channel, metadata_pairs in channel_metadata_pairs.items():

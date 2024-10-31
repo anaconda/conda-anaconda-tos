@@ -59,19 +59,19 @@ def hash_channel(channel: str | Channel) -> str:
     return hasher.hexdigest()
 
 
-def get_tos_root(path: str | os.PathLike[str] | Path) -> Path:
+def get_path(path: str | os.PathLike[str] | Path) -> Path:
     """Get the root ToS directory."""
     if isinstance(path, str):
         path = custom_expandvars(path, os.environ)
     return Path(path).expanduser()
 
 
-def get_tos_search_path(
+def get_search_path(
     search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
     """Get all root ToS directories."""
     for tos_root in SEARCH_PATH if search_path is None else search_path:
-        if (path := get_tos_root(tos_root)).is_dir():
+        if (path := get_path(tos_root)).is_dir():
             yield path
 
 
@@ -80,7 +80,7 @@ def get_tos_dir(
     channel: str | Channel,
 ) -> Path:
     """Get the ToS directory for the given channel."""
-    return get_tos_root(tos_root) / hash_channel(channel)
+    return get_path(tos_root) / hash_channel(channel)
 
 
 def get_metadata_path(
@@ -92,19 +92,33 @@ def get_metadata_path(
     return get_tos_dir(tos_root, channel) / f"{version}.json"
 
 
+def get_cache_dir() -> Path:
+    """Get the ToS cache directory."""
+    return Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
+
+
 def get_cache_path(channel: str | Channel) -> Path:
     """Get the ToS cache file path for the given channel."""
-    return Path(
-        user_cache_dir(APP_NAME, appauthor=APP_NAME),
-        f"{hash_channel(channel)}.cache",
-    )
+    return get_cache_dir() / f"{hash_channel(channel)}.cache"
 
 
-def get_all_paths(tos_root: Path) -> Iterator[Path]:
+def get_all_channel_paths(
+    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> Iterator[Path]:
     """Get all local ToS file paths."""
-    return get_tos_root(tos_root).glob(f"*/{TOS_GLOB}")
+    for tos_root in get_search_path(search_path):
+        yield from get_path(tos_root).glob(f"*/{TOS_GLOB}")
 
 
-def get_channel_paths(tos_root: Path, channel: str | Channel) -> Iterator[Path]:
+def get_channel_paths(
+    channel: str | Channel,
+    search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> Iterator[Path]:
     """Get all local ToS file paths for the given channel."""
-    return get_tos_dir(tos_root, channel).glob(TOS_GLOB)
+    for tos_root in get_search_path(search_path):
+        yield from get_tos_dir(tos_root, channel).glob(TOS_GLOB)
+
+
+def get_cache_paths() -> Iterator[Path]:
+    """Get all local ToS cache file paths."""
+    return get_cache_dir().glob("*.cache")

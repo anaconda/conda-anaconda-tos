@@ -39,19 +39,19 @@ def test_view_tos(
     tmp_path: Path,
     tos_full_lines: list[str],
 ) -> None:
-    view_tos(tmp_path, tos_channel, cache_timeout=0)
+    view_tos(tos_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [f"viewing ToS for {tos_channel}:", *tos_full_lines]
     # assert not err  # server log is output to stderr
 
-    view_tos(tmp_path, sample_channel, cache_timeout=0)
+    view_tos(sample_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
     assert sample_lines == [f"viewing ToS for {sample_channel}:", "ToS not found"]
     # assert not err  # server log is output to stderr
 
-    view_tos(tmp_path, tos_channel, sample_channel, cache_timeout=0)
+    view_tos(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
@@ -63,19 +63,19 @@ def test_accept_tos(
     sample_channel: str,
     tmp_path: Path,
 ) -> None:
-    accept_tos(tmp_path, tos_channel, cache_timeout=0)
+    accept_tos(tos_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [f"accepting ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
 
-    accept_tos(tmp_path, sample_channel, cache_timeout=0)
+    accept_tos(sample_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
     assert sample_lines == [f"ToS not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
-    accept_tos(tmp_path, tos_channel, sample_channel, cache_timeout=0)
+    accept_tos(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
@@ -87,19 +87,19 @@ def test_reject_tos(
     sample_channel: str,
     tmp_path: Path,
 ) -> None:
-    reject_tos(tmp_path, tos_channel, cache_timeout=0)
+    reject_tos(tos_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [f"rejecting ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
 
-    reject_tos(tmp_path, sample_channel, cache_timeout=0)
+    reject_tos(sample_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
     assert sample_lines == [f"ToS not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
-    reject_tos(tmp_path, tos_channel, sample_channel, cache_timeout=0)
+    reject_tos(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=0)
     out, err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
@@ -114,7 +114,7 @@ def test_get_tos(
     _, user_tos_root = mock_tos_search_path
 
     # list all channels and whether their ToS has been accepted
-    tos = list(get_tos(tmp_path, tos_channel, sample_channel, cache_timeout=0))
+    tos = list(get_tos(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=0))
     assert len(tos) == 2
     (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
@@ -124,8 +124,8 @@ def test_get_tos(
     assert not metadata_pair2
 
     # accept the ToS for a channel
-    accept_tos(user_tos_root, tos_channel, cache_timeout=0)
-    tos = list(get_tos(tmp_path, tos_channel, sample_channel, cache_timeout=0))
+    accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
+    tos = list(get_tos(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=0))
     assert len(tos) == 2
     (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
@@ -136,8 +136,8 @@ def test_get_tos(
     assert not metadata_pair2
 
     # list all channels that have been accepted even if it is not active
-    accept_tos(user_tos_root, tos_channel, cache_timeout=0)
-    tos = list(get_tos(tmp_path, cache_timeout=0))
+    accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
+    tos = list(get_tos(tos_root=tmp_path, cache_timeout=0))
     assert len(tos) == 1
     channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)
@@ -146,8 +146,8 @@ def test_get_tos(
     assert metadata_pair1.path == get_metadata_path(user_tos_root, tos_channel, 1)
 
     # even rejected ToS channels are listed
-    reject_tos(user_tos_root, tos_channel, cache_timeout=0)
-    tos = list(get_tos(tmp_path, cache_timeout=0))
+    reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
+    tos = list(get_tos(tos_root=tmp_path, cache_timeout=0))
     assert len(tos) == 1
     channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)

@@ -10,19 +10,24 @@ from conda.base.context import context
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
-from rich.console import Console
-from rich.table import Table
 
-from .path import SYSTEM_TOS_ROOT, USER_TOS_ROOT, get_cache_path
-from .tos import accept_tos, get_tos, reject_tos, view_tos
+from .path import (
+    SYSTEM_TOS_ROOT,
+    USER_TOS_ROOT,
+)
+from .tos import (
+    accept_tos,
+    clean_cache,
+    clean_tos,
+    info_tos,
+    list_tos,
+    reject_tos,
+    view_tos,
+)
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
     from typing import Iterator
-
-    from conda.models.channel import Channel
-
-    from .models import MetadataPathPair
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -51,6 +56,9 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--accept", "--agree", action="store_true")
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
+    action.add_argument("--info", action="store_true")
+    action.add_argument("--clean-cache", action="store_true")
+    action.add_argument("--clean-tos", action="store_true")
 
     parser.add_argument("--cache-timeout", action="store", type=int)
     parser.add_argument(
@@ -62,78 +70,32 @@ def configure_parser(parser: ArgumentParser) -> None:
     parser.set_defaults(cache_timeout=24 * 60 * 60)
 
 
-def version_mapping(metadata_pair: MetadataPathPair | None) -> str:
-    """Map the ToS version to a human-readable string."""
-    if not metadata_pair or not metadata_pair.metadata:
-        return "-"
-    return str(metadata_pair.metadata.tos_version)
-
-
-def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
-    """Map the ToS acceptance status to a human-readable string."""
-    if (
-        not metadata_pair
-        or not metadata_pair.metadata
-        or (tos_accepted := metadata_pair.metadata.tos_accepted) is None
-    ):
-        return "-"
-    elif tos_accepted:
-        if (
-            acceptance_timestamp := metadata_pair.metadata.acceptance_timestamp
-        ) is None:
-            return "unknown"
-        else:
-            # convert timestamp to localized time
-            return acceptance_timestamp.astimezone().isoformat(" ")
-    else:
-        return "rejected"
-
-
-def location_mapping(metadata_pair: MetadataPathPair | None) -> str:
-    """Map the ToS path to a human-readable string."""
-    if not metadata_pair or not metadata_pair.path:
-        return "-"
-    return str(metadata_pair.path.parent.parent)
-
-
-def cache_mapping(channel: str | Channel) -> str:
-    """Map the ToS cache path to a human-readable string."""
-    return str(get_cache_path(channel))
-
-
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
-    if args.accept:
-        accept_tos(args.tos_root, *context.channels, cache_timeout=args.cache_timeout)
-    elif args.reject:
-        reject_tos(args.tos_root, *context.channels, cache_timeout=args.cache_timeout)
-    elif args.view:
-        view_tos(*context.channels, cache_timeout=args.cache_timeout)
+    if args.info:
+        # TODO: refactor into `conda info` plugin
+        info_tos()
+    elif args.clean_cache:
+        # TODO: refactor info `conda clean` plugin
+        clean_cache()
+    elif args.clean_tos:
+        # TODO: refactor info `conda clean` plugin
+        clean_tos()
     else:
-        table = Table()
-        table.add_column("Channel")
-        table.add_column("Version")
-        table.add_column("Accepted")
-        table.add_column("Location")
-        table.add_column("Cache")
-
-        for channel, metadata_pair in get_tos(
-            args.tos_root,
+        action = list_tos
+        if args.accept:
+            action = accept_tos
+        elif args.reject:
+            action = reject_tos
+        elif args.view:
+            action = view_tos
+        action(
             *context.channels,
+            tos_root=args.tos_root,
             cache_timeout=args.cache_timeout,
-        ):
-            table.add_row(
-                channel.base_url,
-                version_mapping(metadata_pair),
-                accepted_mapping(metadata_pair),
-                location_mapping(metadata_pair),
-                cache_mapping(channel),
-            )
-
-        console = Console()
-        console.print(table)
+        )
     return 0
 
 

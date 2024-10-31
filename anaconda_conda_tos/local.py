@@ -16,7 +16,7 @@ from .path import (
     get_cache_path,
     get_channel_paths,
     get_metadata_path,
-    get_tos_search_path,
+    get_path,
 )
 
 if TYPE_CHECKING:
@@ -68,10 +68,10 @@ def write_metadata(
     return MetadataPathPair(metadata=metadata, path=path)
 
 
-def read_metadata(path: Path) -> LocalToSMetadata | None:
+def read_metadata(path: str | os.PathLike[str] | Path) -> LocalToSMetadata | None:
     """Load the ToS metadata from file."""
     try:
-        return LocalToSMetadata.model_validate_json(path.read_text())
+        return LocalToSMetadata.model_validate_json(get_path(path).read_text())
     except (OSError, ValidationError):
         # OSError: unable to access file, ignoring
         # ValidationError: corrupt file, ignoring
@@ -83,8 +83,7 @@ def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
     # find all ToS metadata files for the given channel
     metadata_pairs = [
         MetadataPathPair(metadata=metadata, path=path)
-        for tos_root in get_tos_search_path()
-        for path in get_channel_paths(tos_root, channel)
+        for path in get_channel_paths(channel)
         if (metadata := read_metadata(path))
     ]
 
