@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from datetime import datetime  # noqa: TCH003 # needed for Pydantic model
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import (
     BaseModel,
@@ -15,7 +15,7 @@ from pydantic import (
 )
 
 if TYPE_CHECKING:
-    from typing import Optional, Self
+    from typing import Self
 
 
 class RemoteToSMetadata(BaseModel):
