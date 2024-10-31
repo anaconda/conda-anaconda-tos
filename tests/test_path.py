@@ -63,13 +63,6 @@ def test_get_metadata_path(tmp_path: Path, sample_channel: str) -> None:
     )
 
 
-def test_get_cache_path(sample_channel: str, mock_cache_dir: Path) -> None:
-    assert (
-        get_cache_path(sample_channel)
-        == mock_cache_dir / f"{hash_channel(sample_channel)}.cache"
-    )
-
-
 def test_get_all_channel_paths(tmp_path: Path) -> None:
     (channel1 := tmp_path / "channel1").mkdir()
     (json1 := channel1 / "1.json").touch()
@@ -85,6 +78,13 @@ def test_get_channel_paths(tmp_path: Path, sample_channel: str) -> None:
     (json1 := channel1 / "1.json").touch()
     (json2 := channel1 / "2.json").touch()
     assert sorted(get_channel_paths(sample_channel, [tmp_path])) == [json1, json2]
+
+
+def test_get_cache_path(sample_channel: str, mock_cache_dir: Path) -> None:
+    assert (
+        get_cache_path(sample_channel)
+        == mock_cache_dir / f"{hash_channel(sample_channel)}.cache"
+    )
 
 
 def test_get_cache_paths(mock_cache_dir: Path) -> None:

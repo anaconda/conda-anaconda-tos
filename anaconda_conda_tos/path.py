@@ -94,11 +94,6 @@ def get_metadata_path(
     return get_tos_dir(tos_root, channel) / f"{version}.json"
 
 
-def get_cache_path(channel: str | Channel) -> Path:
-    """Get the ToS cache file path for the given channel."""
-    return CACHE_DIR / f"{hash_channel(channel)}.cache"
-
-
 def get_all_channel_paths(
     search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
@@ -114,6 +109,11 @@ def get_channel_paths(
     """Get all local ToS file paths for the given channel."""
     for path in get_search_path(search_path):
         yield from get_tos_dir(path, channel).glob(TOS_GLOB)
+
+
+def get_cache_path(channel: str | Channel) -> Path:
+    """Get the ToS cache file path for the given channel."""
+    return CACHE_DIR / f"{hash_channel(channel)}.cache"
 
 
 def get_cache_paths() -> Iterator[Path]:
