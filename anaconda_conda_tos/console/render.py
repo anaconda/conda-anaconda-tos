@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from rich.console import Console
 from rich.table import Table
 
+from ..path import CACHE_DIR, SEARCH_PATH
 from ..tos import get_tos
 from .mappers import accepted_mapping, location_mapping, version_mapping
 
@@ -42,6 +43,19 @@ def list_tos(
             accepted_mapping(metadata_pair),
             location_mapping(metadata_pair),
         )
+
+    console = Console()
+    console.print(table)
+
+
+def info_tos() -> None:
+    """Print ToS information."""
+    table = Table(show_header=False)
+    table.add_column("Key")
+    table.add_column("Value")
+
+    table.add_row("Search Path", "\n".join(SEARCH_PATH))
+    table.add_row("Cache Dir", str(CACHE_DIR))
 
     console = Console()
     console.print(table)

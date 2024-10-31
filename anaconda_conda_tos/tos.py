@@ -7,14 +7,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
-from rich.console import Console
 from rich.progress import track
-from rich.table import Table
 
 from .cache import get_all_metadatas, get_metadata
 from .exceptions import CondaToSMissingError
 from .local import write_metadata
-from .path import CACHE_DIR, SEARCH_PATH, get_all_channel_paths, get_cache_paths
+from .path import get_all_channel_paths, get_cache_paths
 
 if TYPE_CHECKING:
     import os
@@ -106,19 +104,6 @@ def get_tos(
         if channel not in seen:
             yield channel, metadata_pair
             seen.add(channel)
-
-
-def info_tos() -> None:
-    """Print ToS information."""
-    table = Table(show_header=False)
-    table.add_column("Key")
-    table.add_column("Value")
-
-    table.add_row("Search Path", "\n".join(SEARCH_PATH))
-    table.add_row("Cache Dir", str(CACHE_DIR))
-
-    console = Console()
-    console.print(table)
 
 
 def clean_cache() -> None:

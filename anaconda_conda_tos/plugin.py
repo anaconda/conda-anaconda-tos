@@ -11,19 +11,9 @@ from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
 
-from .console import list_tos
-from .path import (
-    SYSTEM_TOS_ROOT,
-    USER_TOS_ROOT,
-)
-from .tos import (
-    accept_tos,
-    clean_cache,
-    clean_tos,
-    info_tos,
-    reject_tos,
-    view_tos,
-)
+from .console import info_tos, list_tos
+from .path import SYSTEM_TOS_ROOT, USER_TOS_ROOT
+from .tos import accept_tos, clean_cache, clean_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
