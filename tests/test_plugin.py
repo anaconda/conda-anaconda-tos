@@ -198,14 +198,14 @@ def test_subcommand_tos_list(
     # assert not err  # server log is output to stderr
     assert not code
 
-    accept_tos(system_tos_root, tos_channel, cache_timeout=0)
+    accept_tos(tos_channel, tos_root=system_tos_root, cache_timeout=0)
     out, err, code = conda_cli("tos", f"--file={tmp_path}")
     assert tos_channel in out
     assert sample_channel in out
     # assert not err  # server log is output to stderr
     assert not code
 
-    reject_tos(user_tos_root, tos_channel, cache_timeout=0)
+    reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
     out, err, code = conda_cli("tos", f"--file={tmp_path}")
     assert tos_channel in out
     assert sample_channel in out
