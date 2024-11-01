@@ -30,7 +30,7 @@ def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
     elif tos_accepted:
         if acceptance_timestamp:
             # convert timestamp to localized time
-            return acceptance_timestamp.astimezone().isoformat(" ")
+            return acceptance_timestamp.astimezone().strftime("%Y-%m-%d")
         else:
             # accepted but no timestamp
             return "unknown"
@@ -38,7 +38,7 @@ def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
         return "rejected"
 
 
-def path_mapping(metadata_pair: MetadataPathPair | None) -> str:
+def location_mapping(metadata_pair: MetadataPathPair | None) -> str:
     """Map the ToS path to a human-readable string."""
     if not metadata_pair:
         return "-"

@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ..tos import get_tos
-from .mappers import accepted_mapping, path_mapping, version_mapping
+from .mappers import accepted_mapping, location_mapping, version_mapping
 
 if TYPE_CHECKING:
     from conda.models.channel import Channel
@@ -29,7 +29,7 @@ def list_tos(*channels: str | Channel) -> None:
             channel.base_url,
             version_mapping(metadata_pair),
             accepted_mapping(metadata_pair),
-            path_mapping(metadata_pair),
+            location_mapping(metadata_pair),
         )
 
     console = Console()
