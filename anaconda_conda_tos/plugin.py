@@ -12,7 +12,7 @@ from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
 
 from .console import list_tos
-from .path import SYSTEM_TOS_ROOT, USER_TOS_ROOT
+from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 from .tos import accept_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
@@ -32,12 +32,19 @@ def configure_parser(parser: ArgumentParser) -> None:
 
     location_grp = parser.add_argument_group("Local ToS Storage Location")
     location = location_grp.add_mutually_exclusive_group()
-    location.add_argument(
-        "--system", dest="tos_root", const=SYSTEM_TOS_ROOT, action="store_const"
-    )
-    location.add_argument(
-        "--user", dest="tos_root", const=USER_TOS_ROOT, action="store_const"
-    )
+    for flag, value, text in (
+        ("--site", SITE_TOS_ROOT, "System-wide ToS storage location."),
+        ("--system", SYSTEM_TOS_ROOT, "Conda installation ToS storage location."),
+        ("--user", USER_TOS_ROOT, "User ToS storage location."),
+        ("--env", ENV_TOS_ROOT, "Conda environment ToS storage location."),
+    ):
+        location.add_argument(
+            flag,
+            dest="tos_root",
+            action="store_const",
+            const=value,
+            help=text,
+        )
     location.add_argument("--file", dest="tos_root", action="store")
     parser.set_defaults(tos_root=USER_TOS_ROOT)
 
