@@ -78,6 +78,16 @@ def read_metadata(path: str | os.PathLike[str] | Path) -> LocalToSMetadata | Non
         return None
 
 
+def sorted_metadata_pairs(
+    metadata_pairs: Iterable[MetadataPathPair],
+) -> list[MetadataPathPair]:
+    """Sort ToS metadata pairs by version."""
+    return sorted(
+        metadata_pairs,
+        key=lambda metadata_pair: metadata_pair.metadata.tos_version,
+    )
+
+
 def get_local_metadata(
     channel: str | Channel,
     *,
@@ -96,10 +106,7 @@ def get_local_metadata(
         raise CondaToSMissingError(f"No ToS metadata found for {channel}")
 
     # sort metadatas by version
-    sorted_pairs = sorted(
-        metadata_pairs,
-        key=lambda metadata_pair: metadata_pair.metadata.tos_version,
-    )
+    sorted_pairs = sorted_metadata_pairs(metadata_pairs)
 
     # return newest metadata for channel
     return sorted_pairs[-1]

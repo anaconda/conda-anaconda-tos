@@ -10,7 +10,13 @@ from typing import TYPE_CHECKING
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
-from .local import get_local_metadata, read_metadata, touch_cache, write_metadata
+from .local import (
+    get_local_metadata,
+    read_metadata,
+    sorted_metadata_pairs,
+    touch_cache,
+    write_metadata,
+)
 from .models import MetadataPathPair
 from .path import get_all_channel_paths, get_cache_path
 from .remote import get_remote_metadata
@@ -81,23 +87,21 @@ def get_all_metadatas(
 
     # yield the latest ToS metadata for each channel
     for channel, metadata_pairs in channel_metadata_pairs.items():
-        # return cached metadata if not stale
         if not is_cache_stale(channel, cache_timeout):
-            yield (
-                channel,
-                sorted(
-                    metadata_pairs,
-                    key=lambda metadata_pair: metadata_pair.metadata.tos_version,
-                )[-1],
-            )
-            continue
-
-        try:
-            # fetch remote metadata
-            metadata = get_remote_metadata(channel)
-        except CondaToSMissingError:
-            # CondaToSMissingError: no ToS for this channel
-            touch_cache(channel)
+            # return cached metadata if not stale
+            yield channel, sorted_metadata_pairs(metadata_pairs)[-1]
         else:
-            # cache metadata for future use
-            yield channel, write_metadata(tos_root, channel, metadata)
+            try:
+                # fetch remote metadata
+                remote_metadata = get_remote_metadata(channel)
+            except CondaToSMissingError:
+                # CondaToSMissingError: no ToS for this channel
+                touch_cache(channel)
+            else:
+                metadata_pair = sorted_metadata_pairs(metadata_pairs)[-1]
+                if metadata_pair.metadata.tos_version >= remote_metadata.tos_version:
+                    touch_cache(channel)
+                    yield channel, metadata_pair
+                else:
+                    # cache metadata for future use
+                    yield channel, write_metadata(tos_root, channel, remote_metadata)
