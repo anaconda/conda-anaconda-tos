@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from time import sleep
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -39,10 +40,12 @@ def test_touch_cache(
     mocker.patch("anaconda_conda_tos.local.get_cache_path", return_value=path)
 
     now = datetime.now().timestamp()  # noqa: DTZ005
+    sleep(0.01)
     touch_cache(sample_channel)
     assert now < path.stat().st_mtime
 
     now = datetime.now().timestamp()  # noqa: DTZ005
+    sleep(0.01)
     touch_cache(sample_channel)
     assert now < path.stat().st_mtime
 
