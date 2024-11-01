@@ -16,25 +16,28 @@ from conda.models.channel import Channel
 if TYPE_CHECKING:
     from typing import Final, Iterable, Iterator
 
+SITE_TOS_ROOT: Final = "C:/ProgramData/conda/tos" if on_win else "/etc/conda/tos"
+
 # mirrors conda.base.context.sys_rc_path
 SYSTEM_TOS_ROOT: Final = "$CONDA_ROOT/conda-meta/tos"
 
 # mirrors conda.base.context.user_rc_path
 USER_TOS_ROOT: Final = "~/.conda/tos"
 
+ENV_TOS_ROOT: Final = "$CONDA_PREFIX/conda-meta/tos"
+
 # mirrors conda.base.constants.SEARCH_PATH locations
 SEARCH_PATH: Final = tuple(
     filter(
         None,
         (
-            "C:/ProgramData/conda/tos" if on_win else None,
-            "/etc/conda/tos" if not on_win else None,
+            SITE_TOS_ROOT,
             "/var/lib/conda/tos" if not on_win else None,
             SYSTEM_TOS_ROOT,
             "$XDG_CONFIG_HOME/conda/tos",
             "~/.config/conda/tos",
             USER_TOS_ROOT,
-            "$CONDA_PREFIX/conda-meta/tos",
+            ENV_TOS_ROOT,
             # mirrors $CONDARC
             "$CONDATOS",
         ),
