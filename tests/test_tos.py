@@ -118,13 +118,17 @@ def test_get_tos(
     assert len(tos) == 2
     (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
-    assert not metadata_pair1
+    assert metadata_pair1
+    assert not metadata_pair1.metadata.tos_accepted
+    assert metadata_pair1.path == get_metadata_path(tmp_path, tos_channel, 1)
     assert channel2 == Channel(sample_channel)
     assert not metadata_pair2
 
     # accept the ToS for a channel
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
-    tos = list(get_tos(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=0))
+    tos = list(
+        get_tos(tos_channel, sample_channel, tos_root=user_tos_root, cache_timeout=0)
+    )
     assert len(tos) == 2
     (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
@@ -136,7 +140,7 @@ def test_get_tos(
 
     # list all channels that have been accepted even if it is not active
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
-    tos = list(get_tos(tos_root=tmp_path, cache_timeout=0))
+    tos = list(get_tos(tos_root=user_tos_root, cache_timeout=0))
     assert len(tos) == 1
     channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)
@@ -146,7 +150,7 @@ def test_get_tos(
 
     # even rejected ToS channels are listed
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=0)
-    tos = list(get_tos(tos_root=tmp_path, cache_timeout=0))
+    tos = list(get_tos(tos_root=user_tos_root, cache_timeout=0))
     assert len(tos) == 1
     channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)
