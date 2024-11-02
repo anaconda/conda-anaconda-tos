@@ -7,14 +7,9 @@ from typing import TYPE_CHECKING
 from conda.base.context import context
 from conda.models.channel import Channel
 
+from anaconda_conda_tos.api import get_all_metadatas
 from anaconda_conda_tos.path import get_metadata_path
-from anaconda_conda_tos.tos import (
-    accept_tos,
-    get_channels,
-    get_tos,
-    reject_tos,
-    view_tos,
-)
+from anaconda_conda_tos.tos import accept_tos, get_channels, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -110,7 +105,7 @@ def test_get_tos(
     _, user_tos_root = mock_tos_search_path
 
     # list all channels and whether their ToS has been accepted
-    tos = list(get_tos(tos_channel, sample_channel))
+    tos = list(get_all_metadatas(tos_channel, sample_channel))
     assert len(tos) == 2
     (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
@@ -120,7 +115,7 @@ def test_get_tos(
 
     # accept the ToS for a channel
     accept_tos(user_tos_root, tos_channel)
-    tos = list(get_tos(tos_channel, sample_channel))
+    tos = list(get_all_metadatas(tos_channel, sample_channel))
     assert len(tos) == 2
     (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
     assert channel1 == Channel(tos_channel)
@@ -132,7 +127,7 @@ def test_get_tos(
 
     # list all channels that have been accepted even if it is not active
     accept_tos(user_tos_root, tos_channel)
-    tos = list(get_tos())
+    tos = list(get_all_metadatas())
     assert len(tos) == 1
     channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)
@@ -142,7 +137,7 @@ def test_get_tos(
 
     # even rejected ToS channels are listed
     reject_tos(user_tos_root, tos_channel)
-    tos = list(get_tos())
+    tos = list(get_all_metadatas())
     assert len(tos) == 1
     channel1, metadata_pair1 = tos[0]
     assert channel1 == Channel(tos_channel)

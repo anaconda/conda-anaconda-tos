@@ -81,7 +81,7 @@ def get_path(path: str | os.PathLike[str] | Path) -> Path:
 def get_search_path(
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
-    """Get all root ToS directories."""
+    """Get all root ToS directories ordered from highest to lowest priority."""
     seen: set[Path] = set()
     for tos_root in (*SEARCH_PATH, *(extend_search_path or ())):
         if (path := get_path(tos_root)).is_dir() and path not in seen:

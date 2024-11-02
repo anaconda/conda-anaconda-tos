@@ -19,6 +19,7 @@ from .models import RemoteToSMetadata
 from .path import get_cache_path
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Final
 
     from requests import Response

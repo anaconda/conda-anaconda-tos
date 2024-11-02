@@ -11,7 +11,7 @@ from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
 
-from .console import list_tos
+from .console import info_tos, list_tos
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 from .tos import accept_tos, reject_tos, view_tos
 
@@ -53,6 +53,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--accept", "--agree", action="store_true")
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
+    action.add_argument("--info", action="store_true")
 
     parser.add_argument(
         "--cache-timeout",
@@ -72,19 +73,21 @@ def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
-    action = list_tos
-    if args.accept:
-        action = accept_tos
-    elif args.reject:
-        action = reject_tos
-    elif args.view:
-        action = view_tos
-    action(
-        *context.channels,
-        tos_root=args.tos_root,
-        cache_timeout=args.cache_timeout,
-    )
-
+    if args.info:
+        info_tos()
+    else:
+        action = list_tos
+        if args.accept:
+            action = accept_tos
+        elif args.reject:
+            action = reject_tos
+        elif args.view:
+            action = view_tos
+        action(
+            *context.channels,
+            tos_root=args.tos_root,
+            cache_timeout=args.cache_timeout,
+        )
     return 0
 
 
