@@ -54,19 +54,37 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
 
+    parser.add_argument(
+        "--cache-timeout",
+        action="store",
+        type=int,
+        default=24 * 60 * 60,
+    )
+    parser.add_argument(
+        "--ignore-cache",
+        dest="cache_timeout",
+        action="store_const",
+        const=0,
+    )
+
 
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
+    action = list_tos
     if args.accept:
-        accept_tos(args.tos_root, *context.channels)
+        action = accept_tos
     elif args.reject:
-        reject_tos(args.tos_root, *context.channels)
+        action = reject_tos
     elif args.view:
-        view_tos(*context.channels)
-    else:
-        list_tos(*context.channels)
+        action = view_tos
+    action(
+        *context.channels,
+        tos_root=args.tos_root,
+        cache_timeout=args.cache_timeout,
+    )
+
     return 0
 
 

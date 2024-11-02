@@ -6,12 +6,16 @@ from __future__ import annotations
 
 import hashlib
 import os
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.common.compat import on_win
 from conda.common.configuration import custom_expandvars
 from conda.models.channel import Channel
+from platformdirs import user_cache_dir
+
+from . import APP_NAME
 
 if TYPE_CHECKING:
     from typing import Final, Iterable, Iterator
@@ -46,12 +50,18 @@ SEARCH_PATH: Final = tuple(
 
 TOS_GLOB: Final = "*.json"
 
+CACHE_DIR: Final = Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
 
+
+@lru_cache(maxsize=None)
 def hash_channel(channel: str | Channel) -> str:
     """Hash the channel to remove problematic characters (e.g. /)."""
     channel = Channel(channel)
     if not channel.base_url:
-        raise ValueError("Channel must have a base URL. MultiChannel cannot be hashed.")
+        raise ValueError(
+            "`channel` must have a base URL. "
+            "(hint: `conda.models.channel.MultiChannel` cannot be hashed)"
+        )
 
     hasher = hashlib.new("sha256")
     hasher.update(channel.channel_location.encode("utf-8"))
@@ -63,6 +73,8 @@ def get_path(path: str | os.PathLike[str] | Path) -> Path:
     """Expand environment variables and user home in the path."""
     if isinstance(path, str):
         path = custom_expandvars(path, os.environ)
+    elif not isinstance(path, Path):
+        raise TypeError("`path` must be a string or `pathlib.Path`.")
     return Path(path).expanduser()
 
 
@@ -110,3 +122,13 @@ def get_channel_paths(
     """Get all local ToS file paths for the given channel."""
     for path in get_search_path(extend_search_path):
         yield from get_tos_dir(path, channel).glob(TOS_GLOB)
+
+
+def get_cache_path(channel: str | Channel) -> Path:
+    """Get the ToS cache file path for the given channel."""
+    return CACHE_DIR / f"{hash_channel(channel)}.cache"
+
+
+def get_cache_paths() -> Iterator[Path]:
+    """Get all local ToS cache file paths."""
+    return CACHE_DIR.glob("*.cache")

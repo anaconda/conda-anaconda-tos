@@ -17,13 +17,13 @@ from .path import get_all_channel_paths, get_channel_paths, get_metadata_path, g
 if TYPE_CHECKING:
     import os
     from pathlib import Path
-    from typing import Any, Iterator
+    from typing import Any, Iterable, Iterator
 
 
 def write_metadata(
     tos_root: str | os.PathLike[str] | Path,
-    channel: Channel,
-    metadata: LocalToSMetadata | RemoteToSMetadata,
+    channel: str | Channel,
+    metadata: RemoteToSMetadata | LocalToSMetadata,
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
 ) -> MetadataPathPair:
@@ -32,19 +32,18 @@ def write_metadata(
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError("`channel` must have a base URL.")
-    if not isinstance(metadata, (LocalToSMetadata, RemoteToSMetadata)):
-        raise TypeError("`metadata` must be either a ToSMetadata or RemoteToSMetadata.")
+    if not isinstance(metadata, (RemoteToSMetadata, LocalToSMetadata)):
+        raise TypeError("`metadata` must be a RemoteToSMetadata or LocalToSMetadata.")
+
+    # always ensure the base_url is set
+    kwargs["base_url"] = channel.base_url
+
+    # always set the acceptance timestamp if tos_accepted is provided
+    if isinstance(kwargs.get("tos_accepted"), bool):
+        kwargs["acceptance_timestamp"] = datetime.now(tz=timezone.utc)
 
     # create/update ToSMetadata object
-    metadata = LocalToSMetadata(
-        **{
-            **metadata.model_dump(),
-            **kwargs,
-            # override the following fields with the current time and channel base URL
-            "acceptance_timestamp": datetime.now(tz=timezone.utc),
-            "base_url": channel.base_url,
-        }
-    )
+    metadata = LocalToSMetadata(**{**metadata.model_dump(), **kwargs})
 
     # write metadata to file
     path = get_metadata_path(tos_root, channel, metadata.tos_version)
@@ -58,18 +57,22 @@ def read_metadata(path: str | os.PathLike[str] | Path) -> LocalToSMetadata | Non
     """Load the ToS metadata from file."""
     try:
         return LocalToSMetadata.model_validate_json(get_path(path).read_text())
-    except (OSError, ValidationError):
-        # OSError: unable to access file, ignoring
-        # ValidationError: corrupt file, ignoring
+    except (FileNotFoundError, ValidationError):
+        # FileNotFoundError: metadata path doesn't exist
+        # ValidationError: invalid JSON schema
         return None
 
 
-def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
+def get_local_metadata(
+    channel: str | Channel,
+    *,
+    extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
+) -> MetadataPathPair:
     """Get the latest ToS metadata for the given channel."""
     # find all ToS metadata files for the given channel
     metadata_pairs = [
         MetadataPathPair(metadata=metadata, path=path)
-        for path in get_channel_paths(channel)
+        for path in get_channel_paths(channel, extend_search_path=extend_search_path)
         if (metadata := read_metadata(path))
     ]
 
@@ -77,35 +80,23 @@ def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
     if not metadata_pairs:
         raise CondaToSMissingError(f"No ToS metadata found for {channel}")
 
-    # sort metadatas by version
-    sorted_pairs = sorted(
-        metadata_pairs,
-        key=lambda metadata_pair: metadata_pair.metadata.tos_version,
-    )
-
-    # return newest metadata for channel
-    return sorted_pairs[-1]
+    # return newest (and highest priority) metadata for channel
+    return sorted(metadata_pairs)[0]
 
 
-def get_all_local_metadatas(
-    channel: Channel | None = None,
+def get_local_metadatas(
+    *,
+    extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[tuple[Channel, MetadataPathPair]]:
-    """Yield all ToS metadata for the given channel."""
+    """Yield all ToS metadata."""
     # group metadata by channel
-    grouped_metadatas: dict[Channel, list[MetadataPathPair]] = {}
-    for path in get_channel_paths(channel) if channel else get_all_channel_paths():
+    grouped_metadata_pairs: dict[Channel, list[MetadataPathPair]] = {}
+    for path in get_all_channel_paths(extend_search_path=extend_search_path):
         if metadata := read_metadata(path):
-            key = channel or Channel(metadata.base_url)
-            grouped_metadatas.setdefault(key, []).append(
-                MetadataPathPair(metadata=metadata, path=path)
-            )
+            channel = Channel(metadata.base_url)
+            metadata_pair = MetadataPathPair(metadata=metadata, path=path)
+            grouped_metadata_pairs.setdefault(channel, []).append(metadata_pair)
 
-    # return the newest metadata for each channel
-    for channel, metadata_pairs in grouped_metadatas.items():
-        yield (
-            channel,
-            sorted(
-                metadata_pairs,
-                key=lambda metadata_pair: metadata_pair.metadata.tos_version,
-            )[-1],
-        )
+    # return the newest (and highest priority) metadata for each channel
+    for channel, metadata_pairs in grouped_metadata_pairs.items():
+        yield channel, sorted(metadata_pairs)[0]

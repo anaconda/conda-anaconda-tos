@@ -6,28 +6,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ..models import RemoteToSMetadata
+
 if TYPE_CHECKING:
-    from ..models import MetadataPathPair
+    from pathlib import Path
+
+    from ..models import LocalToSMetadata
 
 
-def version_mapping(metadata_pair: MetadataPathPair | None) -> str:
-    """Map the ToS version to a human-readable string."""
-    if not metadata_pair or metadata_pair.metadata.tos_version is None:
-        return "-"
-    return str(metadata_pair.metadata.tos_version)
-
-
-def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
+def accepted_mapping(metadata: RemoteToSMetadata | LocalToSMetadata) -> str:
     """Map the ToS acceptance status to a human-readable string."""
-    if not metadata_pair:
+    if type(metadata) is RemoteToSMetadata:
         return "-"
 
-    tos_accepted = metadata_pair.metadata.tos_accepted
-    acceptance_timestamp = metadata_pair.metadata.acceptance_timestamp
-    if tos_accepted is None:
-        # neither accepted nor rejected
-        return "-"
-    elif tos_accepted:
+    tos_accepted = metadata.tos_accepted
+    acceptance_timestamp = metadata.acceptance_timestamp
+    if tos_accepted:
         if acceptance_timestamp:
             # convert timestamp to localized time
             return acceptance_timestamp.astimezone().strftime("%Y-%m-%d")
@@ -38,8 +32,8 @@ def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
         return "rejected"
 
 
-def location_mapping(metadata_pair: MetadataPathPair | None) -> str:
+def location_mapping(path: Path | None) -> str:
     """Map the ToS path to a human-readable string."""
-    if not metadata_pair:
+    if not path:
         return "-"
-    return str(metadata_pair.path.parent.parent)
+    return str(path.parent.parent)

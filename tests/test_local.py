@@ -13,8 +13,8 @@ from pydantic import ValidationError
 from anaconda_conda_tos.exceptions import CondaToSMissingError
 from anaconda_conda_tos.local import (
     LocalToSMetadata,
-    get_all_local_metadatas,
     get_local_metadata,
+    get_local_metadatas,
     read_metadata,
     write_metadata,
 )
@@ -92,9 +92,9 @@ def test_get_all_tos_metadatas(
     tos_channel: str,
 ) -> None:
     system_tos_root, user_tos_root = mock_tos_search_path
-    assert len(list(get_all_local_metadatas())) == 0
-    assert len(list(get_all_local_metadatas(tos_channel))) == 0
+    assert len(list(get_local_metadatas())) == 0
+    assert len(list(get_local_metadatas(tos_channel))) == 0
     accept_tos(system_tos_root, tos_channel)
-    assert len(list(get_all_local_metadatas())) == 1
+    assert len(list(get_local_metadatas())) == 1
     reject_tos(user_tos_root, tos_channel)
-    assert len(list(get_all_local_metadatas())) == 1
+    assert len(list(get_local_metadatas())) == 1
