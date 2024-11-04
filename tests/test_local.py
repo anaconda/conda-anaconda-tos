@@ -8,7 +8,6 @@ from uuid import uuid4
 
 import pytest
 from conda.models.channel import Channel
-from pydantic import ValidationError
 
 from anaconda_conda_tos.exceptions import CondaToSMissingError
 from anaconda_conda_tos.local import (
@@ -20,79 +19,131 @@ from anaconda_conda_tos.local import (
 )
 from anaconda_conda_tos.models import MetadataPathPair, RemoteToSMetadata
 from anaconda_conda_tos.path import get_metadata_path
-from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from pytest import MonkeyPatch
 
-def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
-    channel = Channel(tos_channel)
-    now = datetime.now(tz=timezone.utc).timestamp()
-    remote = RemoteToSMetadata(
-        tos_version=42,
-        text=f"ToS full text\n\n{uuid4().hex}",
-        **{uuid4().hex: uuid4().hex},
-    )
-    metadata = LocalToSMetadata(
-        **remote.model_dump(),
-        tos_accepted=True,
-        # the following fields are overridden in write_metadata
-        acceptance_timestamp=now,
-        base_url=channel.base_url,
+
+def _similar_metadata(
+    metadata1: LocalToSMetadata | RemoteToSMetadata,
+    metadata2: LocalToSMetadata | RemoteToSMetadata,
+) -> bool:
+    return type(metadata1) is type(metadata2) and all(
+        getattr(metadata1, key) == getattr(metadata2, key)
+        for key in set(metadata1.model_fields) - {"acceptance_timestamp"}
     )
 
+
+CHANNEL = Channel("someplace")
+NOW = datetime.now(tz=timezone.utc)
+REMOTE_METADATA = RemoteToSMetadata(
+    tos_version=42,
+    text=f"ToS full text\n\n{uuid4().hex}",
+    **{uuid4().hex: uuid4().hex},
+)
+LOCAL_METADATA = LocalToSMetadata(
+    **REMOTE_METADATA.model_dump(),
+    tos_accepted=True,
+    acceptance_timestamp=NOW,
+    base_url=CHANNEL.base_url,
+)
+
+
+def test_write_metadata(tmp_path: Path) -> None:
+    path = get_metadata_path(tmp_path, CHANNEL, LOCAL_METADATA.tos_version)
+
+    # invalid input
     with pytest.raises(ValueError):
-        write_metadata(tmp_path, "defaults", metadata)
-
-    write_metadata(tmp_path, tos_channel, metadata)
+        write_metadata(tmp_path, "defaults", LOCAL_METADATA, tos_accepted=True)
 
     with pytest.raises(TypeError):
-        write_metadata(tmp_path, tos_channel, "metadata")  # type: ignore[arg-type]
+        write_metadata(tmp_path, CHANNEL, object(), tos_accepted=True)  # type: ignore[arg-type]
 
-    with pytest.raises(ValidationError):
-        write_metadata(tmp_path, tos_channel, remote)
+    with pytest.raises(TypeError):
+        write_metadata(tmp_path, CHANNEL, LOCAL_METADATA, tos_accepted=object())  # type: ignore[arg-type]
 
-    write_metadata(tmp_path, tos_channel, remote, tos_accepted=True)
-
-    write_metadata(tmp_path, tos_channel, metadata)
-    contents = get_metadata_path(tmp_path, tos_channel, 42).read_text()
-    local = LocalToSMetadata.model_validate_json(contents)
-    assert local.model_fields == metadata.model_fields
-    assert all(
-        getattr(local, key) == getattr(metadata, key)
-        for key in set(local.model_fields) - {"acceptance_timestamp"}
+    # write with RemoteToSMetadata
+    metadata_pair = write_metadata(
+        tmp_path,
+        CHANNEL,
+        REMOTE_METADATA,
+        tos_accepted=True,
     )
+    assert isinstance(metadata_pair, MetadataPathPair)
+    assert _similar_metadata(metadata_pair.metadata, LOCAL_METADATA)
+    assert metadata_pair.path == path
+
+    # write with LocalToSMetadata
+    metadata_pair = write_metadata(tmp_path, CHANNEL, LOCAL_METADATA, tos_accepted=True)
+    assert isinstance(metadata_pair, MetadataPathPair)
+    assert _similar_metadata(metadata_pair.metadata, LOCAL_METADATA)
+    assert metadata_pair.path == path
 
 
-def test_read_metadata(mock_search_path: tuple[Path, Path], tos_channel: str) -> None:
-    system_tos_root, user_tos_root = mock_search_path
-    assert not read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
-    accept_tos(system_tos_root, tos_channel)
-    assert read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
+def test_read_metadata(tmp_path: Path) -> None:
+    path = get_metadata_path(tmp_path, CHANNEL, REMOTE_METADATA.tos_version)
+
+    # missing file
+    assert not read_metadata(path)
+
+    # corrupt file
+    path.parent.mkdir(parents=True)
+    path.write_text("corrupt")
+    assert not read_metadata(path)
+
+    # invalid JSON schema
+    path.write_text("{}")
+    assert not read_metadata(path)
+
+    # valid metadata
+    write_metadata(tmp_path, CHANNEL, REMOTE_METADATA, tos_accepted=True)
+    assert read_metadata(path)
 
 
-def test_get_channel_tos_metadata(
-    mock_search_path: tuple[Path, Path],
-    tos_channel: str,
-) -> None:
-    system_tos_root, user_tos_root = mock_search_path
+def test_get_local_metadata(tmp_path: Path) -> None:
+    # missing metadata
     with pytest.raises(CondaToSMissingError):
-        get_local_metadata(tos_channel)
-    accept_tos(system_tos_root, tos_channel)
-    assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)
-    reject_tos(user_tos_root, tos_channel)
-    assert isinstance(get_local_metadata(tos_channel), MetadataPathPair)
+        get_local_metadata(CHANNEL)
+
+    # valid reads
+    expected = write_metadata(tmp_path, CHANNEL, REMOTE_METADATA, tos_accepted=True)
+    assert get_local_metadata(CHANNEL, extend_search_path=[tmp_path]) == expected
+
+    expected = write_metadata(tmp_path, CHANNEL, REMOTE_METADATA, tos_accepted=False)
+    assert get_local_metadata(CHANNEL, extend_search_path=[tmp_path]) == expected
 
 
-def test_get_all_tos_metadatas(
+def test_get_local_metadatas(
     mock_search_path: tuple[Path, Path],
-    tos_channel: str,
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     system_tos_root, user_tos_root = mock_search_path
+    monkeypatch.setenv("CONDATOS", str(tmp_path))
+
+    # no metadata
     assert len(list(get_local_metadatas())) == 0
-    assert len(list(get_local_metadatas(tos_channel))) == 0
-    accept_tos(system_tos_root, tos_channel)
-    assert len(list(get_local_metadatas())) == 1
-    reject_tos(user_tos_root, tos_channel)
-    assert len(list(get_local_metadatas())) == 1
+
+    # $CONDATOS is lowest priority
+    expected = write_metadata(tmp_path, CHANNEL, REMOTE_METADATA, tos_accepted=True)
+    assert list(get_local_metadatas()) == [(CHANNEL, expected)]
+
+    # user ToS root is higher priority over custom ToS root
+    expected = write_metadata(
+        user_tos_root,
+        CHANNEL,
+        REMOTE_METADATA,
+        tos_accepted=False,
+    )
+    assert list(get_local_metadatas()) == [(CHANNEL, expected)]
+
+    # system ToS root is highest priority
+    expected = write_metadata(
+        system_tos_root,
+        CHANNEL,
+        REMOTE_METADATA,
+        tos_accepted=True,
+    )
+    assert list(get_local_metadatas()) == [(CHANNEL, expected)]
