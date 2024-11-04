@@ -77,14 +77,8 @@ def get_local_metadata(channel: str | Channel) -> MetadataPathPair:
     if not metadata_pairs:
         raise CondaToSMissingError(f"No ToS metadata found for {channel}")
 
-    # sort metadatas by version
-    sorted_pairs = sorted(
-        metadata_pairs,
-        key=lambda metadata_pair: metadata_pair.metadata.tos_version,
-    )
-
     # return newest metadata for channel
-    return sorted_pairs[-1]
+    return sorted(metadata_pairs)[0]
 
 
 def get_all_local_metadatas(
@@ -102,10 +96,4 @@ def get_all_local_metadatas(
 
     # return the newest metadata for each channel
     for channel, metadata_pairs in grouped_metadatas.items():
-        yield (
-            channel,
-            sorted(
-                metadata_pairs,
-                key=lambda metadata_pair: metadata_pair.metadata.tos_version,
-            )[-1],
-        )
+        yield channel, sorted(metadata_pairs)[0]
