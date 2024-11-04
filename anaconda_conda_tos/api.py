@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
-from .local import get_local_metadata, get_local_metadatas
+from .local import get_local_metadata, get_local_metadatas, write_metadata
 from .models import MetadataPathPair
 from .remote import get_remote_metadata
 
@@ -34,8 +34,8 @@ def get_channels(*channels: str | Channel) -> Iterable[Channel]:
 
 def get_single_metadata(
     channel: str | Channel,
-    tos_root: str | os.PathLike[str] | Path,
     *,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> MetadataPathPair:
     """Get the ToS metadata for the given channel."""
@@ -59,8 +59,8 @@ def get_single_metadata(
 
 
 def get_stored_metadatas(
-    tos_root: str | os.PathLike[str] | Path,
     *,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> Iterator[tuple[Channel, MetadataPathPair]]:
     """Yield all ToS metadatas."""
@@ -70,6 +70,8 @@ def get_stored_metadatas(
         except CondaToSMissingError:
             # CondaToSMissingError: no remote ToS metadata
             continue
+
+        print(channel, local_pair)
 
         # yield local metadata if it's the same version as the remote
         if local_pair.metadata.tos_version >= remote_metadata.tos_version:
@@ -90,7 +92,9 @@ def get_all_metadatas(
         try:
             yield (
                 channel,
-                get_single_metadata(channel, tos_root, cache_timeout=cache_timeout),
+                get_single_metadata(
+                    channel, tos_root=tos_root, cache_timeout=cache_timeout
+                ),
             )
         except CondaToSMissingError:
             yield channel, None
@@ -98,8 +102,34 @@ def get_all_metadatas(
 
     # list all other ToS that have been accepted/rejected
     for channel, metadata_pair in get_stored_metadatas(
-        tos_root, cache_timeout=cache_timeout
+        tos_root=tos_root, cache_timeout=cache_timeout
     ):
         if channel not in seen:
             yield channel, metadata_pair
             seen.add(channel)
+
+
+def accept_metadata(
+    channel: str | Channel,
+    *,
+    tos_root: str | os.PathLike[str] | Path,
+    cache_timeout: int | float | None,
+) -> MetadataPathPair:
+    """Accept the ToS metadata for the given channel."""
+    metadata_pair = get_single_metadata(
+        channel, tos_root=tos_root, cache_timeout=cache_timeout
+    )
+    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=True)
+
+
+def reject_metadata(
+    channel: str | Channel,
+    *,
+    tos_root: str | os.PathLike[str] | Path,
+    cache_timeout: int | float | None,
+) -> MetadataPathPair:
+    """Reject the ToS metadata for the given channel."""
+    metadata_pair = get_single_metadata(
+        channel, tos_root=tos_root, cache_timeout=cache_timeout
+    )
+    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=False)

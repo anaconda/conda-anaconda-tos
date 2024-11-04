@@ -6,6 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+from conda.models.channel import Channel
 from http_test_server import (
     TOS_METADATA,
     TOS_TEXT,
@@ -30,17 +31,17 @@ pytest_plugins = (
 
 
 @pytest.fixture(scope="session")
-def tos_channel(tmp_path_factory: TempPathFactory) -> Iterator[str]:
+def tos_channel(tmp_path_factory: TempPathFactory) -> Iterator[Channel]:
     path = tmp_path_factory.mktemp("tos_channel")
     with serve_tos_channel(path) as url:
-        yield url
+        yield Channel(url)
 
 
 @pytest.fixture(scope="session")
-def sample_channel() -> Iterator[str]:
+def sample_channel() -> Iterator[Channel]:
     # Serve the sample channel as-is
     with serve_sample_channel() as url:
-        yield url
+        yield Channel(url)
 
 
 @pytest.fixture(scope="session")
