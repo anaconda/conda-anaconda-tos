@@ -54,8 +54,9 @@ def tos_metadata() -> RemoteToSMetadata:
 
 
 @pytest.fixture
-def mock_tos_search_path(
-    monkeypatch: MonkeyPatch, tmp_path_factory: TempPathFactory
+def mock_search_path(
+    monkeypatch: MonkeyPatch,
+    tmp_path_factory: TempPathFactory,
 ) -> tuple[Path, Path]:
     tos_root = tmp_path_factory.mktemp("tos")
     (system_tos_root := tos_root / "system").mkdir()
@@ -66,3 +67,10 @@ def mock_tos_search_path(
         (tos_root / "other", system_tos_root, user_tos_root, "$CONDATOS"),
     )
     return (system_tos_root, user_tos_root)
+
+
+@pytest.fixture(autouse=True)
+def mock_cache_dir(monkeypatch: MonkeyPatch, tmp_path_factory: TempPathFactory) -> Path:
+    cache_dir = tmp_path_factory.mktemp("cache")
+    monkeypatch.setattr(path, "CACHE_DIR", cache_dir)
+    return cache_dir

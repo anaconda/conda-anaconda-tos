@@ -100,9 +100,11 @@ def test_reject_tos(
 
 
 def test_get_tos(
-    tos_channel: str, sample_channel: str, mock_tos_search_path: tuple[Path, Path]
+    tos_channel: str,
+    sample_channel: str,
+    mock_search_path: tuple[Path, Path],
 ) -> None:
-    _, user_tos_root = mock_tos_search_path
+    _, user_tos_root = mock_search_path
 
     # list all channels and whether their ToS has been accepted
     tos = list(get_all_metadatas(tos_channel, sample_channel))

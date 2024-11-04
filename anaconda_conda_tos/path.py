@@ -20,17 +20,19 @@ from . import APP_NAME
 if TYPE_CHECKING:
     from typing import Final, Iterable, Iterator
 
+#: Site ToS directory. This is the highest priority location.
 SITE_TOS_ROOT: Final = "C:/ProgramData/conda/tos" if on_win else "/etc/conda/tos"
 
-# mirrors conda.base.context.sys_rc_path
+#: System ToS directory. Located in the conda installation.
 SYSTEM_TOS_ROOT: Final = "$CONDA_ROOT/conda-meta/tos"
 
-# mirrors conda.base.context.user_rc_path
+#: User ToS directory. Located in the user home directory.
 USER_TOS_ROOT: Final = "~/.conda/tos"
 
+#: Environment ToS directory. Located in the current conda environment.
 ENV_TOS_ROOT: Final = "$CONDA_PREFIX/conda-meta/tos"
 
-# mirrors conda.base.constants.SEARCH_PATH locations
+#: Search path for ToS directories.
 SEARCH_PATH: Final = tuple(
     filter(
         None,
@@ -48,8 +50,10 @@ SEARCH_PATH: Final = tuple(
     ),
 )
 
+#: ToS file glob pattern.
 TOS_GLOB: Final = "*.json"
 
+#: OS and user specific ToS cache directory.
 CACHE_DIR: Final = Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
 
 

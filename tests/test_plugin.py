@@ -165,9 +165,9 @@ def test_subcommand_tos_list(
     conda_cli: CondaCLIFixture,
     tos_channel: str,
     sample_channel: str,
-    mock_tos_search_path: tuple[Path, Path],
+    mock_search_path: tuple[Path, Path],
 ) -> None:
-    system_tos_root, user_tos_root = mock_tos_search_path
+    system_tos_root, user_tos_root = mock_search_path
 
     mocker.patch("os.get_terminal_size", return_value=os.terminal_size((100, 100)))
 

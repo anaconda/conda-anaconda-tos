@@ -65,20 +65,18 @@ def test_write_metadata(tos_channel: str, tmp_path: Path) -> None:
     )
 
 
-def test_read_metadata(
-    mock_tos_search_path: tuple[Path, Path], tos_channel: str
-) -> None:
-    system_tos_root, user_tos_root = mock_tos_search_path
+def test_read_metadata(mock_search_path: tuple[Path, Path], tos_channel: str) -> None:
+    system_tos_root, user_tos_root = mock_search_path
     assert not read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
     accept_tos(system_tos_root, tos_channel)
     assert read_metadata(get_metadata_path(system_tos_root, tos_channel, 1))
 
 
 def test_get_channel_tos_metadata(
-    mock_tos_search_path: tuple[Path, Path],
+    mock_search_path: tuple[Path, Path],
     tos_channel: str,
 ) -> None:
-    system_tos_root, user_tos_root = mock_tos_search_path
+    system_tos_root, user_tos_root = mock_search_path
     with pytest.raises(CondaToSMissingError):
         get_local_metadata(tos_channel)
     accept_tos(system_tos_root, tos_channel)
@@ -88,10 +86,10 @@ def test_get_channel_tos_metadata(
 
 
 def test_get_all_tos_metadatas(
-    mock_tos_search_path: tuple[Path, Path],
+    mock_search_path: tuple[Path, Path],
     tos_channel: str,
 ) -> None:
-    system_tos_root, user_tos_root = mock_tos_search_path
+    system_tos_root, user_tos_root = mock_search_path
     assert len(list(get_local_metadatas())) == 0
     assert len(list(get_local_metadatas(tos_channel))) == 0
     accept_tos(system_tos_root, tos_channel)
