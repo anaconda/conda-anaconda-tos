@@ -91,13 +91,13 @@ def get_local_metadatas(
 ) -> Iterator[tuple[Channel, MetadataPathPair]]:
     """Yield all ToS metadata."""
     # group metadata by channel
-    grouped_metadata_pairs: dict[Channel, list[MetadataPathPair]] = {}
+    grouped_metadatas: dict[Channel, list[MetadataPathPair]] = {}
     for path in get_all_channel_paths(extend_search_path=extend_search_path):
         if metadata := read_metadata(path):
             channel = Channel(metadata.base_url)
             metadata_pair = MetadataPathPair(metadata=metadata, path=path)
-            grouped_metadata_pairs.setdefault(channel, []).append(metadata_pair)
+            grouped_metadatas.setdefault(channel, []).append(metadata_pair)
 
     # return the newest (and highest priority) metadata for each channel
-    for channel, metadata_pairs in grouped_metadata_pairs.items():
+    for channel, metadata_pairs in grouped_metadatas.items():
         yield channel, sorted(metadata_pairs)[0]
