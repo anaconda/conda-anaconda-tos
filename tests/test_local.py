@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
+from conda.common.compat import on_win
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
@@ -83,12 +85,12 @@ def test_write_metadata(tmp_path: Path) -> None:
     assert metadata_pair.path == path
 
     try:
-        tmp_path.chmod(0o000)
+        path.chmod(0o000)
         with pytest.raises(CondaToSPermissionError):
             write_metadata(tmp_path, CHANNEL, LOCAL_METADATA)
     finally:
-        # cleanup so tmp_dir can be removed
-        tmp_path.chmod(0o700)
+        # cleanup so tmp_path can be removed
+        path.chmod(0o700)
 
 
 def test_read_metadata(tmp_path: Path) -> None:
@@ -108,10 +110,11 @@ def test_read_metadata(tmp_path: Path) -> None:
 
     try:
         path.chmod(0o000)
-        with pytest.raises(CondaToSPermissionError):
+        with nullcontext() if on_win else pytest.raises(CondaToSPermissionError):
+            # Windows can only make the path read-only
             read_metadata(path)
     finally:
-        # cleanup so tmp_dir can be removed
+        # cleanup so tmp_path can be removed
         path.chmod(0o644)
 
     # valid metadata

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import os
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
+from conda.common.compat import on_win
 
 from anaconda_conda_tos.exceptions import (
     CondaToSInvalidError,
@@ -98,17 +100,15 @@ def test_write_cached_endpoint(
     with pytest.raises(TypeError):
         write_cached_endpoint(sample_channel, object())  # type: ignore[arg-type]
 
+    (path := tmp_path / "cache").touch()
+    mocker.patch("anaconda_conda_tos.remote.get_cache_path", return_value=path)
     try:
-        tmp_path.chmod(0o000)
+        path.chmod(0o000)
         with pytest.raises(CondaToSPermissionError):
-            mocker.patch(
-                "anaconda_conda_tos.remote.get_cache_path",
-                return_value=tmp_path / "cache",
-            )
             write_cached_endpoint(sample_channel, remote_metadata)
     finally:
-        # cleanup so tmp_dir can be removed
-        tmp_path.chmod(0o700)
+        # cleanup so tmp_path can be removed
+        path.chmod(0o644)
 
 
 def test_get_remote_metadata(
@@ -157,10 +157,11 @@ def test_get_remote_metadata(
 
     try:
         cache.chmod(0o000)
-        with pytest.raises(CondaToSPermissionError):
+        with nullcontext() if on_win else pytest.raises(CondaToSPermissionError):
+            # Windows can only make the path read-only
             get_remote_metadata("channel")
     finally:
-        # cleanup so tmp_dir can be removed
+        # cleanup so tmp_path can be removed
         cache.chmod(0o644)
 
     cache.write_text("{}")
