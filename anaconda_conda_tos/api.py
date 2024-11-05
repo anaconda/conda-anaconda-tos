@@ -37,38 +37,22 @@ def get_channels(*channels: str | Channel) -> Iterable[Channel]:
                 seen.add(channel)
 
 
-def view_tos(*channels: str | Channel) -> None:
-    """Print the ToS full text for the given channels."""
-    for channel in get_channels(*channels):
-        print(f"viewing ToS for {channel}:")
-        try:
-            print(get_metadata(channel).text)
-        except CondaToSMissingError:
-            print("ToS not found")
+def accept_tos(
+    tos_root: str | os.PathLike | Path,
+    channel: str | Channel,
+) -> MetadataPathPair:
+    """Accept the ToS for the given channel."""
+    metadata = get_metadata(channel)
+    return write_metadata(tos_root, channel, metadata, tos_accepted=True)
 
 
-def accept_tos(tos_root: str | os.PathLike | Path, *channels: str | Channel) -> None:
-    """Accept the ToS for the given channels."""
-    for channel in get_channels(*channels):
-        try:
-            metadata = get_metadata(channel)
-        except CondaToSMissingError:
-            print(f"ToS not found for {channel}")
-        else:
-            print(f"accepting ToS for {channel}")
-            write_metadata(tos_root, channel, metadata, tos_accepted=True)
-
-
-def reject_tos(tos_root: str | os.PathLike | Path, *channels: str | Channel) -> None:
-    """Reject the ToS for the given channels."""
-    for channel in get_channels(*channels):
-        try:
-            metadata = get_metadata(channel)
-        except CondaToSMissingError:
-            print(f"ToS not found for {channel}")
-        else:
-            print(f"rejecting ToS for {channel}")
-            write_metadata(tos_root, channel, metadata, tos_accepted=False)
+def reject_tos(
+    tos_root: str | os.PathLike | Path,
+    channel: str | Channel,
+) -> MetadataPathPair:
+    """Reject the ToS for the given channel."""
+    metadata = get_metadata(channel)
+    return write_metadata(tos_root, channel, metadata, tos_accepted=False)
 
 
 def get_tos(
