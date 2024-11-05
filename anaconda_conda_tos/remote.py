@@ -97,28 +97,24 @@ def get_cached_endpoint(
     return path
 
 
-def write_cached_endpoint(channel: str | Channel, metadata: RemoteToSMetadata) -> Path:
+def write_cached_endpoint(
+    channel: str | Channel,
+    metadata: RemoteToSMetadata | None,
+) -> Path:
     """Write the ToS cache for the given channel."""
     # argument validation/coercion
     path = get_cache_path(channel)
-    if not isinstance(metadata, RemoteToSMetadata):
+    if metadata and not isinstance(metadata, RemoteToSMetadata):
         raise TypeError("`metadata` must be a RemoteToSMetadata.")
 
     # write to cache
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(metadata.model_dump_json())
+    if metadata:
+        path.write_text(metadata.model_dump_json())
+    else:
+        path.touch()
 
     return path
-
-
-def touch_cached_endpoint(channel: str | Channel) -> None:
-    """Touch the ToS cache for the given channel."""
-    # argument validation/coercion
-    path = get_cache_path(channel)
-
-    # touch cache
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.touch()
 
 
 def get_remote_metadata(
@@ -152,7 +148,7 @@ def get_remote_metadata(
     except CondaToSMissingError:
         # CondaToSMissingError: no ToS for this channel
         # create an empty cache to prevent repeated requests
-        touch_cached_endpoint(channel)
+        write_cached_endpoint(channel, None)
         raise
     except (AttributeError, TypeError, ValidationError) as exc:
         # AttributeError: response has no JSON

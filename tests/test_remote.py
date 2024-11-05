@@ -15,7 +15,6 @@ from anaconda_conda_tos.remote import (
     get_cached_endpoint,
     get_endpoint,
     get_remote_metadata,
-    touch_cached_endpoint,
     write_cached_endpoint,
 )
 
@@ -76,19 +75,17 @@ def test_write_cached_endpoint(sample_channel: str) -> None:
 
     path = get_cache_path(sample_channel)
     assert not path.exists()
+
+    write_cached_endpoint(sample_channel, None)
+    assert path.exists()
+    assert not path.read_text()
+
     write_cached_endpoint(sample_channel, remote_metadata)
     assert path.exists()
     assert RemoteToSMetadata.model_validate_json(path.read_text()) == remote_metadata
 
     with pytest.raises(TypeError):
         write_cached_endpoint(sample_channel, object())  # type: ignore[arg-type]
-
-
-def test_touch_cached_endpoint(sample_channel: str) -> None:
-    path = get_cache_path(sample_channel)
-    assert not path.exists()
-    touch_cached_endpoint(sample_channel)
-    assert path.exists()
 
 
 def test_get_remote_metadata(
