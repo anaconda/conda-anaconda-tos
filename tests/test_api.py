@@ -58,7 +58,7 @@ def local_metadata_pair(
             **remote_metadata_pair.metadata.model_dump(),
             base_url=sample_channel.base_url,
             tos_accepted=True,
-            acceptance_timestamp=datetime.now(tz=timezone.utc)
+            acceptance_timestamp=datetime.now(tz=timezone.utc),
         ),
         path=uuid4().hex,
     )
@@ -72,7 +72,7 @@ def old_metadata_pair(sample_channel: Channel) -> MetadataPathPair:
             text="old ToS",
             base_url=sample_channel.base_url,
             tos_accepted=True,
-            acceptance_timestamp=datetime.now(tz=timezone.utc)
+            acceptance_timestamp=datetime.now(tz=timezone.utc),
         ),
         path=uuid4().hex,
     )
