@@ -27,7 +27,7 @@ def test_view_tos(
     render_view(sample_channel)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
-    assert sample_lines == [f"viewing ToS for {sample_channel}:", "ToS not found"]
+    assert sample_lines == [f"no ToS for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
     render_view(tos_channel, sample_channel)

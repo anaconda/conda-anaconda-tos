@@ -54,7 +54,7 @@ def test_subcommand_tos_view(
         f"--channel={sample_channel}",
     )
     sample_lines = out.splitlines()
-    assert sample_lines == [f"viewing ToS for {sample_channel}:", "ToS not found"]
+    assert sample_lines == [f"no ToS for {sample_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
 
