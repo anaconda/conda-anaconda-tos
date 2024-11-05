@@ -23,7 +23,10 @@ $ conda activate conda-tos
 (conda-tos) $ $CONDA_PREFIX/bin/conda tos --reject
 ```
 
-To test with a local server use `tests/http_test_server.py` (see below) and use the `--channel` option:
+To test with a local server use `tests/http_test_server.py` (see below) and use the `--channel` option.
+
+> [!NOTE]
+> The port is random and just an example.
 
 ```bash
 (conda-tos) $ $CONDA_PREFIX/bin/conda tos --channel=http://127.0.0.1:53095/
