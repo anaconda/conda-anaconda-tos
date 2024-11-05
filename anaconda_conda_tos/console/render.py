@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ..tos import get_tos
-from .mappers import accepted_mapping, location_mapping, version_mapping
+from .mappers import accepted_mapping, location_mapping
 
 if TYPE_CHECKING:
     from conda.models.channel import Channel
@@ -25,12 +25,15 @@ def list_tos(*channels: str | Channel) -> None:
     table.add_column("Location")
 
     for channel, metadata_pair in get_tos(*channels):
-        table.add_row(
-            channel.base_url,
-            version_mapping(metadata_pair),
-            accepted_mapping(metadata_pair),
-            location_mapping(metadata_pair),
-        )
+        if not metadata_pair:
+            table.add_row(channel.base_url, "-", "-", "-")
+        else:
+            table.add_row(
+                channel.base_url,
+                str(metadata_pair.metadata.tos_version),
+                accepted_mapping(metadata_pair.metadata),
+                location_mapping(metadata_pair.path),
+            )
 
     console = Console()
     console.print(table)
