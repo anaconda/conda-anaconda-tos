@@ -50,7 +50,7 @@ def get_one_tos(
         pass
     else:
         # return local metadata if it's the same version as the remote
-        if local_pair.metadata.tos_version >= remote_metadata.tos_version:
+        if local_pair.metadata >= remote_metadata:
             return local_pair
 
     # cache is stale, remote ToS metadata exists, and local ToS metadata is missing or
@@ -72,7 +72,7 @@ def get_stored_tos(
             continue
 
         # yield local metadata if it's the same version as the remote
-        if local_pair.metadata.tos_version >= remote_metadata.tos_version:
+        if local_pair.metadata >= remote_metadata:
             yield channel, local_pair
         else:
             yield channel, MetadataPathPair(metadata=remote_metadata)

@@ -26,6 +26,12 @@ class RemoteToSMetadata(BaseModel):
     tos_version: int
     text: str
 
+    def __ge__(self: Self, other: RemoteToSMetadata) -> bool:
+        """Compare the ToS metadata version."""
+        if not isinstance(other, RemoteToSMetadata):
+            return NotImplemented
+        return self.tos_version >= other.tos_version
+
 
 class LocalToSMetadata(RemoteToSMetadata):
     """Conda ToS metadata schema with acceptance fields."""
