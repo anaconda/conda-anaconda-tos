@@ -54,6 +54,9 @@ class CondaToSPermissionError(PermissionError, CondaToSError):
 class CondaToSRejectedError(CondaToSError):
     """Error class for when the ToS is rejected for a channel."""
 
-    def __init__(self: Self, channel: str | Channel) -> None:
+    def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
-        super().__init__(f"ToS rejected for {Channel(channel).base_url or channel}.")
+        channels_str = ", ".join(
+            str(Channel(channel).base_url or channel) for channel in channels
+        )
+        super().__init__(f"ToS rejected for {channels_str}.")

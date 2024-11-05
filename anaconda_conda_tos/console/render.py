@@ -17,7 +17,7 @@ from ..api import (
     get_one_tos,
     reject_tos,
 )
-from ..exceptions import CondaToSMissingError, CondaToSRejectedError
+from ..exceptions import CondaToSMissingError
 from .mappers import accepted_mapping, location_mapping
 
 if TYPE_CHECKING:
@@ -115,24 +115,3 @@ def render_reject(
         else:
             console.print(f"rejected ToS for {channel}")
     return 0
-
-
-def render_check(
-    *channels: str | Channel,
-    tos_root: str | os.PathLike | Path,
-    cache_timeout: int | float | None,
-    console: Console | None = None,
-) -> None:
-    """Check the ToS for the given channels."""
-    console = console or Console()
-    for channel, metadata_pair in get_all_tos(
-        *channels,
-        tos_root=tos_root,
-        cache_timeout=cache_timeout,
-    ):
-        if metadata_pair is None:
-            console.print(f"no ToS for {channel}")
-        elif metadata_pair.metadata.tos_accepted:
-            console.print(f"ToS accepted for {channel}")
-        else:
-            raise CondaToSRejectedError(channel)

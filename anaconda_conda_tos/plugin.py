@@ -11,14 +11,23 @@ from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaPreCommand, CondaSetting, CondaSubcommand, hookimpl
 from rich.console import Console
+from rich.prompt import Prompt
 
+from .api import accept_tos, get_channels, get_one_tos, reject_tos
 from .console import render_accept, render_list, render_reject, render_view
+from .exceptions import CondaToSMissingError, CondaToSRejectedError
+from .models import RemoteToSMetadata
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
-from .tos import check_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
+
+    from conda.models.channel import Channel
+
+
+DEFAULT_TOS_ROOT = USER_TOS_ROOT
+DEFAULT_CACHE_TIMEOUT = 24 * 60 * 60
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -47,7 +56,6 @@ def configure_parser(parser: ArgumentParser) -> None:
             help=text,
         )
     location.add_argument("--file", dest="tos_root", action="store")
-    parser.set_defaults(tos_root=USER_TOS_ROOT)
 
     action_grp = parser.add_argument_group("Actions")
     action = action_grp.add_mutually_exclusive_group()
@@ -55,17 +63,17 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
 
-    parser.add_argument(
-        "--cache-timeout",
-        action="store",
-        type=int,
-        default=24 * 60 * 60,
-    )
+    parser.add_argument("--cache-timeout", action="store", type=int)
     parser.add_argument(
         "--ignore-cache",
         dest="cache_timeout",
         action="store_const",
         const=0,
+    )
+
+    parser.set_defaults(
+        tos_root=DEFAULT_TOS_ROOT,
+        cache_timeout=DEFAULT_CACHE_TIMEOUT,
     )
 
 
@@ -110,20 +118,90 @@ def conda_settings() -> Iterator[CondaSetting]:
     )
 
 
-# TODO: first load
-@hookimpl
+def _prompt_acceptance(
+    channel: Channel,
+    metadata: RemoteToSMetadata,
+    console: Console,
+    choices: Iterable[str] = ("accept", "reject", "view"),
+) -> bool:
+    response = Prompt.ask(
+        f"Accept the Terms of Service (ToS) for this channel ({channel})?",
+        choices=choices,
+        console=console,
+    )
+    if response == "accept":
+        return True
+    elif response == "reject":
+        return False
+    else:
+        console.print(metadata.text)
+        return _prompt_acceptance(channel, metadata, console, ("accept", "reject"))
+
+
+def _pre_command_check_tos(_command: str) -> None:
+    accepted = 0
+    rejected = []
+    channel_metadatas = []
+
+    console = Console()
+    console.print("[bold blue]Gathering channels...")
+    for channel in get_channels(*context.channels):
+        try:
+            metadata = get_one_tos(
+                channel,
+                tos_root=DEFAULT_TOS_ROOT,
+                cache_timeout=DEFAULT_CACHE_TIMEOUT,
+            ).metadata
+        except CondaToSMissingError:
+            # CondaToSMissingError: no ToS metadata found
+            continue
+
+        if type(metadata) is RemoteToSMetadata:
+            # ToS hasn't been accepted or rejected yet
+            channel_metadatas.append((channel, metadata))
+        elif metadata.tos_accepted:
+            accepted += 1
+        else:
+            rejected.append(channel)
+
+    if rejected:
+        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+        raise CondaToSRejectedError(*rejected)
+
+    console.print("[bold yellow]Reviewing channels...")
+    for channel, metadata in channel_metadatas:
+        if context.plugins.auto_accept_tos or _prompt_acceptance(
+            channel, metadata, console
+        ):
+            accept_tos(
+                channel, tos_root=DEFAULT_TOS_ROOT, cache_timeout=DEFAULT_CACHE_TIMEOUT
+            )
+            accepted += 1
+        else:
+            reject_tos(
+                channel, tos_root=DEFAULT_TOS_ROOT, cache_timeout=DEFAULT_CACHE_TIMEOUT
+            )
+            rejected.append(channel)
+
+    if rejected:
+        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+        raise CondaToSRejectedError(*rejected)
+    console.print(f"[bold green]{accepted} channel ToS accepted")
+
+
+@hookimpl(tryfirst=True)
 def conda_pre_commands() -> Iterator[CondaPreCommand]:
     """Return a list of pre-commands for the anaconda-conda-tos plugin."""
     yield CondaPreCommand(
         name="check_tos",
-        action=lambda _: check_tos(*context.channels),
+        action=_pre_command_check_tos,
         run_for={
             "create",
+            "env_create",
+            "env_remove",
+            "env_update",
             "install",
-            "update",
-            "upgrade",
             "remove",
-            "uninstall",
-            "env",
+            "update",
         },
     )
