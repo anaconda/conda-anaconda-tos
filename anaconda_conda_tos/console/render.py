@@ -12,9 +12,9 @@ from rich.table import Table
 
 from ..api import (
     accept_tos,
-    get_all_metadatas,
+    get_all_tos,
     get_channels,
-    get_single_metadata,
+    get_one_tos,
     reject_tos,
 )
 from ..exceptions import CondaToSMissingError
@@ -40,7 +40,7 @@ def render_list(
     table.add_column("Accepted")
     table.add_column("Location")
 
-    for channel, metadata_pair in get_all_metadatas(
+    for channel, metadata_pair in get_all_tos(
         *channels,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
@@ -69,7 +69,7 @@ def render_view(
     console = console or Console()
     for channel in get_channels(*channels):
         try:
-            metadata = get_single_metadata(
+            metadata = get_one_tos(
                 channel, tos_root=tos_root, cache_timeout=cache_timeout
             ).metadata
         except CondaToSMissingError:

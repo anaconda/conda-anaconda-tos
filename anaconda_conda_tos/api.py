@@ -32,7 +32,7 @@ def get_channels(*channels: str | Channel) -> Iterable[Channel]:
                 seen.add(channel)
 
 
-def get_single_metadata(
+def get_one_tos(
     channel: str | Channel,
     *,
     tos_root: str | os.PathLike[str] | Path,
@@ -58,7 +58,7 @@ def get_single_metadata(
     return MetadataPathPair(metadata=remote_metadata)
 
 
-def get_stored_metadatas(
+def get_stored_tos(
     *,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
@@ -87,7 +87,7 @@ def accept_tos(
     cache_timeout: int | float | None,
 ) -> MetadataPathPair:
     """Accept the ToS metadata for the given channel."""
-    metadata_pair = get_single_metadata(
+    metadata_pair = get_one_tos(
         channel,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
@@ -102,7 +102,7 @@ def reject_tos(
     cache_timeout: int | float | None,
 ) -> MetadataPathPair:
     """Reject the ToS metadata for the given channel."""
-    metadata_pair = get_single_metadata(
+    metadata_pair = get_one_tos(
         channel,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
@@ -110,7 +110,7 @@ def reject_tos(
     return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=False)
 
 
-def get_all_metadatas(
+def get_all_tos(
     *channels: str | Channel,
     tos_root: str | os.PathLike | Path,
     cache_timeout: int | float | None,
@@ -122,16 +122,14 @@ def get_all_metadatas(
         try:
             yield (
                 channel,
-                get_single_metadata(
-                    channel, tos_root=tos_root, cache_timeout=cache_timeout
-                ),
+                get_one_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout),
             )
         except CondaToSMissingError:
             yield channel, None
         seen.add(channel)
 
     # list all other ToS that have been accepted/rejected
-    for channel, metadata_pair in get_stored_metadatas(
+    for channel, metadata_pair in get_stored_tos(
         tos_root=tos_root, cache_timeout=cache_timeout
     ):
         if channel not in seen:
