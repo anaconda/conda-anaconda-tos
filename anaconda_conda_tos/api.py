@@ -87,12 +87,12 @@ def accept_tos(
     cache_timeout: int | float | None,
 ) -> MetadataPathPair:
     """Accept the ToS metadata for the given channel."""
-    metadata_pair = get_one_tos(
+    metadata = get_one_tos(
         channel,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
-    )
-    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=True)
+    ).metadata
+    return write_metadata(tos_root, channel, metadata, tos_accepted=True)
 
 
 def reject_tos(
@@ -102,12 +102,12 @@ def reject_tos(
     cache_timeout: int | float | None,
 ) -> MetadataPathPair:
     """Reject the ToS metadata for the given channel."""
-    metadata_pair = get_one_tos(
+    metadata = get_one_tos(
         channel,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
-    )
-    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=False)
+    ).metadata
+    return write_metadata(tos_root, channel, metadata, tos_accepted=False)
 
 
 def get_all_tos(
@@ -130,7 +130,8 @@ def get_all_tos(
 
     # list all other ToS that have been accepted/rejected
     for channel, metadata_pair in get_stored_tos(
-        tos_root=tos_root, cache_timeout=cache_timeout
+        tos_root=tos_root,
+        cache_timeout=cache_timeout,
     ):
         if channel not in seen:
             yield channel, metadata_pair
