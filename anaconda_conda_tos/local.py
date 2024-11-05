@@ -54,10 +54,13 @@ def write_metadata(
     return MetadataPathPair(metadata=metadata, path=path)
 
 
-def read_metadata(path: str | os.PathLike[str] | Path) -> LocalToSMetadata | None:
+def read_metadata(path: str | os.PathLike[str] | Path) -> MetadataPathPair | None:
     """Load the ToS metadata from file."""
     try:
-        return LocalToSMetadata.model_validate_json(get_path(path).read_text())
+        return MetadataPathPair(
+            metadata=LocalToSMetadata.model_validate_json(get_path(path).read_text()),
+            path=path,
+        )
     except (FileNotFoundError, ValidationError):
         # FileNotFoundError: metadata path doesn't exist
         # ValidationError: invalid JSON schema
@@ -72,9 +75,9 @@ def get_local_metadata(
     """Get the latest ToS metadata for the given channel."""
     # find all ToS metadata files for the given channel
     metadata_pairs = [
-        MetadataPathPair(metadata=metadata, path=path)
+        metadata_pair
         for path in get_channel_paths(channel, extend_search_path=extend_search_path)
-        if (metadata := read_metadata(path))
+        if (metadata_pair := read_metadata(path))
     ]
 
     # return if no metadata found
@@ -93,9 +96,8 @@ def get_local_metadatas(
     # group metadata by channel
     grouped_metadatas: dict[Channel, list[MetadataPathPair]] = {}
     for path in get_all_channel_paths(extend_search_path=extend_search_path):
-        if metadata := read_metadata(path):
-            channel = Channel(metadata.base_url)
-            metadata_pair = MetadataPathPair(metadata=metadata, path=path)
+        if metadata_pair := read_metadata(path):
+            channel = Channel(metadata_pair.metadata.base_url)
             grouped_metadatas.setdefault(channel, []).append(metadata_pair)
 
     # return the newest (and highest priority) metadata for each channel
