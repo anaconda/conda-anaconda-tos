@@ -7,12 +7,7 @@ from typing import TYPE_CHECKING
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from anaconda_conda_tos.api import (
-    accept_tos,
-    get_channels,
-    get_tos,
-    reject_tos,
-)
+from anaconda_conda_tos.api import accept_tos, get_channels, get_tos, reject_tos
 from anaconda_conda_tos.path import get_metadata_path
 
 if TYPE_CHECKING:
@@ -30,7 +25,9 @@ def test_get_channels() -> None:
 
 
 def test_get_tos(
-    tos_channel: str, sample_channel: str, mock_tos_search_path: tuple[Path, Path]
+    tos_channel: str,
+    sample_channel: str,
+    mock_tos_search_path: tuple[Path, Path],
 ) -> None:
     _, user_tos_root = mock_tos_search_path
 
