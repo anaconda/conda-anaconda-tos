@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS subcommand and settings plugins."""
+"""High-level conda plugin registration."""
 
 from __future__ import annotations
 
@@ -54,21 +54,38 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
 
+    parser.add_argument(
+        "--cache-timeout",
+        action="store",
+        type=int,
+        default=24 * 60 * 60,
+    )
+    parser.add_argument(
+        "--ignore-cache",
+        dest="cache_timeout",
+        action="store_const",
+        const=0,
+    )
+
 
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
-    console = Console()
+    action = render_list
     if args.accept:
-        render_accept(*context.channels, tos_root=args.tos_root, console=console)
+        action = render_accept
     elif args.reject:
-        render_reject(*context.channels, tos_root=args.tos_root, console=console)
+        action = render_reject
     elif args.view:
-        render_view(*context.channels, console=console)
-    else:
-        render_list(*context.channels, console=console)
-    return 0
+        action = render_view
+
+    return action(
+        *context.channels,
+        tos_root=args.tos_root,
+        cache_timeout=args.cache_timeout,
+        console=Console(),
+    )
 
 
 @hookimpl

@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS exceptions."""
+"""Custom exceptions."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ from conda.exceptions import CondaError
 from conda.models.channel import Channel
 
 if TYPE_CHECKING:
+    import os
+    from pathlib import Path
     from typing import Self
 
 
@@ -31,3 +33,19 @@ class CondaToSInvalidError(CondaToSError):
     def __init__(self: Self, channel: str | Channel) -> None:
         """Format error message with channel base URL."""
         super().__init__(f"Invalid ToS for {Channel(channel).base_url or channel}.")
+
+
+class CondaToSPermissionError(PermissionError, CondaToSError):
+    """Error class for when the ToS metadata file cannot be written."""
+
+    def __init__(
+        self: Self,
+        path: str | os.PathLike[str] | Path,
+        channel: str | Channel | None = None,
+    ) -> None:
+        """Format error message with channel base URL and path."""
+        addendum = f" for {Channel(channel).base_url or channel}" if channel else ""
+        super().__init__(
+            f"Unable to read/write path ({path}){addendum}. "
+            "Please check permissions."
+        )

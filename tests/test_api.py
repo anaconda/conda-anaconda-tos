@@ -2,16 +2,30 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
+import pytest
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from anaconda_conda_tos.api import accept_tos, get_channels, get_tos, reject_tos
-from anaconda_conda_tos.path import get_metadata_path
+from anaconda_conda_tos.api import (
+    get_channels,
+    get_one_tos,
+    get_stored_tos,
+)
+from anaconda_conda_tos.exceptions import CondaToSMissingError
+from anaconda_conda_tos.models import (
+    LocalToSMetadata,
+    MetadataPathPair,
+    RemoteToSMetadata,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from pytest_mock import MockerFixture
 
 
 def test_get_channels() -> None:
@@ -24,50 +38,126 @@ def test_get_channels() -> None:
     assert set(get_channels("defaults", "conda-forge")) == defaults | conda_forge
 
 
-def test_get_tos(
-    tos_channel: str,
-    sample_channel: str,
-    mock_tos_search_path: tuple[Path, Path],
+@pytest.fixture(scope="session")
+def remote_metadata_pair() -> MetadataPathPair:
+    return MetadataPathPair(
+        metadata=RemoteToSMetadata(
+            tos_version=2,
+            text="new ToS",
+        ),
+    )
+
+
+@pytest.fixture(scope="session")
+def local_metadata_pair(
+    remote_metadata_pair: MetadataPathPair,
+    sample_channel: Channel,
+) -> MetadataPathPair:
+    return MetadataPathPair(
+        metadata=LocalToSMetadata(
+            **remote_metadata_pair.metadata.model_dump(),
+            base_url=sample_channel.base_url,
+            tos_accepted=True,
+            acceptance_timestamp=datetime.now(tz=timezone.utc),
+        ),
+        path=uuid4().hex,
+    )
+
+
+@pytest.fixture(scope="session")
+def old_metadata_pair(sample_channel: Channel) -> MetadataPathPair:
+    return MetadataPathPair(
+        metadata=LocalToSMetadata(
+            tos_version=1,
+            text="old ToS",
+            base_url=sample_channel.base_url,
+            tos_accepted=True,
+            acceptance_timestamp=datetime.now(tz=timezone.utc),
+        ),
+        path=uuid4().hex,
+    )
+
+
+def test_get_single_metadata(
+    mocker: MockerFixture,
+    tmp_path: Path,
+    sample_channel: Channel,
+    remote_metadata_pair: MetadataPathPair,
+    local_metadata_pair: MetadataPathPair,
+    old_metadata_pair: MetadataPathPair,
 ) -> None:
-    _, user_tos_root = mock_tos_search_path
+    # mock remote ToS and no local ToS
+    mocker.patch(
+        "anaconda_conda_tos.api.get_remote_metadata",
+        return_value=remote_metadata_pair.metadata,
+    )
+    mocker.patch(
+        "anaconda_conda_tos.api.get_local_metadata",
+        side_effect=CondaToSMissingError(sample_channel),
+    )
+    metadata_pair = get_one_tos(
+        sample_channel,
+        tos_root=tmp_path,
+        cache_timeout=None,
+    )
+    assert metadata_pair == remote_metadata_pair
 
-    # list all channels and whether their ToS has been accepted
-    tos = list(get_tos(tos_channel, sample_channel))
-    assert len(tos) == 2
-    (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
-    assert channel1 == Channel(tos_channel)
-    assert not metadata_pair1
-    assert channel2 == Channel(sample_channel)
-    assert not metadata_pair2
+    # mock local ToS version matches remote ToS version
+    mocker.patch(
+        "anaconda_conda_tos.api.get_local_metadata",
+        return_value=local_metadata_pair,
+    )
+    metadata_pair = get_one_tos(
+        sample_channel,
+        tos_root=tmp_path,
+        cache_timeout=None,
+    )
+    assert metadata_pair == local_metadata_pair
 
-    # accept the ToS for a channel
-    accept_tos(user_tos_root, tos_channel)
-    tos = list(get_tos(tos_channel, sample_channel))
-    assert len(tos) == 2
-    (channel1, metadata_pair1), (channel2, metadata_pair2) = tos
-    assert channel1 == Channel(tos_channel)
-    assert metadata_pair1
-    assert metadata_pair1.metadata.tos_accepted
-    assert metadata_pair1.path == get_metadata_path(user_tos_root, tos_channel, 1)
-    assert channel2 == Channel(sample_channel)
-    assert not metadata_pair2
+    # mock local ToS version is outdated
+    mocker.patch(
+        "anaconda_conda_tos.api.get_local_metadata",
+        return_value=old_metadata_pair,
+    )
+    metadata_pair = get_one_tos(
+        sample_channel,
+        tos_root=tmp_path,
+        cache_timeout=None,
+    )
+    assert metadata_pair == remote_metadata_pair
 
-    # list all channels that have been accepted even if it is not active
-    accept_tos(user_tos_root, tos_channel)
-    tos = list(get_tos())
-    assert len(tos) == 1
-    channel1, metadata_pair1 = tos[0]
-    assert channel1 == Channel(tos_channel)
-    assert metadata_pair1
-    assert metadata_pair1.metadata.tos_accepted
-    assert metadata_pair1.path == get_metadata_path(user_tos_root, tos_channel, 1)
 
-    # even rejected ToS channels are listed
-    reject_tos(user_tos_root, tos_channel)
-    tos = list(get_tos())
-    assert len(tos) == 1
-    channel1, metadata_pair1 = tos[0]
-    assert channel1 == Channel(tos_channel)
-    assert metadata_pair1
-    assert not metadata_pair1.metadata.tos_accepted
-    assert metadata_pair1.path == get_metadata_path(user_tos_root, tos_channel, 1)
+def test_get_stored_metadatas(
+    mocker: MockerFixture,
+    tmp_path: Path,
+    sample_channel: Channel,
+    remote_metadata_pair: MetadataPathPair,
+    local_metadata_pair: MetadataPathPair,
+    old_metadata_pair: MetadataPathPair,
+) -> None:
+    # mock no remote ToS
+    mocker.patch(
+        "anaconda_conda_tos.api.get_local_metadatas",
+        return_value=[(sample_channel, local_metadata_pair)],
+    )
+    mocker.patch(
+        "anaconda_conda_tos.api.get_remote_metadata",
+        side_effect=CondaToSMissingError(sample_channel),
+    )
+    assert not list(get_stored_tos(tos_root=tmp_path, cache_timeout=None))
+
+    # mock local ToS version matches remote ToS version
+    mocker.patch(
+        "anaconda_conda_tos.api.get_remote_metadata",
+        return_value=remote_metadata_pair.metadata,
+    )
+    metadata_pairs = list(get_stored_tos(tos_root=tmp_path, cache_timeout=None))
+    assert metadata_pairs == [(sample_channel, local_metadata_pair)]
+
+    # mock local ToS version is outdated
+    mocker.patch(
+        "anaconda_conda_tos.api.get_local_metadatas",
+        return_value=[(sample_channel, old_metadata_pair)],
+    )
+    metadata_pairs = list(get_stored_tos(tos_root=tmp_path, cache_timeout=None))
+    assert metadata_pairs == [(sample_channel, remote_metadata_pair)]

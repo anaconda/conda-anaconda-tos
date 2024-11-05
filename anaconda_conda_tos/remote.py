@@ -1,9 +1,10 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS remote functions."""
+"""Low-level remote (the "raw" endpoint JSON) ToS metadata management."""
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
@@ -13,15 +14,21 @@ from conda.models.channel import Channel
 from pydantic import ValidationError
 from requests.exceptions import ConnectionError, HTTPError
 
-from .exceptions import CondaToSInvalidError, CondaToSMissingError
+from .exceptions import (
+    CondaToSInvalidError,
+    CondaToSMissingError,
+    CondaToSPermissionError,
+)
 from .models import RemoteToSMetadata
+from .path import get_cache_path
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Final
 
     from requests import Response
 
-TOS_ENDPOINT: Final = "tos.json"
+ENDPOINT: Final = "tos.json"
 
 
 def get_endpoint(channel: str | Channel) -> Response:
@@ -29,11 +36,12 @@ def get_endpoint(channel: str | Channel) -> Response:
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError(
-            "Channel must have a base URL. MultiChannel doesn't have endpoints."
+            "`channel` must have a base URL. "
+            "(hint: `conda.models.channel.MultiChannel` doesn't have an endpoint)"
         )
 
     session = get_session(channel.base_url)
-    url = join_url(channel.base_url, TOS_ENDPOINT)
+    url = join_url(channel.base_url, ENDPOINT)
 
     saved_token_setting = context.add_anaconda_token
     try:
@@ -64,9 +72,100 @@ def get_endpoint(channel: str | Channel) -> Response:
     return response
 
 
-def get_metadata(channel: str | Channel) -> RemoteToSMetadata:
-    """Get the ToS metadata for the given channel."""
+def get_cached_endpoint(
+    channel: str | Channel,
+    *,
+    cache_timeout: int | float | None = float("inf"),
+) -> Path | None:
+    """Get the path to cached payload for the given channel."""
+    # early exit if cache is disabled
+    if not cache_timeout:
+        return None
+
+    # argument validation/coercion
+    path = get_cache_path(channel)
+    if not isinstance(cache_timeout, (int, float)):
+        raise TypeError("`cache_timeout` must be an integer, float, or falsy.")
+
+    # get mtime of cache
     try:
-        return RemoteToSMetadata(**get_endpoint(channel).json())
-    except (AttributeError, ValidationError) as exc:
+        mtime = path.stat().st_mtime
+    except FileNotFoundError:
+        # FileNotFoundError: cache path doesn't exist
+        return None
+
+    # check if cache is stale
+    now = datetime.now().timestamp()  # noqa: DTZ005
+    if (now - mtime) >= cache_timeout:
+        return None
+    return path
+
+
+def write_cached_endpoint(
+    channel: str | Channel,
+    metadata: RemoteToSMetadata | None,
+) -> Path:
+    """Write the ToS cache for the given channel."""
+    # argument validation/coercion
+    path = get_cache_path(channel)
+    if metadata and not isinstance(metadata, RemoteToSMetadata):
+        raise TypeError("`metadata` must be a RemoteToSMetadata.")
+
+    # write to cache
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if metadata:
+            path.write_text(metadata.model_dump_json())
+        else:
+            path.touch()
+    except PermissionError as exc:
+        # PermissionError: can't write to cache path
+        raise CondaToSPermissionError(path, channel) from exc
+
+    return path
+
+
+def get_remote_metadata(
+    channel: str | Channel,
+    *,
+    cache_timeout: int | float | None = None,
+) -> RemoteToSMetadata:
+    """Get the ToS metadata for the given channel."""
+    # argument validation/coercion
+    cache = get_cached_endpoint(channel, cache_timeout=cache_timeout)
+
+    # return cached metadata
+    if cache:
+        try:
+            text = cache.read_text().strip()
+            if not text:
+                raise CondaToSMissingError(channel)
+        except FileNotFoundError as exc:
+            # FileNotFoundError: cache path doesn't exist
+            raise CondaToSMissingError(channel) from exc
+        except PermissionError as exc:
+            # PermissionError: can't read cache path
+            raise CondaToSPermissionError(cache, channel) from exc
+
+        try:
+            return RemoteToSMetadata.model_validate_json(text)
+        except ValidationError as exc:
+            # ValidationError: invalid JSON schema
+            raise CondaToSInvalidError(channel) from exc
+
+    # return remote metadata
+    try:
+        metadata = RemoteToSMetadata(**get_endpoint(channel).json())
+    except CondaToSMissingError:
+        # CondaToSMissingError: no ToS for this channel
+        # create an empty cache to prevent repeated requests
+        write_cached_endpoint(channel, None)
+        raise
+    except (AttributeError, TypeError, ValidationError) as exc:
+        # AttributeError: response has no JSON
+        # TypeError: invalid JSON
+        # ValidationError: invalid JSON schema
         raise CondaToSInvalidError(channel) from exc
+    else:
+        write_cached_endpoint(channel, metadata)
+        return metadata

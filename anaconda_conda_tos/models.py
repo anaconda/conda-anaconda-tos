@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS metadata models."""
+"""Models to encapsulate ToS metadata."""
 
 from __future__ import annotations
 
@@ -31,10 +31,8 @@ class LocalToSMetadata(RemoteToSMetadata):
     """Conda ToS metadata schema with acceptance fields."""
 
     base_url: str
-    # FUTURE: Python 3.10+, switch to `bool | None`
-    tos_accepted: Optional[bool] = Field(None)  # noqa: UP007
-    # FUTURE: Python 3.10+, switch to `datetime | None`
-    acceptance_timestamp: Optional[datetime] = Field(None)  # noqa: UP007
+    tos_accepted: bool
+    acceptance_timestamp: datetime
 
     @model_validator(mode="after")
     def _required(self: Self) -> Self:
