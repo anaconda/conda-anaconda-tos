@@ -40,6 +40,6 @@ def accepted_mapping(metadata_pair: MetadataPathPair | None) -> str:
 
 def location_mapping(metadata_pair: MetadataPathPair | None) -> str:
     """Map the ToS path to a human-readable string."""
-    if not metadata_pair:
+    if not metadata_pair or not metadata_pair.path:
         return "-"
     return str(metadata_pair.path.parent.parent)
