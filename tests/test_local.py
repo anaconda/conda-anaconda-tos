@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 from conda.models.channel import Channel
+from pydantic import ValidationError
 
 from anaconda_conda_tos.exceptions import CondaToSMissingError
 from anaconda_conda_tos.local import (
@@ -61,8 +62,8 @@ def test_write_metadata(tmp_path: Path) -> None:
     with pytest.raises(TypeError):
         write_metadata(tmp_path, CHANNEL, object(), tos_accepted=True)  # type: ignore[arg-type]
 
-    with pytest.raises(TypeError):
-        write_metadata(tmp_path, CHANNEL, LOCAL_METADATA, tos_accepted=object())  # type: ignore[arg-type]
+    with pytest.raises(ValidationError):
+        write_metadata(tmp_path, CHANNEL, LOCAL_METADATA, tos_accepted=object())
 
     # write with RemoteToSMetadata
     metadata_pair = write_metadata(
