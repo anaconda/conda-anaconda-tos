@@ -10,7 +10,7 @@ import pytest
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from anaconda_conda_tos.exceptions import CondaToSMissingError
+from anaconda_conda_tos.exceptions import CondaToSMissingError, CondaToSPermissionError
 from anaconda_conda_tos.local import (
     LocalToSMetadata,
     get_local_metadata,
@@ -82,6 +82,14 @@ def test_write_metadata(tmp_path: Path) -> None:
     assert _similar_metadata(metadata_pair.metadata, LOCAL_METADATA)
     assert metadata_pair.path == path
 
+    try:
+        tmp_path.chmod(0o000)
+        with pytest.raises(CondaToSPermissionError):
+            write_metadata(tmp_path, CHANNEL, LOCAL_METADATA)
+    finally:
+        # cleanup so tmp_dir can be removed
+        tmp_path.chmod(0o700)
+
 
 def test_read_metadata(tmp_path: Path) -> None:
     path = get_metadata_path(tmp_path, CHANNEL, REMOTE_METADATA.tos_version)
@@ -97,6 +105,14 @@ def test_read_metadata(tmp_path: Path) -> None:
     # invalid JSON schema
     path.write_text("{}")
     assert not read_metadata(path)
+
+    try:
+        path.chmod(0o000)
+        with pytest.raises(CondaToSPermissionError):
+            read_metadata(path)
+    finally:
+        # cleanup so tmp_dir can be removed
+        path.chmod(0o644)
 
     # valid metadata
     write_metadata(tmp_path, CHANNEL, REMOTE_METADATA, tos_accepted=True)
