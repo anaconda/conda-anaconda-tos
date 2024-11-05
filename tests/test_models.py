@@ -53,7 +53,7 @@ NOW: Final = datetime.now(tz=timezone.utc)
     "base_url,tos_accepted,acceptance_timestamp,raises",
     [
         pytest.param(None, None, None, True, id="missing"),
-        pytest.param("url", None, None, False, id="only base_url"),
+        pytest.param("url", None, None, True, id="only base_url"),
         pytest.param(None, True, None, True, id="only tos_accepted"),
         pytest.param(None, None, NOW, True, id="only acceptance_timestamp"),
         pytest.param(object(), None, None, True, id="invalid base_url"),
