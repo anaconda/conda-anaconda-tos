@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from contextlib import nullcontext
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -135,35 +134,34 @@ def test_get_remote_metadata(
 
     mocker.patch("anaconda_conda_tos.remote.get_endpoint", return_value=None)
     with pytest.raises(CondaToSInvalidError):
-        get_remote_metadata("channel")
+        get_remote_metadata(tos_channel)
 
     mocker.patch("anaconda_conda_tos.remote.get_endpoint", return_value=42)
     with pytest.raises(CondaToSInvalidError):
-        get_remote_metadata("channel")
+        get_remote_metadata(tos_channel)
 
     mocker.patch("anaconda_conda_tos.remote.get_endpoint", return_value={})
     with pytest.raises(CondaToSInvalidError):
-        get_remote_metadata("channel")
+        get_remote_metadata(tos_channel)
 
     cache = tmp_path / "cache"
     mocker.patch("anaconda_conda_tos.remote.get_cached_endpoint", return_value=cache)
     with pytest.raises(CondaToSMissingError):
-        get_remote_metadata("channel")
+        get_remote_metadata(tos_channel)
 
     cache.touch()
-    mocker.patch("anaconda_conda_tos.remote.get_endpoint", return_value=cache)
     with pytest.raises(CondaToSMissingError):
-        get_remote_metadata("channel")
+        get_remote_metadata(tos_channel)
 
     try:
         cache.chmod(0o000)
-        with nullcontext() if on_win else pytest.raises(CondaToSPermissionError):
+        with pytest.raises(CondaToSMissingError if on_win else CondaToSPermissionError):
             # Windows can only make the path read-only
-            get_remote_metadata("channel")
+            get_remote_metadata(tos_channel)
     finally:
         # cleanup so tmp_path can be removed
         cache.chmod(0o644)
 
     cache.write_text("{}")
     with pytest.raises(CondaToSInvalidError):
-        get_remote_metadata("channel")
+        get_remote_metadata(tos_channel)
