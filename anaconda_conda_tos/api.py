@@ -15,8 +15,8 @@ from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
     import os
+    from collections.abc import Iterable, Iterator
     from pathlib import Path
-    from typing import Iterable, Iterator
 
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:

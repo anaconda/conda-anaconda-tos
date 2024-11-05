@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -18,7 +18,8 @@ from platformdirs import user_cache_dir
 from . import APP_NAME
 
 if TYPE_CHECKING:
-    from typing import Final, Iterable, Iterator
+    from collections.abc import Iterable, Iterator
+    from typing import Final
 
 #: Site ToS directory. This is the highest priority location.
 SITE_TOS_ROOT: Final = "C:/ProgramData/conda/tos" if on_win else "/etc/conda/tos"
@@ -57,7 +58,7 @@ TOS_GLOB: Final = "*.json"
 CACHE_DIR: Final = Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
 
 
-@lru_cache(maxsize=None)
+@cache
 def hash_channel(channel: str | Channel) -> str:
     """Hash the channel to remove problematic characters (e.g. /)."""
     channel = Channel(channel)
