@@ -38,7 +38,8 @@ def get_channels(*channels: str | Channel) -> Iterable[Channel]:
 
 
 def accept_tos(
-    tos_root: str | os.PathLike | Path, channel: str | Channel
+    tos_root: str | os.PathLike | Path,
+    channel: str | Channel,
 ) -> MetadataPathPair:
     """Accept the ToS for the given channels."""
     metadata = get_metadata(channel)
@@ -46,7 +47,8 @@ def accept_tos(
 
 
 def reject_tos(
-    tos_root: str | os.PathLike | Path, channel: str | Channel
+    tos_root: str | os.PathLike | Path,
+    channel: str | Channel,
 ) -> MetadataPathPair:
     """Reject the ToS for the given channels."""
     metadata = get_metadata(channel)
