@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 def render_list(*channels: str | Channel) -> None:
-    """Printout listing of unaccepted, accepted, and rejected ToS."""
+    """Display listing of unaccepted, accepted, and rejected ToS."""
     table = Table()
     table.add_column("Channel")
     table.add_column("Version")
@@ -45,7 +45,7 @@ def render_list(*channels: str | Channel) -> None:
 
 
 def render_view(*channels: str | Channel) -> None:
-    """Print the ToS full text for the given channels."""
+    """Display the ToS text for the given channels."""
     for channel in get_channels(*channels):
         print(f"viewing ToS for {channel}:")
         try:
@@ -55,7 +55,7 @@ def render_view(*channels: str | Channel) -> None:
 
 
 def render_accept(*channels: str | Channel, tos_root: str | os.PathLike | Path) -> None:
-    """Accept the ToS for the given channels."""
+    """Display acceptance of the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
             accept_tos(tos_root, channel)
@@ -66,7 +66,7 @@ def render_accept(*channels: str | Channel, tos_root: str | os.PathLike | Path) 
 
 
 def render_reject(*channels: str | Channel, tos_root: str | os.PathLike | Path) -> None:
-    """Reject the ToS for the given channels."""
+    """Display rejection of the ToS for the given channels."""
     for channel in get_channels(*channels):
         try:
             reject_tos(tos_root, channel)

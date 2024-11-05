@@ -41,7 +41,7 @@ def accept_tos(
     tos_root: str | os.PathLike | Path,
     channel: str | Channel,
 ) -> MetadataPathPair:
-    """Accept the ToS for the given channels."""
+    """Accept the ToS for the given channel."""
     metadata = get_metadata(channel)
     return write_metadata(tos_root, channel, metadata, tos_accepted=True)
 
@@ -50,7 +50,7 @@ def reject_tos(
     tos_root: str | os.PathLike | Path,
     channel: str | Channel,
 ) -> MetadataPathPair:
-    """Reject the ToS for the given channels."""
+    """Reject the ToS for the given channel."""
     metadata = get_metadata(channel)
     return write_metadata(tos_root, channel, metadata, tos_accepted=False)
 
