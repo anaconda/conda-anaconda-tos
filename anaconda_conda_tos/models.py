@@ -26,6 +26,12 @@ class RemoteToSMetadata(BaseModel):
     tos_version: int
     text: str
 
+    def __ge__(self: Self, other: RemoteToSMetadata) -> bool:
+        """Compare the ToS metadata version."""
+        if not isinstance(other, RemoteToSMetadata):
+            return NotImplemented
+        return self.tos_version >= other.tos_version
+
 
 class LocalToSMetadata(RemoteToSMetadata):
     """Conda ToS metadata schema with acceptance fields."""
@@ -68,7 +74,4 @@ class MetadataPathPair(BaseModel):
         """
         if not isinstance(other, MetadataPathPair):
             return NotImplemented
-
-        # we sort in reverse here to list the highest version first,
-        # this also ensures we do not mess with the priority order
-        return self.metadata.tos_version > other.metadata.tos_version
+        return self.metadata.tos_version < other.metadata.tos_version
