@@ -16,8 +16,9 @@ from .path import get_all_channel_paths, get_channel_paths, get_metadata_path, g
 
 if TYPE_CHECKING:
     import os
+    from collections.abc import Iterator
     from pathlib import Path
-    from typing import Any, Iterator
+    from typing import Any
 
 
 def write_metadata(

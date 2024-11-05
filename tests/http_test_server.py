@@ -20,7 +20,8 @@ from anaconda_conda_tos.models import RemoteToSMetadata
 
 if TYPE_CHECKING:
     import os
-    from typing import ContextManager, Iterator
+    from collections.abc import Iterator
+    from contextlib import AbstractContextManager
 
 DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
@@ -86,7 +87,7 @@ def serve_channel(path: Path) -> Iterator[str]:
     http.shutdown()
 
 
-def serve_tos_channel(path: str | os.PathLike | Path) -> ContextManager[str]:
+def serve_tos_channel(path: str | os.PathLike | Path) -> AbstractContextManager[str]:
     path = Path(path)
 
     # Copy the sample channel to a temporary directory and add ToS files
@@ -97,7 +98,7 @@ def serve_tos_channel(path: str | os.PathLike | Path) -> ContextManager[str]:
     return serve_channel(path)
 
 
-def serve_sample_channel() -> ContextManager[str]:
+def serve_sample_channel() -> AbstractContextManager[str]:
     # Serve the sample channel as-is
     return serve_channel(SAMPLE_CHANNEL_DIR)
 
