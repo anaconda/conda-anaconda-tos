@@ -53,7 +53,6 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--accept", "--agree", action="store_true")
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
-    action.add_argument("--info", action="store_true")
 
     parser.add_argument(
         "--cache-timeout",
