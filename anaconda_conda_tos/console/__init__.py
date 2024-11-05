@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Render functions for console output."""
 
-from .render import info_tos, list_tos  # noqa: F401
+from .render import render_accept, render_list, render_reject, render_view  # noqa: F401

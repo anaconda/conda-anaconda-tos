@@ -10,22 +10,30 @@ from typing import TYPE_CHECKING
 from rich.console import Console
 from rich.table import Table
 
-from ..api import get_all_metadatas
-from ..path import CACHE_DIR, SEARCH_PATH
+from ..api import (
+    accept_tos,
+    get_all_metadatas,
+    get_channels,
+    get_single_metadata,
+    reject_tos,
+)
+from ..exceptions import CondaToSMissingError
 from .mappers import accepted_mapping, location_mapping
 
 if TYPE_CHECKING:
     import os
+    from pathlib import Path
 
     from conda.models.channel import Channel
 
 
-def list_tos(
+def render_list(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    console: Console | None = None,
 ) -> None:
-    """Printout listing of unaccepted, accepted, and rejected ToS."""
+    """Display listing of unaccepted, accepted, and rejected ToS."""
     table = Table()
     table.add_column("Channel")
     table.add_column("Version")
@@ -47,25 +55,59 @@ def list_tos(
                 location_mapping(metadata_pair.path),
             )
 
-    console = Console()
+    console = console or Console()
     console.print(table)
 
 
-def info_tos() -> None:
-    """Printout information for ToS plugin."""
-    table = Table(show_header=False)
-    table.add_column("Key")
-    table.add_column("Value")
+def render_view(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    cache_timeout: int | float | None,
+    console: Console | None = None,
+) -> None:
+    """Display the ToS text for the given channels."""
+    console = console or Console()
+    for channel in get_channels(*channels):
+        try:
+            metadata = get_single_metadata(
+                channel, tos_root=tos_root, cache_timeout=cache_timeout
+            ).metadata
+        except CondaToSMissingError:
+            console.print(f"no ToS for {channel}")
+        else:
+            console.print(f"viewing ToS for {channel}:")
+            console.print(metadata.text)
 
-    table.add_row("Search Path", "\n".join(SEARCH_PATH))
 
-    try:
-        relative_cache_dir = Path("~", CACHE_DIR.relative_to(Path.home()))
-    except ValueError:
-        # ValueError: path is not within the home directory
-        relative_cache_dir = CACHE_DIR
+def render_accept(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    cache_timeout: int | float | None,
+    console: Console | None = None,
+) -> None:
+    """Display acceptance of the ToS for the given channels."""
+    console = console or Console()
+    for channel in get_channels(*channels):
+        try:
+            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+        except CondaToSMissingError:
+            console.print(f"ToS not found for {channel}")
+        else:
+            console.print(f"accepted ToS for {channel}")
 
-    table.add_row("Cache Dir", str(relative_cache_dir))
 
-    console = Console()
-    console.print(table)
+def render_reject(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    cache_timeout: int | float | None,
+    console: Console | None = None,
+) -> None:
+    """Display rejection of the ToS for the given channels."""
+    console = console or Console()
+    for channel in get_channels(*channels):
+        try:
+            reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+        except CondaToSMissingError:
+            console.print(f"ToS not found for {channel}")
+        else:
+            console.print(f"rejected ToS for {channel}")

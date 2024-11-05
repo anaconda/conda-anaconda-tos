@@ -10,10 +10,10 @@ from conda.base.context import context
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
+from rich.console import Console
 
-from .console import info_tos, list_tos
+from .console import render_accept, render_list, render_reject, render_view
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
-from .tos import accept_tos, reject_tos, view_tos
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -73,21 +73,19 @@ def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
-    if args.info:
-        info_tos()
-    else:
-        action = list_tos
-        if args.accept:
-            action = accept_tos
-        elif args.reject:
-            action = reject_tos
-        elif args.view:
-            action = view_tos
-        action(
-            *context.channels,
-            tos_root=args.tos_root,
-            cache_timeout=args.cache_timeout,
-        )
+    action = render_list
+    if args.accept:
+        action = render_accept
+    elif args.reject:
+        action = render_reject
+    elif args.view:
+        action = render_view
+    action(
+        *context.channels,
+        tos_root=args.tos_root,
+        cache_timeout=args.cache_timeout,
+        console=Console(),
+    )
     return 0
 
 

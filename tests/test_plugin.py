@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 from conda.base.context import context
 
+from anaconda_conda_tos.api import accept_tos, reject_tos
 from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
-from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -54,7 +54,7 @@ def test_subcommand_tos_view(
         f"--channel={sample_channel}",
     )
     sample_lines = out.splitlines()
-    assert sample_lines == [f"viewing ToS for {sample_channel}:", "ToS not found"]
+    assert sample_lines == [f"no ToS for {sample_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
 
@@ -105,7 +105,7 @@ def test_subcommand_tos_accept(
         f"--channel={tos_channel}",
         f"--file={tmp_path}",
     )
-    assert out.splitlines() == [f"accepting ToS for {tos_channel}"]
+    assert out.splitlines() == [f"accepted ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
 
@@ -115,7 +115,7 @@ def test_subcommand_tos_accept(
         return_value=(tos_channel,),
     )
     out, err, code = conda_cli("tos", "--accept", f"--file={tmp_path}")
-    assert out.splitlines() == [f"accepting ToS for {tos_channel}"]
+    assert out.splitlines() == [f"accepted ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
 
@@ -145,7 +145,7 @@ def test_subcommand_tos_reject(
         f"--channel={tos_channel}",
         f"--file={tmp_path}",
     )
-    assert out.splitlines() == [f"rejecting ToS for {tos_channel}"]
+    assert out.splitlines() == [f"rejected ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
 
@@ -155,7 +155,7 @@ def test_subcommand_tos_reject(
         return_value=(tos_channel,),
     )
     out, err, code = conda_cli("tos", "--reject", f"--file={tmp_path}")
-    assert out.splitlines() == [f"rejecting ToS for {tos_channel}"]
+    assert out.splitlines() == [f"rejected ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
 
@@ -193,14 +193,14 @@ def test_subcommand_tos_list(
     # assert not err  # server log is output to stderr
     assert not code
 
-    accept_tos(system_tos_root, tos_channel)
+    accept_tos(tos_channel, tos_root=system_tos_root, cache_timeout=None)
     out, err, code = conda_cli("tos")
     assert tos_channel in out
     assert sample_channel in out
     # assert not err  # server log is output to stderr
     assert not code
 
-    reject_tos(user_tos_root, tos_channel)
+    reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     out, err, code = conda_cli("tos")
     assert tos_channel in out
     assert sample_channel in out

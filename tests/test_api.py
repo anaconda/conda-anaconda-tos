@@ -11,6 +11,7 @@ from conda.base.context import context
 from conda.models.channel import Channel
 
 from anaconda_conda_tos.api import (
+    get_channels,
     get_single_metadata,
     get_stored_metadatas,
 )
@@ -20,7 +21,6 @@ from anaconda_conda_tos.models import (
     MetadataPathPair,
     RemoteToSMetadata,
 )
-from anaconda_conda_tos.tos import get_channels
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -95,7 +95,11 @@ def test_get_single_metadata(
         "anaconda_conda_tos.api.get_local_metadata",
         side_effect=CondaToSMissingError(sample_channel),
     )
-    metadata_pair = get_single_metadata(sample_channel, tmp_path, cache_timeout=None)
+    metadata_pair = get_single_metadata(
+        sample_channel,
+        tos_root=tmp_path,
+        cache_timeout=None,
+    )
     assert metadata_pair == remote_metadata_pair
 
     # mock local ToS version matches remote ToS version
@@ -103,7 +107,11 @@ def test_get_single_metadata(
         "anaconda_conda_tos.api.get_local_metadata",
         return_value=local_metadata_pair,
     )
-    metadata_pair = get_single_metadata(sample_channel, tmp_path, cache_timeout=None)
+    metadata_pair = get_single_metadata(
+        sample_channel,
+        tos_root=tmp_path,
+        cache_timeout=None,
+    )
     assert metadata_pair == local_metadata_pair
 
     # mock local ToS version is outdated
@@ -111,7 +119,11 @@ def test_get_single_metadata(
         "anaconda_conda_tos.api.get_local_metadata",
         return_value=old_metadata_pair,
     )
-    metadata_pair = get_single_metadata(sample_channel, tmp_path, cache_timeout=None)
+    metadata_pair = get_single_metadata(
+        sample_channel,
+        tos_root=tmp_path,
+        cache_timeout=None,
+    )
     assert metadata_pair == remote_metadata_pair
 
 
@@ -132,14 +144,14 @@ def test_get_stored_metadatas(
         "anaconda_conda_tos.api.get_remote_metadata",
         side_effect=CondaToSMissingError(sample_channel),
     )
-    assert not list(get_stored_metadatas(tmp_path, cache_timeout=None))
+    assert not list(get_stored_metadatas(tos_root=tmp_path, cache_timeout=None))
 
     # mock local ToS version matches remote ToS version
     mocker.patch(
         "anaconda_conda_tos.api.get_remote_metadata",
         return_value=remote_metadata_pair.metadata,
     )
-    metadata_pairs = list(get_stored_metadatas(tmp_path, cache_timeout=None))
+    metadata_pairs = list(get_stored_metadatas(tos_root=tmp_path, cache_timeout=None))
     assert metadata_pairs == [(sample_channel, local_metadata_pair)]
 
     # mock local ToS version is outdated
@@ -147,5 +159,5 @@ def test_get_stored_metadatas(
         "anaconda_conda_tos.api.get_local_metadatas",
         return_value=[(sample_channel, old_metadata_pair)],
     )
-    metadata_pairs = list(get_stored_metadatas(tmp_path, cache_timeout=None))
+    metadata_pairs = list(get_stored_metadatas(tos_root=tmp_path, cache_timeout=None))
     assert metadata_pairs == [(sample_channel, remote_metadata_pair)]

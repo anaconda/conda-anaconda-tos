@@ -80,6 +80,36 @@ def get_stored_metadatas(
             yield channel, MetadataPathPair(metadata=remote_metadata)
 
 
+def accept_tos(
+    channel: str | Channel,
+    *,
+    tos_root: str | os.PathLike[str] | Path,
+    cache_timeout: int | float | None,
+) -> MetadataPathPair:
+    """Accept the ToS metadata for the given channel."""
+    metadata_pair = get_single_metadata(
+        channel,
+        tos_root=tos_root,
+        cache_timeout=cache_timeout,
+    )
+    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=True)
+
+
+def reject_tos(
+    channel: str | Channel,
+    *,
+    tos_root: str | os.PathLike[str] | Path,
+    cache_timeout: int | float | None,
+) -> MetadataPathPair:
+    """Reject the ToS metadata for the given channel."""
+    metadata_pair = get_single_metadata(
+        channel,
+        tos_root=tos_root,
+        cache_timeout=cache_timeout,
+    )
+    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=False)
+
+
 def get_all_metadatas(
     *channels: str | Channel,
     tos_root: str | os.PathLike | Path,
@@ -107,29 +137,3 @@ def get_all_metadatas(
         if channel not in seen:
             yield channel, metadata_pair
             seen.add(channel)
-
-
-def accept_metadata(
-    channel: str | Channel,
-    *,
-    tos_root: str | os.PathLike[str] | Path,
-    cache_timeout: int | float | None,
-) -> MetadataPathPair:
-    """Accept the ToS metadata for the given channel."""
-    metadata_pair = get_single_metadata(
-        channel, tos_root=tos_root, cache_timeout=cache_timeout
-    )
-    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=True)
-
-
-def reject_metadata(
-    channel: str | Channel,
-    *,
-    tos_root: str | os.PathLike[str] | Path,
-    cache_timeout: int | float | None,
-) -> MetadataPathPair:
-    """Reject the ToS metadata for the given channel."""
-    metadata_pair = get_single_metadata(
-        channel, tos_root=tos_root, cache_timeout=cache_timeout
-    )
-    return write_metadata(tos_root, channel, metadata_pair.metadata, tos_accepted=False)
