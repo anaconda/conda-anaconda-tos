@@ -26,10 +26,11 @@ from anaconda_conda_tos.path import (
 )
 
 if TYPE_CHECKING:
+    from conda.models.channel import Channel
     from pytest import MonkeyPatch
 
 
-def test_hash_channel(sample_channel: str, tos_channel: str) -> None:
+def test_hash_channel(sample_channel: Channel, tos_channel: Channel) -> None:
     assert hash_channel(sample_channel) == hash_channel(sample_channel)
     assert hash_channel(sample_channel) != hash_channel(tos_channel)
 
@@ -67,12 +68,12 @@ def test_get_search_path(
     assert tuple(get_search_path()) == (*mock_search_path, tmp_path)
 
 
-def test_get_tos_dir(tmp_path: Path, sample_channel: str) -> None:
+def test_get_tos_dir(tmp_path: Path, sample_channel: Channel) -> None:
     expected = get_path(tmp_path) / hash_channel(sample_channel)
     assert get_tos_dir(tmp_path, sample_channel) == expected
 
 
-def test_get_metadata_path(tmp_path: Path, sample_channel: str) -> None:
+def test_get_metadata_path(tmp_path: Path, sample_channel: Channel) -> None:
     expected = get_tos_dir(tmp_path, sample_channel) / "42.json"
     assert get_metadata_path(tmp_path, sample_channel, 42) == expected
 
@@ -103,7 +104,7 @@ def test_get_all_channel_paths(
 
 def test_get_channel_paths(
     tmp_path: Path,
-    sample_channel: str,
+    sample_channel: Channel,
     mock_search_path: tuple[Path, Path],
 ) -> None:
     system_tos_root, user_tos_root = mock_search_path
@@ -124,7 +125,7 @@ def test_get_channel_paths(
     assert list(paths) == [json1, json2, json3]
 
 
-def test_get_cache_path(mock_cache_dir: Path, sample_channel: str) -> None:
+def test_get_cache_path(mock_cache_dir: Path, sample_channel: Channel) -> None:
     expected = mock_cache_dir / f"{hash_channel(sample_channel)}.cache"
     assert get_cache_path(sample_channel) == expected
 

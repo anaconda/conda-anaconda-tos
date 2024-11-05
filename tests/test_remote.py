@@ -19,10 +19,11 @@ from anaconda_conda_tos.remote import (
 )
 
 if TYPE_CHECKING:
+    from conda.models.channel import Channel
     from pytest_mock import MockerFixture
 
 
-def test_get_endpoint(tos_channel: str, sample_channel: str) -> None:
+def test_get_endpoint(tos_channel: Channel, sample_channel: Channel) -> None:
     # get ToS endpoint for ToS channel
     assert get_endpoint(tos_channel).status_code == 200
 
@@ -38,7 +39,7 @@ def test_get_endpoint(tos_channel: str, sample_channel: str) -> None:
         get_endpoint(uuid4().hex)
 
 
-def test_get_cached_endpoint(sample_channel: str) -> None:
+def test_get_cached_endpoint(sample_channel: Channel) -> None:
     path = get_cache_path(sample_channel)
     assert not path.exists()
 
@@ -66,7 +67,7 @@ def test_get_cached_endpoint(sample_channel: str) -> None:
     assert get_cached_endpoint(sample_channel, cache_timeout=10) is None
 
 
-def test_write_cached_endpoint(sample_channel: str) -> None:
+def test_write_cached_endpoint(sample_channel: Channel) -> None:
     remote_metadata = RemoteToSMetadata(
         tos_version=42,
         text=f"ToS full text\n\n{uuid4().hex}",
@@ -89,8 +90,8 @@ def test_write_cached_endpoint(sample_channel: str) -> None:
 
 
 def test_get_remote_metadata(
-    tos_channel: str,
-    sample_channel: str,
+    tos_channel: Channel,
+    sample_channel: Channel,
     tos_metadata: RemoteToSMetadata,
     mocker: MockerFixture,
 ) -> None:

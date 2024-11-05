@@ -13,6 +13,7 @@ from anaconda_conda_tos.plugin import conda_settings, conda_subcommands
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from conda.models.channel import Channel
     from conda.testing.fixtures import CondaCLIFixture
     from pytest_mock import MockerFixture
 
@@ -43,8 +44,8 @@ def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
 def test_subcommand_tos_view(
     mocker: MockerFixture,
     conda_cli: CondaCLIFixture,
-    tos_channel: str,
-    sample_channel: str,
+    tos_channel: Channel,
+    sample_channel: Channel,
     tos_full_lines: list[str],
 ) -> None:
     out, err, code = conda_cli(
@@ -83,8 +84,8 @@ def test_subcommand_tos_view(
 def test_subcommand_tos_accept(
     mocker: MockerFixture,
     conda_cli: CondaCLIFixture,
-    tos_channel: str,
-    sample_channel: str,
+    tos_channel: Channel,
+    sample_channel: Channel,
     tmp_path: Path,
 ) -> None:
     out, err, code = conda_cli(
@@ -123,8 +124,8 @@ def test_subcommand_tos_accept(
 def test_subcommand_tos_reject(
     mocker: MockerFixture,
     conda_cli: CondaCLIFixture,
-    tos_channel: str,
-    sample_channel: str,
+    tos_channel: Channel,
+    sample_channel: Channel,
     tmp_path: Path,
 ) -> None:
     out, err, code = conda_cli(
@@ -163,8 +164,8 @@ def test_subcommand_tos_reject(
 def test_subcommand_tos_list(
     mocker: MockerFixture,
     conda_cli: CondaCLIFixture,
-    tos_channel: str,
-    sample_channel: str,
+    tos_channel: Channel,
+    sample_channel: Channel,
     mock_search_path: tuple[Path, Path],
 ) -> None:
     system_tos_root, user_tos_root = mock_search_path
@@ -177,8 +178,8 @@ def test_subcommand_tos_list(
         f"--channel={tos_channel}",
         f"--channel={sample_channel}",
     )
-    assert tos_channel in out
-    assert sample_channel in out
+    assert tos_channel.base_url in out
+    assert sample_channel.base_url in out
     # assert not err  # server log is output to stderr
     assert not code
 
@@ -188,22 +189,22 @@ def test_subcommand_tos_list(
         return_value=(tos_channel, sample_channel),
     )
     out, err, code = conda_cli("tos")
-    assert tos_channel in out
-    assert sample_channel in out
+    assert tos_channel.base_url in out
+    assert sample_channel.base_url in out
     # assert not err  # server log is output to stderr
     assert not code
 
     accept_tos(tos_channel, tos_root=system_tos_root, cache_timeout=None)
     out, err, code = conda_cli("tos")
-    assert tos_channel in out
-    assert sample_channel in out
+    assert tos_channel.base_url in out
+    assert sample_channel.base_url in out
     # assert not err  # server log is output to stderr
     assert not code
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     out, err, code = conda_cli("tos")
-    assert tos_channel in out
-    assert sample_channel in out
+    assert tos_channel.base_url in out
+    assert sample_channel.base_url in out
     # assert not err  # server log is output to stderr
     assert not code
 
