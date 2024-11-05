@@ -10,6 +10,7 @@ import pytest
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
+from anaconda_conda_tos.api import accept_tos, reject_tos
 from anaconda_conda_tos.exceptions import CondaToSMissingError
 from anaconda_conda_tos.local import (
     LocalToSMetadata,
@@ -20,7 +21,6 @@ from anaconda_conda_tos.local import (
 )
 from anaconda_conda_tos.models import MetadataPathPair, RemoteToSMetadata
 from anaconda_conda_tos.path import get_metadata_path
-from anaconda_conda_tos.tos import accept_tos, reject_tos
 
 if TYPE_CHECKING:
     from pathlib import Path
