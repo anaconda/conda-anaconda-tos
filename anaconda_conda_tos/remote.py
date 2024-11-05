@@ -14,7 +14,11 @@ from conda.models.channel import Channel
 from pydantic import ValidationError
 from requests.exceptions import ConnectionError, HTTPError
 
-from .exceptions import CondaToSInvalidError, CondaToSMissingError
+from .exceptions import (
+    CondaToSInvalidError,
+    CondaToSMissingError,
+    CondaToSPermissionError,
+)
 from .models import RemoteToSMetadata
 from .path import get_cache_path
 
@@ -108,11 +112,15 @@ def write_cached_endpoint(
         raise TypeError("`metadata` must be a RemoteToSMetadata.")
 
     # write to cache
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if metadata:
-        path.write_text(metadata.model_dump_json())
-    else:
-        path.touch()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if metadata:
+            path.write_text(metadata.model_dump_json())
+        else:
+            path.touch()
+    except PermissionError as exc:
+        # PermissionError: can't write to cache path
+        raise CondaToSPermissionError(path, channel) from exc
 
     return path
 
@@ -135,6 +143,9 @@ def get_remote_metadata(
         except FileNotFoundError as exc:
             # FileNotFoundError: cache path doesn't exist
             raise CondaToSMissingError(channel) from exc
+        except PermissionError as exc:
+            # PermissionError: can't read cache path
+            raise CondaToSPermissionError(cache, channel) from exc
 
         try:
             return RemoteToSMetadata.model_validate_json(text)

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
-from .exceptions import CondaToSMissingError
+from .exceptions import CondaToSMissingError, CondaToSPermissionError
 from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
 from .path import get_all_channel_paths, get_channel_paths, get_metadata_path, get_path
 
@@ -48,8 +48,12 @@ def write_metadata(
 
     # write metadata to file
     path = get_metadata_path(tos_root, channel, metadata.tos_version)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(metadata.model_dump_json())
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(metadata.model_dump_json())
+    except PermissionError as exc:
+        # PermissionError: can't write metadata path
+        raise CondaToSPermissionError(path, channel) from exc
 
     return MetadataPathPair(metadata=metadata, path=path)
 
@@ -63,8 +67,11 @@ def read_metadata(path: str | os.PathLike[str] | Path) -> MetadataPathPair | Non
         )
     except (FileNotFoundError, ValidationError):
         # FileNotFoundError: metadata path doesn't exist
-        # ValidationError: invalid JSON schema
+        # ValidationError: invalid JSON schema, treat it as missing
         return None
+    except PermissionError as exc:
+        # PermissionError: can't read metadata path
+        raise CondaToSPermissionError(path) from exc
 
 
 def get_local_metadata(
