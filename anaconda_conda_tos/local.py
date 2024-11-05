@@ -92,8 +92,11 @@ def get_local_metadata(
     if not metadata_pairs:
         raise CondaToSMissingError(f"No ToS metadata found for {channel}")
 
+    # reverse to order from lowest to highest priority
+    metadata_pairs.reverse()
+
     # return newest (and highest priority) metadata for channel
-    return sorted(metadata_pairs)[0]
+    return sorted(metadata_pairs)[-1]
 
 
 def get_local_metadatas(
@@ -110,4 +113,8 @@ def get_local_metadatas(
 
     # return the newest (and highest priority) metadata for each channel
     for channel, metadata_pairs in grouped_metadatas.items():
-        yield channel, sorted(metadata_pairs)[0]
+        # reverse to order from lowest to highest priority
+        metadata_pairs.reverse()
+
+        # yield newest (and highest priority) metadata for channel
+        yield channel, sorted(metadata_pairs)[-1]

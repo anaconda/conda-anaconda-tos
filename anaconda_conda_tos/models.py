@@ -68,7 +68,4 @@ class MetadataPathPair(BaseModel):
         """
         if not isinstance(other, MetadataPathPair):
             return NotImplemented
-
-        # we sort in reverse here to list the highest version first,
-        # this also ensures we do not mess with the priority order
-        return self.metadata.tos_version > other.metadata.tos_version
+        return self.metadata.tos_version < other.metadata.tos_version
