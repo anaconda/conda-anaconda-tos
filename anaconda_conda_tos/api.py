@@ -18,8 +18,8 @@ from .remote import get_metadata
 
 if TYPE_CHECKING:
     import os
+    from collections.abc import Iterable, Iterator
     from pathlib import Path
-    from typing import Iterable, Iterator
 
     from .models import MetadataPathPair
 

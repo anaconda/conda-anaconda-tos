@@ -17,7 +17,7 @@ from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-    from typing import Iterator
+    from collections.abc import Iterator
 
 
 def configure_parser(parser: ArgumentParser) -> None:

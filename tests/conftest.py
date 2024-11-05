@@ -16,8 +16,8 @@ from http_test_server import (
 from anaconda_conda_tos import path
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from pathlib import Path
-    from typing import Iterator
 
     from pytest import MonkeyPatch, TempPathFactory
 

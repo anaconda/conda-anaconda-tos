@@ -14,7 +14,8 @@ from conda.common.configuration import custom_expandvars
 from conda.models.channel import Channel
 
 if TYPE_CHECKING:
-    from typing import Final, Iterable, Iterator
+    from collections.abc import Iterable, Iterator
+    from typing import Final
 
 SITE_TOS_ROOT: Final = "C:/ProgramData/conda/tos" if on_win else "/etc/conda/tos"
 
