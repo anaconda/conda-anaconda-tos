@@ -32,7 +32,7 @@ def render_list(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
-) -> None:
+) -> int:
     """Display listing of unaccepted, accepted, and rejected ToS."""
     table = Table()
     table.add_column("Channel")
@@ -57,6 +57,7 @@ def render_list(
 
     console = console or Console()
     console.print(table)
+    return 0
 
 
 def render_view(
@@ -64,7 +65,7 @@ def render_view(
     tos_root: str | os.PathLike | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
-) -> None:
+) -> int:
     """Display the ToS text for the given channels."""
     console = console or Console()
     for channel in get_channels(*channels):
@@ -77,6 +78,7 @@ def render_view(
         else:
             console.print(f"viewing ToS for {channel}:")
             console.print(metadata.text)
+    return 0
 
 
 def render_accept(
@@ -84,7 +86,7 @@ def render_accept(
     tos_root: str | os.PathLike | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
-) -> None:
+) -> int:
     """Display acceptance of the ToS for the given channels."""
     console = console or Console()
     for channel in get_channels(*channels):
@@ -94,6 +96,7 @@ def render_accept(
             console.print(f"ToS not found for {channel}")
         else:
             console.print(f"accepted ToS for {channel}")
+    return 0
 
 
 def render_reject(
@@ -101,7 +104,7 @@ def render_reject(
     tos_root: str | os.PathLike | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
-) -> None:
+) -> int:
     """Display rejection of the ToS for the given channels."""
     console = console or Console()
     for channel in get_channels(*channels):
@@ -111,3 +114,4 @@ def render_reject(
             console.print(f"ToS not found for {channel}")
         else:
             console.print(f"rejected ToS for {channel}")
+    return 0

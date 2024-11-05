@@ -79,13 +79,13 @@ def execute(args: Namespace) -> int:
         action = render_reject
     elif args.view:
         action = render_view
-    action(
+
+    return action(
         *context.channels,
         tos_root=args.tos_root,
         cache_timeout=args.cache_timeout,
         console=Console(),
     )
-    return 0
 
 
 @hookimpl
