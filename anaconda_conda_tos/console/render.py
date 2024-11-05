@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from conda.models.channel import Channel
 
 
-def render_list(*channels: str | Channel) -> None:
+def render_list(*channels: str | Channel, console: Console | None = None) -> None:
     """Display listing of unaccepted, accepted, and rejected ToS."""
     table = Table()
     table.add_column("Channel")
@@ -40,37 +40,50 @@ def render_list(*channels: str | Channel) -> None:
                 location_mapping(metadata_pair.path),
             )
 
-    console = Console()
+    console = console or Console()
     console.print(table)
 
 
-def render_view(*channels: str | Channel) -> None:
+def render_view(*channels: str | Channel, console: Console | None = None) -> None:
     """Display the ToS text for the given channels."""
+    console = console or Console()
     for channel in get_channels(*channels):
-        print(f"viewing ToS for {channel}:")
         try:
-            print(get_metadata(channel).text)
+            metadata = get_metadata(channel)
         except CondaToSMissingError:
-            print("ToS not found")
+            console.print(f"no ToS for {channel}")
+        else:
+            console.print(f"viewing ToS for {channel}:")
+            console.print(metadata.text)
 
 
-def render_accept(*channels: str | Channel, tos_root: str | os.PathLike | Path) -> None:
+def render_accept(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    console: Console | None = None,
+) -> None:
     """Display acceptance of the ToS for the given channels."""
+    console = console or Console()
     for channel in get_channels(*channels):
         try:
             accept_tos(tos_root, channel)
         except CondaToSMissingError:
-            print(f"ToS not found for {channel}")
+            console.print(f"ToS not found for {channel}")
         else:
-            print(f"accepted ToS for {channel}")
+            console.print(f"accepted ToS for {channel}")
 
 
-def render_reject(*channels: str | Channel, tos_root: str | os.PathLike | Path) -> None:
+def render_reject(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    console: Console | None = None,
+) -> None:
     """Display rejection of the ToS for the given channels."""
+    console = console or Console()
     for channel in get_channels(*channels):
         try:
             reject_tos(tos_root, channel)
         except CondaToSMissingError:
-            print(f"ToS not found for {channel}")
+            console.print(f"ToS not found for {channel}")
         else:
-            print(f"rejected ToS for {channel}")
+            console.print(f"rejected ToS for {channel}")
