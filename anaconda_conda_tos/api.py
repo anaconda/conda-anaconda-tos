@@ -71,8 +71,6 @@ def get_stored_tos(
             # CondaToSMissingError: no remote ToS metadata
             continue
 
-        print(channel, local_pair)
-
         # yield local metadata if it's the same version as the remote
         if local_pair.metadata.tos_version >= remote_metadata.tos_version:
             yield channel, local_pair

@@ -9,7 +9,7 @@ $ git clone https://github.com/anaconda/anaconda-conda-tos.git
 $ cd anaconda-conda-tos
 $ conda create --name=conda-tos --file=tests/requirements.txt
 $ conda activate conda-tos
-(conda-tos) $ pip install [-e] .
+(conda-tos) $ pip install -e .
 ```
 
 ## Usage
