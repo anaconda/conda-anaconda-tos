@@ -23,9 +23,7 @@ if TYPE_CHECKING:
 def write_metadata(
     tos_root: str | os.PathLike[str] | Path,
     channel: str | Channel,
-    metadata: RemoteToSMetadata | LocalToSMetadata,
-    *,
-    tos_accepted: bool,
+    metadata: LocalToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
 ) -> MetadataPathPair:
@@ -34,20 +32,19 @@ def write_metadata(
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError("`channel` must have a base URL.")
-    if not isinstance(metadata, (RemoteToSMetadata, LocalToSMetadata)):
-        raise TypeError("`metadata` must be a RemoteToSMetadata or LocalToSMetadata.")
-    if not isinstance(tos_accepted, bool):
-        raise TypeError("`tos_accepted` must be a bool.")
-
-    # always ensure the base_url is set
-    kwargs["base_url"] = channel.base_url
-
-    # always set the acceptance fields
-    kwargs["tos_accepted"] = tos_accepted
-    kwargs["acceptance_timestamp"] = datetime.now(tz=timezone.utc)
+    if not isinstance(metadata, (LocalToSMetadata, RemoteToSMetadata)):
+        raise TypeError("`metadata` must be a LocalToSMetadata or RemoteToSMetadata.")
 
     # create/update ToSMetadata object
-    metadata = LocalToSMetadata(**{**metadata.model_dump(), **kwargs})
+    metadata = LocalToSMetadata(
+        **{
+            **metadata.model_dump(),
+            **kwargs,
+            # override the following fields with the current time and channel base URL
+            "acceptance_timestamp": datetime.now(tz=timezone.utc),
+            "base_url": channel.base_url,
+        }
+    )
 
     # write metadata to file
     path = get_metadata_path(tos_root, channel, metadata.tos_version)
