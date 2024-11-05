@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import datetime  # noqa: TCH003 # needed for Pydantic model
 from pathlib import Path  # noqa: TCH003 # needed for Pydantic model
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -48,5 +48,29 @@ class LocalToSMetadata(RemoteToSMetadata):
 class MetadataPathPair(BaseModel):
     """Tuple of ToS metadata and path."""
 
-    metadata: LocalToSMetadata
-    path: Path
+    # FUTURE: Python 3.10+, switch to `LocalToSMetadata | RemoteToSMetadata`
+    metadata: Union[LocalToSMetadata, RemoteToSMetadata]  # noqa: UP007
+    # FUTURE: Python 3.10+, switch to `Path | None`
+    path: Optional[Path] = Field(None)  # noqa: UP007
+
+    @model_validator(mode="after")
+    def _required(self: Self) -> Self:
+        if type(self.metadata) is RemoteToSMetadata:
+            self.path = None
+        elif type(self.metadata) is LocalToSMetadata and not self.path:
+            raise ValueError(
+                "`path` must be provided when metadata is a LocalToSMetadata."
+            )
+        return self
+
+    def __lt__(self: Self, other: MetadataPathPair) -> bool:
+        """Compare the ToS metadata version.
+
+        Critical for sorting a list of ToS metadata path pairs.
+        """
+        if not isinstance(other, MetadataPathPair):
+            return NotImplemented
+
+        # we sort in reverse here to list the highest version first,
+        # this also ensures we do not mess with the priority order
+        return self.metadata.tos_version > other.metadata.tos_version
