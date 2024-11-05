@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS API functions."""
+"""High-level API functions for interacting with a channel's ToS."""
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS remote functions."""
+"""Low-level remote (the "raw" endpoint JSON) ToS metadata management."""
 
 from __future__ import annotations
 

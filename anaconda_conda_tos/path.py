@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Conda ToS path functions."""
+"""Low-level path helpers."""
 
 from __future__ import annotations
 
