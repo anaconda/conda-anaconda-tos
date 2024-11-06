@@ -10,13 +10,13 @@ import pytest
 from pydantic import ValidationError
 
 from anaconda_conda_tos.models import (
+    LocalPair,
     LocalToSMetadata,
-    MetadataPathPair,
+    RemotePair,
     RemoteToSMetadata,
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from typing import Final
 
 
@@ -84,7 +84,8 @@ def test_LocalToSMetadata(  # noqa: N802
         )
 
 
-METADATA = LocalToSMetadata(
+REMOTE_METADATA = RemoteToSMetadata(tos_version=2, text="ToS")
+LOCAL_METADATA = LocalToSMetadata(
     tos_version=1,
     text="ToS",
     base_url="url",
@@ -93,21 +94,61 @@ METADATA = LocalToSMetadata(
 )
 
 
+def test_ToSMetadata_ge() -> None:  # noqa: N802
+    assert REMOTE_METADATA >= LOCAL_METADATA
+
+    with pytest.raises(TypeError):
+        assert object() <= REMOTE_METADATA
+    with pytest.raises(TypeError):
+        assert object() <= LOCAL_METADATA
+
+
 @pytest.mark.parametrize(
     "metadata,path,raises",
     [
         pytest.param(None, None, True, id="missing"),
-        pytest.param(METADATA, None, True, id="only metadata"),
+        pytest.param(REMOTE_METADATA, None, False, id="only metadata"),
         pytest.param(None, "path", True, id="only path"),
-        pytest.param(METADATA, "path", False, id="complete"),
+        pytest.param(REMOTE_METADATA, "path", True, id="complete"),
     ],
 )
-def test_MetadataPathPair(metadata: LocalToSMetadata, path: Path, raises: bool) -> None:  # noqa: N802
-    pair = {
-        "metadata": metadata,
-        "path": path,
-    }
+def test_RemotePair(  # noqa: N802
+    metadata: RemoteToSMetadata | None,
+    path: str | None,
+    raises: bool,
+) -> None:
+    kwargs = {"metadata": metadata, "path": path}
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     with pytest.raises(ValidationError) if raises else nullcontext():
-        MetadataPathPair(
-            **{key: value for key, value in pair.items() if value is not None},
-        )
+        RemotePair(**kwargs)
+
+
+@pytest.mark.parametrize(
+    "metadata,path,raises",
+    [
+        pytest.param(None, None, True, id="missing"),
+        pytest.param(LOCAL_METADATA, None, True, id="only metadata"),
+        pytest.param(None, "path", True, id="only path"),
+        pytest.param(LOCAL_METADATA, "path", False, id="complete"),
+    ],
+)
+def test_LocalPair(  # noqa: N802
+    metadata: RemoteToSMetadata | None,
+    path: str | None,
+    raises: bool,
+) -> None:
+    kwargs = {"metadata": metadata, "path": path}
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
+    with pytest.raises(ValidationError) if raises else nullcontext():
+        LocalPair(**kwargs)
+
+
+def test_MetadataPair_lt() -> None:  # noqa: N802
+    local = LocalPair(metadata=LOCAL_METADATA, path="path")
+    remote = RemotePair(metadata=REMOTE_METADATA)
+    assert local < remote
+
+    with pytest.raises(TypeError):
+        assert object() > local
+    with pytest.raises(TypeError):
+        assert object() > remote

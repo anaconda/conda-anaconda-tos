@@ -10,7 +10,7 @@ from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
 from .local import get_local_metadata, get_local_metadatas, write_metadata
-from .models import MetadataPathPair
+from .models import LocalPair, RemotePair
 from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ def get_one_tos(
     *,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-) -> MetadataPathPair:
+) -> LocalPair | RemotePair:
     """Get the ToS metadata for the given channel."""
     # fetch remote metadata
     remote_metadata = get_remote_metadata(channel, cache_timeout=cache_timeout)
@@ -55,14 +55,14 @@ def get_one_tos(
 
     # cache is stale, remote ToS metadata exists, and local ToS metadata is missing or
     # local ToS metadata is outdated (i.e., remote has a newer version)
-    return MetadataPathPair(metadata=remote_metadata)
+    return RemotePair(metadata=remote_metadata)
 
 
 def get_stored_tos(
     *,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-) -> Iterator[tuple[Channel, MetadataPathPair]]:
+) -> Iterator[tuple[Channel, LocalPair | RemotePair]]:
     """Yield all ToS metadatas."""
     for channel, local_pair in get_local_metadatas(extend_search_path=[tos_root]):
         try:
@@ -75,7 +75,7 @@ def get_stored_tos(
         if local_pair.metadata >= remote_metadata:
             yield channel, local_pair
         else:
-            yield channel, MetadataPathPair(metadata=remote_metadata)
+            yield channel, RemotePair(metadata=remote_metadata)
 
 
 def accept_tos(
@@ -83,7 +83,7 @@ def accept_tos(
     *,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-) -> MetadataPathPair:
+) -> LocalPair:
     """Accept the ToS metadata for the given channel."""
     metadata = get_one_tos(
         channel,
@@ -98,7 +98,7 @@ def reject_tos(
     *,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-) -> MetadataPathPair:
+) -> LocalPair:
     """Reject the ToS metadata for the given channel."""
     metadata = get_one_tos(
         channel,
@@ -112,7 +112,7 @@ def get_all_tos(
     *channels: str | Channel,
     tos_root: str | os.PathLike | Path,
     cache_timeout: int | float | None,
-) -> Iterator[tuple[Channel, MetadataPathPair | None]]:
+) -> Iterator[tuple[Channel, LocalPair | RemotePair | None]]:
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 def accepted_mapping(metadata: RemoteToSMetadata | LocalToSMetadata) -> str:
     """Map the ToS acceptance status to a human-readable string."""
-    if type(metadata) is RemoteToSMetadata:
+    if isinstance(metadata, RemoteToSMetadata):
         return "-"
 
     tos_accepted = metadata.tos_accepted
