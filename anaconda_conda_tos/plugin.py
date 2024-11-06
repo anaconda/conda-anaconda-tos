@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
@@ -11,23 +12,27 @@ from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaPreCommand, CondaSetting, CondaSubcommand, hookimpl
 from rich.console import Console
-from rich.prompt import Prompt
 
-from .api import accept_tos, get_channels, get_one_tos, reject_tos
-from .console import render_accept, render_list, render_reject, render_view
-from .exceptions import CondaToSMissingError, CondaToSRejectedError
-from .models import RemoteToSMetadata
+from .console import (
+    render_accept,
+    render_interactive,
+    render_list,
+    render_reject,
+    render_view,
+)
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterator
+    from typing import Callable
 
-    from conda.models.channel import Channel
 
-
+#: Default ToS storage location.
 DEFAULT_TOS_ROOT = USER_TOS_ROOT
-DEFAULT_CACHE_TIMEOUT = 24 * 60 * 60
+
+#: Default cache timeout in seconds.
+DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -62,6 +67,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--accept", "--agree", action="store_true")
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
+    action.add_argument("--interactive", action="store_true")
 
     parser.add_argument("--cache-timeout", action="store", type=int)
     parser.add_argument(
@@ -81,19 +87,24 @@ def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
-    action = render_list
+    action: Callable = render_list
+    kwargs = {}
     if args.accept:
         action = render_accept
     elif args.reject:
         action = render_reject
     elif args.view:
         action = render_view
+    elif args.interactive:
+        action = render_interactive
+        kwargs["auto_accept_tos"] = context.plugins.auto_accept_tos
 
     return action(
         *context.channels,
         tos_root=args.tos_root,
         cache_timeout=args.cache_timeout,
         console=Console(),
+        **kwargs,
     )
 
 
@@ -118,75 +129,13 @@ def conda_settings() -> Iterator[CondaSetting]:
     )
 
 
-def _prompt_acceptance(
-    channel: Channel,
-    metadata: RemoteToSMetadata,
-    console: Console,
-    choices: Iterable[str] = ("accept", "reject", "view"),
-) -> bool:
-    response = Prompt.ask(
-        f"Accept the Terms of Service (ToS) for this channel ({channel})?",
-        choices=choices,
-        console=console,
-    )
-    if response == "accept":
-        return True
-    elif response == "reject":
-        return False
-    else:
-        console.print(metadata.text)
-        return _prompt_acceptance(channel, metadata, console, ("accept", "reject"))
-
-
 def _pre_command_check_tos(_command: str) -> None:
-    accepted = 0
-    rejected = []
-    channel_metadatas = []
-
-    console = Console()
-    console.print("[bold blue]Gathering channels...")
-    for channel in get_channels(*context.channels):
-        try:
-            metadata = get_one_tos(
-                channel,
-                tos_root=DEFAULT_TOS_ROOT,
-                cache_timeout=DEFAULT_CACHE_TIMEOUT,
-            ).metadata
-        except CondaToSMissingError:
-            # CondaToSMissingError: no ToS metadata found
-            continue
-
-        if type(metadata) is RemoteToSMetadata:
-            # ToS hasn't been accepted or rejected yet
-            channel_metadatas.append((channel, metadata))
-        elif metadata.tos_accepted:
-            accepted += 1
-        else:
-            rejected.append(channel)
-
-    if rejected:
-        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
-        raise CondaToSRejectedError(*rejected)
-
-    console.print("[bold yellow]Reviewing channels...")
-    for channel, metadata in channel_metadatas:
-        if context.plugins.auto_accept_tos or _prompt_acceptance(
-            channel, metadata, console
-        ):
-            accept_tos(
-                channel, tos_root=DEFAULT_TOS_ROOT, cache_timeout=DEFAULT_CACHE_TIMEOUT
-            )
-            accepted += 1
-        else:
-            reject_tos(
-                channel, tos_root=DEFAULT_TOS_ROOT, cache_timeout=DEFAULT_CACHE_TIMEOUT
-            )
-            rejected.append(channel)
-
-    if rejected:
-        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
-        raise CondaToSRejectedError(*rejected)
-    console.print(f"[bold green]{accepted} channel ToS accepted")
+    render_interactive(
+        *context.channels,
+        tos_root=DEFAULT_TOS_ROOT,
+        cache_timeout=DEFAULT_CACHE_TIMEOUT,
+        auto_accept_tos=context.plugins.auto_accept_tos,
+    )
 
 
 @hookimpl(tryfirst=True)

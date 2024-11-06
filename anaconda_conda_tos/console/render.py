@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rich.console import Console
+from rich.prompt import Prompt
 from rich.table import Table
 
 from ..api import (
@@ -17,11 +18,13 @@ from ..api import (
     get_one_tos,
     reject_tos,
 )
-from ..exceptions import CondaToSMissingError
+from ..exceptions import CondaToSMissingError, CondaToSRejectedError
+from ..models import RemoteToSMetadata
 from .mappers import accepted_mapping, location_mapping
 
 if TYPE_CHECKING:
     import os
+    from collections.abc import Iterable
     from pathlib import Path
 
     from conda.models.channel import Channel
@@ -114,4 +117,76 @@ def render_reject(
             console.print(f"ToS not found for {channel}")
         else:
             console.print(f"rejected ToS for {channel}")
+    return 0
+
+
+def _prompt_acceptance(
+    channel: Channel,
+    metadata: RemoteToSMetadata,
+    console: Console,
+    choices: Iterable[str] = ("accept", "reject", "view"),
+) -> bool:
+    response = Prompt.ask(
+        f"Accept the Terms of Service (ToS) for this channel ({channel})?",
+        choices=choices,
+        console=console,
+    )
+    if response == "accept":
+        return True
+    elif response == "reject":
+        return False
+    else:
+        console.print(metadata.text)
+        return _prompt_acceptance(channel, metadata, console, ("accept", "reject"))
+
+
+def render_interactive(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    cache_timeout: int | float | None,
+    console: Console | None = None,
+    auto_accept_tos: bool,
+) -> int:
+    """Prompt user to accept or reject ToS for channels."""
+    accepted = 0
+    rejected = []
+    channel_metadatas = []
+
+    console = Console()
+    console.print("[bold blue]Gathering channels...")
+    for channel in get_channels(*channels):
+        try:
+            metadata = get_one_tos(
+                channel, tos_root=tos_root, cache_timeout=cache_timeout
+            ).metadata
+        except CondaToSMissingError:
+            # CondaToSMissingError: no ToS metadata found
+            continue
+
+        if type(metadata) is RemoteToSMetadata:
+            # ToS hasn't been accepted or rejected yet
+            channel_metadatas.append((channel, metadata))
+        elif metadata.tos_accepted:
+            accepted += 1
+        else:
+            rejected.append(channel)
+
+    if rejected:
+        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+        raise CondaToSRejectedError(*rejected)
+
+    console.print("[bold yellow]Reviewing channels...")
+    for channel, metadata in channel_metadatas:
+        if auto_accept_tos or _prompt_acceptance(channel, metadata, console):
+            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            accepted += 1
+        else:
+            reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            rejected.append(channel)
+
+    if rejected:
+        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+        raise CondaToSRejectedError(*rejected)
+    console.print(f"[bold green]{accepted} channel ToS accepted")
+
     return 0
