@@ -2,15 +2,25 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import sys
+from io import StringIO
 from typing import TYPE_CHECKING
 
-from anaconda_conda_tos.console.render import render_accept, render_reject, render_view
+import pytest
+
+from anaconda_conda_tos.console.render import (
+    render_accept,
+    render_interactive,
+    render_reject,
+    render_view,
+)
+from anaconda_conda_tos.exceptions import CondaToSRejectedError
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from conda.models.channel import Channel
-    from pytest import CaptureFixture
+    from pytest import CaptureFixture, MonkeyPatch
 
 
 def test_render_view(
@@ -84,3 +94,96 @@ def test_render_reject(
     out, err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
+
+
+def test_render_interactive(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture,
+    sample_channel: Channel,
+    tos_channel: Channel,
+    tmp_path: Path,
+    tos_full_lines: list[str],
+) -> None:
+    render_interactive(
+        sample_channel, tos_root=tmp_path, cache_timeout=None, auto_accept_tos=False
+    )
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [
+        "Gathering channels...",
+        "Reviewing channels...",
+        "0 channel ToS accepted",
+    ]
+
+    monkeypatch.setattr(sys, "stdin", StringIO("accept\n"))
+    render_interactive(
+        tos_channel,
+        tos_root=tmp_path / "accepted",
+        cache_timeout=None,
+        auto_accept_tos=False,
+    )
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [
+        "Gathering channels...",
+        "Reviewing channels...",
+        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+        "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS accepted",
+    ]
+    render_interactive(
+        tos_channel,
+        tos_root=tmp_path / "accepted",
+        cache_timeout=None,
+        auto_accept_tos=False,
+    )
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [
+        "Gathering channels...",
+        "Reviewing channels...",
+        "1 channel ToS accepted",
+    ]
+
+    monkeypatch.setattr(sys, "stdin", StringIO("reject\n"))
+    with pytest.raises(CondaToSRejectedError):
+        render_interactive(
+            tos_channel,
+            tos_root=tmp_path / "rejected",
+            cache_timeout=None,
+            auto_accept_tos=False,
+        )
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [
+        "Gathering channels...",
+        "Reviewing channels...",
+        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+        "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS rejected",
+    ]
+    with pytest.raises(CondaToSRejectedError):
+        render_interactive(
+            tos_channel,
+            tos_root=tmp_path / "rejected",
+            cache_timeout=None,
+            auto_accept_tos=False,
+        )
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [
+        "Gathering channels...",
+        "Reviewing channels...",
+        "1 channel ToS rejected",
+    ]
+
+    monkeypatch.setattr(sys, "stdin", StringIO("view\naccept\n"))
+    render_interactive(
+        tos_channel,
+        tos_root=tmp_path / "viewed",
+        cache_timeout=None,
+        auto_accept_tos=False,
+    )
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [
+        "Gathering channels...",
+        "Reviewing channels...",
+        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+        "[(a)ccept/(r)eject/(v)iew]: " + tos_full_lines[0],
+        *tos_full_lines[1:],
+        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+        "[(a)ccept/(r)eject]: 1 channel ToS accepted",
+    ]

@@ -171,11 +171,11 @@ def render_interactive(
         else:
             rejected.append(channel)
 
+    console.print("[bold yellow]Reviewing channels...")
     if rejected:
         console.print(f"[bold red]{len(rejected)} channel ToS rejected")
         raise CondaToSRejectedError(*rejected)
 
-    console.print("[bold yellow]Reviewing channels...")
     for channel, metadata in channel_metadatas:
         if auto_accept_tos or _prompt_acceptance(channel, metadata, console):
             accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
