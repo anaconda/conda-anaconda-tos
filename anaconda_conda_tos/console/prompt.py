@@ -24,6 +24,7 @@ class FuzzyPrompt(Prompt):
         """Check value is in the list of valid choices."""
         if not self.choices:
             return value
+        value = self.strip_braces(value)
         value = value.lower()
         return next(
             (
@@ -36,7 +37,6 @@ class FuzzyPrompt(Prompt):
 
     def process_response(self: Self, value: str) -> str:
         """Process response from user, convert to prompt type."""
-        value = self.strip_braces(value)
         try:
             return_value = self.response_type(value)
         except ValueError as exc:

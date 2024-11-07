@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from anaconda_conda_tos.console import render_accept, render_reject, render_view
+from anaconda_conda_tos.console.render import render_accept, render_reject, render_view
 
 if TYPE_CHECKING:
     from pathlib import Path
