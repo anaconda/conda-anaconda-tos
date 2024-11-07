@@ -11,7 +11,7 @@ from conda.models.channel import Channel
 from pydantic import ValidationError
 
 from .exceptions import CondaToSMissingError, CondaToSPermissionError
-from .models import LocalToSMetadata, MetadataPathPair, RemoteToSMetadata
+from .models import LocalPair, LocalToSMetadata, RemoteToSMetadata
 from .path import get_all_channel_paths, get_channel_paths, get_metadata_path, get_path
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ def write_metadata(
     metadata: LocalToSMetadata | RemoteToSMetadata,
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
-) -> MetadataPathPair:
+) -> LocalPair:
     """Write the ToS metadata to file."""
     # argument validation/coercion
     channel = Channel(channel)
@@ -56,13 +56,13 @@ def write_metadata(
         # PermissionError: can't write metadata path
         raise CondaToSPermissionError(path, channel) from exc
 
-    return MetadataPathPair(metadata=metadata, path=path)
+    return LocalPair(metadata=metadata, path=path)
 
 
-def read_metadata(path: str | os.PathLike[str] | Path) -> MetadataPathPair | None:
+def read_metadata(path: str | os.PathLike[str] | Path) -> LocalPair | None:
     """Load the ToS metadata from file."""
     try:
-        return MetadataPathPair(
+        return LocalPair(
             metadata=LocalToSMetadata.model_validate_json(get_path(path).read_text()),
             path=path,
         )
@@ -79,7 +79,7 @@ def get_local_metadata(
     channel: str | Channel,
     *,
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
-) -> MetadataPathPair:
+) -> LocalPair:
     """Get the latest ToS metadata for the given channel."""
     # find all ToS metadata files for the given channel
     metadata_pairs = [
@@ -102,10 +102,10 @@ def get_local_metadata(
 def get_local_metadatas(
     *,
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
-) -> Iterator[tuple[Channel, MetadataPathPair]]:
+) -> Iterator[tuple[Channel, LocalPair]]:
     """Yield all ToS metadata."""
     # group metadata by channel
-    grouped_metadatas: dict[Channel, list[MetadataPathPair]] = {}
+    grouped_metadatas: dict[Channel, list[LocalPair]] = {}
     for path in get_all_channel_paths(extend_search_path=extend_search_path):
         if metadata_pair := read_metadata(path):
             channel = Channel(metadata_pair.metadata.base_url)
