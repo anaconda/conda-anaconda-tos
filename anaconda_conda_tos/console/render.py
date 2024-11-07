@@ -152,7 +152,7 @@ def render_interactive(
     rejected = []
     channel_metadatas = []
 
-    console = Console()
+    console = console or Console()
     console.print("[bold blue]Gathering channels...")
     for channel in get_channels(*channels):
         try:
@@ -163,7 +163,7 @@ def render_interactive(
             # CondaToSMissingError: no ToS metadata found
             continue
 
-        if type(metadata) is RemoteToSMetadata:
+        if isinstance(metadata, RemoteToSMetadata):
             # ToS hasn't been accepted or rejected yet
             channel_metadatas.append((channel, metadata))
         elif metadata.tos_accepted:
@@ -188,5 +188,4 @@ def render_interactive(
         console.print(f"[bold red]{len(rejected)} channel ToS rejected")
         raise CondaToSRejectedError(*rejected)
     console.print(f"[bold green]{accepted} channel ToS accepted")
-
     return 0
