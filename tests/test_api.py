@@ -10,15 +10,12 @@ import pytest
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from anaconda_conda_tos.api import (
-    get_channels,
-    get_one_tos,
-    get_stored_tos,
-)
+from anaconda_conda_tos.api import get_channels, get_one_tos, get_stored_tos
 from anaconda_conda_tos.exceptions import CondaToSMissingError
 from anaconda_conda_tos.models import (
+    LocalPair,
     LocalToSMetadata,
-    MetadataPathPair,
+    RemotePair,
     RemoteToSMetadata,
 )
 
@@ -39,8 +36,8 @@ def test_get_channels() -> None:
 
 
 @pytest.fixture(scope="session")
-def remote_metadata_pair() -> MetadataPathPair:
-    return MetadataPathPair(
+def remote_metadata_pair() -> RemotePair:
+    return RemotePair(
         metadata=RemoteToSMetadata(
             tos_version=2,
             text="new ToS",
@@ -50,10 +47,10 @@ def remote_metadata_pair() -> MetadataPathPair:
 
 @pytest.fixture(scope="session")
 def local_metadata_pair(
-    remote_metadata_pair: MetadataPathPair,
+    remote_metadata_pair: RemotePair,
     sample_channel: Channel,
-) -> MetadataPathPair:
-    return MetadataPathPair(
+) -> LocalPair:
+    return LocalPair(
         metadata=LocalToSMetadata(
             **remote_metadata_pair.metadata.model_dump(),
             base_url=sample_channel.base_url,
@@ -65,8 +62,8 @@ def local_metadata_pair(
 
 
 @pytest.fixture(scope="session")
-def old_metadata_pair(sample_channel: Channel) -> MetadataPathPair:
-    return MetadataPathPair(
+def old_metadata_pair(sample_channel: Channel) -> LocalPair:
+    return LocalPair(
         metadata=LocalToSMetadata(
             tos_version=1,
             text="old ToS",
@@ -82,9 +79,9 @@ def test_get_single_metadata(
     mocker: MockerFixture,
     tmp_path: Path,
     sample_channel: Channel,
-    remote_metadata_pair: MetadataPathPair,
-    local_metadata_pair: MetadataPathPair,
-    old_metadata_pair: MetadataPathPair,
+    remote_metadata_pair: RemotePair,
+    local_metadata_pair: LocalPair,
+    old_metadata_pair: LocalPair,
 ) -> None:
     # mock remote ToS and no local ToS
     mocker.patch(
@@ -131,9 +128,9 @@ def test_get_stored_metadatas(
     mocker: MockerFixture,
     tmp_path: Path,
     sample_channel: Channel,
-    remote_metadata_pair: MetadataPathPair,
-    local_metadata_pair: MetadataPathPair,
-    old_metadata_pair: MetadataPathPair,
+    remote_metadata_pair: RemotePair,
+    local_metadata_pair: LocalPair,
+    old_metadata_pair: LocalPair,
 ) -> None:
     # mock no remote ToS
     mocker.patch(

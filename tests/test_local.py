@@ -14,13 +14,12 @@ from pydantic import ValidationError
 
 from anaconda_conda_tos.exceptions import CondaToSMissingError, CondaToSPermissionError
 from anaconda_conda_tos.local import (
-    LocalToSMetadata,
     get_local_metadata,
     get_local_metadatas,
     read_metadata,
     write_metadata,
 )
-from anaconda_conda_tos.models import MetadataPathPair, RemoteToSMetadata
+from anaconda_conda_tos.models import LocalPair, LocalToSMetadata, RemoteToSMetadata
 from anaconda_conda_tos.path import get_metadata_path
 
 if TYPE_CHECKING:
@@ -74,13 +73,13 @@ def test_write_metadata(tmp_path: Path) -> None:
         REMOTE_METADATA,
         tos_accepted=True,
     )
-    assert isinstance(metadata_pair, MetadataPathPair)
+    assert isinstance(metadata_pair, LocalPair)
     assert _similar_metadata(metadata_pair.metadata, LOCAL_METADATA)
     assert metadata_pair.path == path
 
     # write with LocalToSMetadata
     metadata_pair = write_metadata(tmp_path, CHANNEL, LOCAL_METADATA, tos_accepted=True)
-    assert isinstance(metadata_pair, MetadataPathPair)
+    assert isinstance(metadata_pair, LocalPair)
     assert _similar_metadata(metadata_pair.metadata, LOCAL_METADATA)
     assert metadata_pair.path == path
 
