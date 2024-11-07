@@ -48,7 +48,7 @@ def write_metadata(
     )
 
     # write metadata to file
-    path = get_metadata_path(tos_root, channel, metadata.tos_version)
+    path = get_metadata_path(tos_root, channel, metadata.timestamp)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(metadata.model_dump_json())

@@ -39,7 +39,7 @@ def test_get_channels() -> None:
 def remote_metadata_pair() -> RemotePair:
     return RemotePair(
         metadata=RemoteToSMetadata(
-            tos_version=2,
+            timestamp=datetime(2024, 11, 1, tzinfo=timezone.utc),
             text="new ToS",
         ),
     )
@@ -65,7 +65,7 @@ def local_metadata_pair(
 def old_metadata_pair(sample_channel: Channel) -> LocalPair:
     return LocalPair(
         metadata=LocalToSMetadata(
-            tos_version=1,
+            timestamp=datetime(2024, 10, 1, tzinfo=timezone.utc),
             text="old ToS",
             base_url=sample_channel.base_url,
             tos_accepted=True,

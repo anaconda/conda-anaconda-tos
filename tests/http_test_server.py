@@ -11,6 +11,7 @@ import queue
 import shutil
 import socket
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
@@ -28,7 +29,7 @@ SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
 
 
 TOS_TEXT = "\n".join(("ToS full text", "", uuid4().hex))
-TOS_METADATA = RemoteToSMetadata(tos_version=1, text=TOS_TEXT)
+TOS_METADATA = RemoteToSMetadata(timestamp=datetime.now(tz=timezone.utc), text=TOS_TEXT)
 
 
 def run_test_server(

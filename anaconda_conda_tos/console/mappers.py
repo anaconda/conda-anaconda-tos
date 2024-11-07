@@ -9,9 +9,15 @@ from typing import TYPE_CHECKING
 from ..models import RemoteToSMetadata
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from pathlib import Path
 
     from ..models import LocalToSMetadata
+
+
+def timestamp_mapping(timestamp: datetime) -> str:
+    """Map the UTC ToS timestamp to a localized human-readable string."""
+    return timestamp.astimezone().strftime("%Y-%m-%d")
 
 
 def accepted_mapping(metadata: RemoteToSMetadata | LocalToSMetadata) -> str:
@@ -24,7 +30,7 @@ def accepted_mapping(metadata: RemoteToSMetadata | LocalToSMetadata) -> str:
     if tos_accepted:
         if acceptance_timestamp:
             # convert timestamp to localized time
-            return acceptance_timestamp.astimezone().strftime("%Y-%m-%d")
+            return timestamp_mapping(acceptance_timestamp)
         else:
             # accepted but no timestamp
             return "unknown"

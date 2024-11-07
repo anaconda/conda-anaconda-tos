@@ -18,7 +18,7 @@ from ..api import (
     reject_tos,
 )
 from ..exceptions import CondaToSMissingError
-from .mappers import accepted_mapping, location_mapping
+from .mappers import accepted_mapping, location_mapping, timestamp_mapping
 
 if TYPE_CHECKING:
     import os
@@ -50,7 +50,7 @@ def render_list(
         else:
             table.add_row(
                 channel.base_url,
-                str(metadata_pair.metadata.tos_version),
+                timestamp_mapping(metadata_pair.metadata.timestamp),
                 accepted_mapping(metadata_pair.metadata),
                 location_mapping(metadata_pair.path),
             )
