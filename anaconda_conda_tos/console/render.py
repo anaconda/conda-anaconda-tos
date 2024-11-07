@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rich.console import Console
-from rich.prompt import Prompt
 from rich.table import Table
 
 from ..api import (
@@ -21,6 +20,7 @@ from ..api import (
 from ..exceptions import CondaToSMissingError, CondaToSRejectedError
 from ..models import RemoteToSMetadata
 from .mappers import accepted_mapping, location_mapping
+from .prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
     import os
@@ -124,9 +124,9 @@ def _prompt_acceptance(
     channel: Channel,
     metadata: RemoteToSMetadata,
     console: Console,
-    choices: Iterable[str] = ("accept", "reject", "view"),
+    choices: Iterable[str] = ("(a)ccept", "(r)eject", "(v)iew"),
 ) -> bool:
-    response = Prompt.ask(
+    response = FuzzyPrompt.ask(
         f"Accept the Terms of Service (ToS) for this channel ({channel})?",
         choices=choices,
         console=console,
@@ -137,7 +137,7 @@ def _prompt_acceptance(
         return False
     else:
         console.print(metadata.text)
-        return _prompt_acceptance(channel, metadata, console, ("accept", "reject"))
+        return _prompt_acceptance(channel, metadata, console, ("(a)ccept", "(r)eject"))
 
 
 def render_interactive(
