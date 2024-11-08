@@ -4,20 +4,36 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
-from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
+from conda.plugins import CondaPreCommand, CondaSetting, CondaSubcommand, hookimpl
 from rich.console import Console
 
-from .console import render_accept, render_info, render_list, render_reject, render_view
+from .console import (
+    render_accept,
+    render_info,
+    render_interactive,
+    render_list,
+    render_reject,
+    render_view,
+)
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
     from collections.abc import Iterator
+    from typing import Callable
+
+
+#: Default ToS storage location.
+DEFAULT_TOS_ROOT = USER_TOS_ROOT
+
+#: Default cache timeout in seconds.
+DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -46,26 +62,26 @@ def configure_parser(parser: ArgumentParser) -> None:
             help=text,
         )
     location.add_argument("--file", dest="tos_root", action="store")
-    parser.set_defaults(tos_root=USER_TOS_ROOT)
 
     action_grp = parser.add_argument_group("Actions")
     action = action_grp.add_mutually_exclusive_group()
     action.add_argument("--accept", "--agree", action="store_true")
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
+    action.add_argument("--interactive", action="store_true")
     action.add_argument("--info", action="store_true")
 
-    parser.add_argument(
-        "--cache-timeout",
-        action="store",
-        type=int,
-        default=24 * 60 * 60,
-    )
+    parser.add_argument("--cache-timeout", action="store", type=int)
     parser.add_argument(
         "--ignore-cache",
         dest="cache_timeout",
         action="store_const",
         const=0,
+    )
+
+    parser.set_defaults(
+        tos_root=DEFAULT_TOS_ROOT,
+        cache_timeout=DEFAULT_CACHE_TIMEOUT,
     )
 
 
@@ -78,19 +94,24 @@ def execute(args: Namespace) -> int:
         # refactor into `conda info` plugin (when possible)
         return render_info(console)
 
-    action = render_list
+    action: Callable = render_list
+    kwargs = {}
     if args.accept:
         action = render_accept
     elif args.reject:
         action = render_reject
     elif args.view:
         action = render_view
+    elif args.interactive:
+        action = render_interactive
+        kwargs["auto_accept_tos"] = context.plugins.auto_accept_tos
 
     return action(
         *context.channels,
         tos_root=args.tos_root,
         cache_timeout=args.cache_timeout,
         console=console,
+        **kwargs,
     )
 
 
@@ -112,4 +133,31 @@ def conda_settings() -> Iterator[CondaSetting]:
         name="auto_accept_tos",
         description="Automatically accept Terms of Service (ToS) for all channels.",
         parameter=PrimitiveParameter(False, element_type=bool),
+    )
+
+
+def _pre_command_check_tos(_command: str) -> None:
+    render_interactive(
+        *context.channels,
+        tos_root=DEFAULT_TOS_ROOT,
+        cache_timeout=DEFAULT_CACHE_TIMEOUT,
+        auto_accept_tos=context.plugins.auto_accept_tos,
+    )
+
+
+@hookimpl(tryfirst=True)
+def conda_pre_commands() -> Iterator[CondaPreCommand]:
+    """Return a list of pre-commands for the anaconda-conda-tos plugin."""
+    yield CondaPreCommand(
+        name="check_tos",
+        action=_pre_command_check_tos,
+        run_for={
+            "create",
+            "env_create",
+            "env_remove",
+            "env_update",
+            "install",
+            "remove",
+            "update",
+        },
     )

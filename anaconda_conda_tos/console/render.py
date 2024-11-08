@@ -17,12 +17,15 @@ from ..api import (
     get_one_tos,
     reject_tos,
 )
-from ..exceptions import CondaToSMissingError
+from ..exceptions import CondaToSMissingError, CondaToSRejectedError
+from ..models import RemoteToSMetadata
 from ..path import CACHE_DIR, SEARCH_PATH
 from .mappers import accepted_mapping, location_mapping
+from .prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
     import os
+    from collections.abc import Iterable
 
     from conda.models.channel import Channel
 
@@ -117,6 +120,77 @@ def render_reject(
     return 0
 
 
+def _prompt_acceptance(
+    channel: Channel,
+    metadata: RemoteToSMetadata,
+    console: Console,
+    choices: Iterable[str] = ("(a)ccept", "(r)eject", "(v)iew"),
+) -> bool:
+    response = FuzzyPrompt.ask(
+        f"Accept the Terms of Service (ToS) for this channel ({channel})?",
+        choices=choices,
+        console=console,
+    )
+    if response == "accept":
+        return True
+    elif response == "reject":
+        return False
+    else:
+        console.print(metadata.text)
+        return _prompt_acceptance(channel, metadata, console, ("(a)ccept", "(r)eject"))
+
+
+def render_interactive(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    cache_timeout: int | float | None,
+    console: Console | None = None,
+    auto_accept_tos: bool,
+) -> int:
+    """Prompt user to accept or reject ToS for channels."""
+    accepted = 0
+    rejected = []
+    channel_metadatas = []
+
+    console = console or Console()
+    console.print("[bold blue]Gathering channels...")
+    for channel in get_channels(*channels):
+        try:
+            metadata = get_one_tos(
+                channel, tos_root=tos_root, cache_timeout=cache_timeout
+            ).metadata
+        except CondaToSMissingError:
+            # CondaToSMissingError: no ToS metadata found
+            continue
+
+        if isinstance(metadata, RemoteToSMetadata):
+            # ToS hasn't been accepted or rejected yet
+            channel_metadatas.append((channel, metadata))
+        elif metadata.tos_accepted:
+            accepted += 1
+        else:
+            rejected.append(channel)
+
+    console.print("[bold yellow]Reviewing channels...")
+    if rejected:
+        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+        raise CondaToSRejectedError(*rejected)
+
+    for channel, metadata in channel_metadatas:
+        if auto_accept_tos or _prompt_acceptance(channel, metadata, console):
+            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            accepted += 1
+        else:
+            reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            rejected.append(channel)
+
+    if rejected:
+        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+        raise CondaToSRejectedError(*rejected)
+    console.print(f"[bold green]{accepted} channel ToS accepted")
+    return 0
+
+
 def render_info(console: Console | None = None) -> int:
     """Display information about the ToS cache."""
     table = Table(show_header=False)
@@ -133,5 +207,4 @@ def render_info(console: Console | None = None) -> int:
 
     console = console or Console()
     console.print(table)
-
     return 0

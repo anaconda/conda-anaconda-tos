@@ -49,3 +49,14 @@ class CondaToSPermissionError(PermissionError, CondaToSError):
             f"Unable to read/write path ({path}){addendum}. "
             "Please check permissions."
         )
+
+
+class CondaToSRejectedError(CondaToSError):
+    """Error class for when the ToS is rejected for a channel."""
+
+    def __init__(self: Self, *channels: str | Channel) -> None:
+        """Format error message with channel base URL."""
+        channels_str = ", ".join(
+            str(Channel(channel).base_url or channel) for channel in channels
+        )
+        super().__init__(f"ToS rejected for {channels_str}.")
