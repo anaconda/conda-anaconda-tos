@@ -181,16 +181,14 @@ def _format_active_channels_tos() -> Iterator[tuple[str, int, str, int]]:
                 extend_search_path=[DEFAULT_TOS_ROOT],
             )
         except CondaToSMissingError:
-            continue
-
-        tos_accepted = "accepted" if local_pair.metadata.tos_accepted else "rejected"
-        acceptance_timestamp = int(local_pair.metadata.acceptance_timestamp.timestamp())
-        yield (
-            channel.base_url,
-            int(local_pair.metadata.timestamp.timestamp()),
-            tos_accepted,
-            acceptance_timestamp,
-        )
+            pass
+        else:
+            yield (
+                channel.base_url,
+                int(local_pair.metadata.timestamp.timestamp()),
+                "accepted" if local_pair.metadata.tos_accepted else "rejected",
+                int(local_pair.metadata.acceptance_timestamp.timestamp()),
+            )
 
 
 @hookimpl
