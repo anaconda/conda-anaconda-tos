@@ -15,6 +15,7 @@ from rich.console import Console
 
 from .console import (
     render_accept,
+    render_info,
     render_interactive,
     render_list,
     render_reject,
@@ -68,6 +69,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
     action.add_argument("--interactive", action="store_true")
+    action.add_argument("--info", action="store_true")
 
     parser.add_argument("--cache-timeout", action="store", type=int)
     parser.add_argument(
@@ -87,6 +89,11 @@ def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
+    console = Console()
+    if args.info:
+        # refactor into `conda info` plugin (when possible)
+        return render_info(console)
+
     action: Callable = render_list
     kwargs = {}
     if args.accept:
@@ -103,7 +110,7 @@ def execute(args: Namespace) -> int:
         *context.channels,
         tos_root=args.tos_root,
         cache_timeout=args.cache_timeout,
-        console=Console(),
+        console=console,
         **kwargs,
     )
 

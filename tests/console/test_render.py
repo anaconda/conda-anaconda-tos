@@ -10,11 +10,13 @@ import pytest
 
 from anaconda_conda_tos.console.render import (
     render_accept,
+    render_info,
     render_interactive,
     render_reject,
     render_view,
 )
 from anaconda_conda_tos.exceptions import CondaToSRejectedError
+from anaconda_conda_tos.path import SEARCH_PATH
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -187,3 +189,10 @@ def test_render_interactive(
         f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
         "[(a)ccept/(r)eject]: 1 channel ToS accepted",
     ]
+
+
+def test_render_info(capsys: CaptureFixture) -> None:
+    render_info()
+    out, err = capsys.readouterr()
+    for path in SEARCH_PATH:
+        assert path in out
