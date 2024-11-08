@@ -4,6 +4,7 @@
 
 from .render import (  # noqa: F401
     render_accept,
+    render_info,
     render_interactive,
     render_list,
     render_reject,
