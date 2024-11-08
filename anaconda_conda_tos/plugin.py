@@ -61,11 +61,6 @@ def configure_parser(parser: ArgumentParser) -> None:
 
     location_grp = parser.add_argument_group("Local ToS Storage Location")
     location = location_grp.add_mutually_exclusive_group()
-    location.add_argument(
-        "--tos-root",
-        action="store",
-        help="Custom ToS storage location.",
-    )
     for flag, value, text in (
         ("--site", SITE_TOS_ROOT, "System-wide ToS storage location."),
         ("--system", SYSTEM_TOS_ROOT, "Conda installation ToS storage location."),
@@ -79,6 +74,11 @@ def configure_parser(parser: ArgumentParser) -> None:
             const=value,
             help=text,
         )
+    location.add_argument(
+        "--tos-root",
+        action="store",
+        help="Custom ToS storage location.",
+    )
 
     action_grp = parser.add_argument_group("Actions")
     action = action_grp.add_mutually_exclusive_group()
