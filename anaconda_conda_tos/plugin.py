@@ -92,7 +92,6 @@ def configure_parser(parser: ArgumentParser) -> None:
     )
     action.add_argument(
         "--reject",
-        "--withdraw",
         action="store_true",
         help=(
             "Reject the ToS for all active channels "
