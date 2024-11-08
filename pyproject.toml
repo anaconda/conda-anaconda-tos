@@ -15,7 +15,9 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "conda",
+  "conda >24.9.2",
+  "rich",
+  "pydantic",
 ]
 description = "Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS)."
 license = {file = "LICENSE"}

@@ -10,9 +10,16 @@ from typing import TYPE_CHECKING
 from conda.base.context import context
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
-from conda.plugins import CondaPreCommand, CondaSetting, CondaSubcommand, hookimpl
+from conda.plugins import (
+    CondaPreCommand,
+    CondaRequestHeader,
+    CondaSetting,
+    CondaSubcommand,
+    hookimpl,
+)
 from rich.console import Console
 
+from .api import get_active_tos
 from .console import (
     render_accept,
     render_interactive,
@@ -20,6 +27,7 @@ from .console import (
     render_reject,
     render_view,
 )
+from .models import LocalPair
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 
 if TYPE_CHECKING:
@@ -33,6 +41,9 @@ DEFAULT_TOS_ROOT = USER_TOS_ROOT
 
 #: Default cache timeout in seconds.
 DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
+
+#: Field separator for request header
+FIELD_SEPARATOR = ";"
 
 
 def configure_parser(parser: ArgumentParser) -> None:
@@ -151,6 +162,40 @@ def conda_pre_commands() -> Iterator[CondaPreCommand]:
             "env_update",
             "install",
             "remove",
+            "search",
             "update",
         },
+    )
+
+
+def _format_active_channels() -> dict[str, tuple[str, int]]:
+    return {
+        channel.base_url: (
+            (
+                "accepted" if metadata_pair.metadata.tos_accepted else "rejected",
+                int(metadata_pair.metadata.acceptance_timestamp.timestamp()),
+            )
+            if isinstance(metadata_pair, LocalPair)
+            else ("unknown", 0)
+        )
+        for channel, metadata_pair in get_active_tos(
+            *context.channels,
+            tos_root=DEFAULT_TOS_ROOT,
+            cache_timeout=DEFAULT_CACHE_TIMEOUT,
+        )
+        if metadata_pair
+    }
+
+
+@hookimpl
+def conda_request_headers() -> Iterator[CondaRequestHeader]:
+    """Return a list of request headers for the anaconda-conda-tos plugin."""
+    yield CondaRequestHeader(
+        name="Anaconda-ToS-Accept",
+        description="Header which specifies when the user has accepted the ToS",
+        value=FIELD_SEPARATOR.join(
+            f"{channel}={accepted}={timestamp}"
+            for channel, (accepted, timestamp) in _format_active_channels().items()
+        ),
+        hosts={"repo.anaconda.com"},
     )

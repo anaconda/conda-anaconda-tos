@@ -1,4 +1,4 @@
-conda >=23.9.0
+conda >24.9.2
 pydantic
 python >=3.9
 rich
