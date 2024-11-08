@@ -108,22 +108,6 @@ def reject_tos(
     return write_metadata(tos_root, channel, metadata, tos_accepted=False)
 
 
-def get_active_tos(
-    *channels: str | Channel,
-    tos_root: str | os.PathLike[str] | Path,
-    cache_timeout: int | float | None,
-) -> Iterator[tuple[Channel, LocalPair | RemotePair | None]]:
-    """List all active channels and whether their ToS has been accepted."""
-    for channel in get_channels(*channels):
-        try:
-            yield (
-                channel,
-                get_one_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout),
-            )
-        except CondaToSMissingError:
-            yield channel, None
-
-
 def get_all_tos(
     *channels: str | Channel,
     tos_root: str | os.PathLike | Path,
@@ -132,12 +116,14 @@ def get_all_tos(
     """List all channels and whether their ToS has been accepted."""
     # list all active channels
     seen: set[Channel] = set()
-    for channel, metadata_pair in get_active_tos(
-        *channels,
-        tos_root=tos_root,
-        cache_timeout=cache_timeout,
-    ):
-        yield channel, metadata_pair
+    for channel in get_channels(*channels):
+        try:
+            yield (
+                channel,
+                get_one_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout),
+            )
+        except CondaToSMissingError:
+            yield channel, None
         seen.add(channel)
 
     # list all other ToS that have been accepted/rejected
