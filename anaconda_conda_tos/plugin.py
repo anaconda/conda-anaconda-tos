@@ -12,7 +12,7 @@ from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaSetting, CondaSubcommand, hookimpl
 from rich.console import Console
 
-from .console import render_accept, render_list, render_reject, render_view
+from .console import render_accept, render_info, render_list, render_reject, render_view
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 
 if TYPE_CHECKING:
@@ -53,6 +53,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     action.add_argument("--accept", "--agree", action="store_true")
     action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
     action.add_argument("--view", "--show", action="store_true")
+    action.add_argument("--info", action="store_true")
 
     parser.add_argument(
         "--cache-timeout",
@@ -72,6 +73,11 @@ def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
+    console = Console()
+    if args.info:
+        # refactor into `conda info` plugin (when possible)
+        return render_info(console)
+
     action = render_list
     if args.accept:
         action = render_accept
@@ -84,7 +90,7 @@ def execute(args: Namespace) -> int:
         *context.channels,
         tos_root=args.tos_root,
         cache_timeout=args.cache_timeout,
-        console=Console(),
+        console=console,
     )
 
 

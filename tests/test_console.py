@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from anaconda_conda_tos.console import render_accept, render_reject, render_view
+from anaconda_conda_tos.console import (
+    render_accept,
+    render_info,
+    render_reject,
+    render_view,
+)
+from anaconda_conda_tos.path import SEARCH_PATH
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -84,3 +90,10 @@ def test_render_reject(
     out, err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
+
+
+def test_render_info(capsys: CaptureFixture) -> None:
+    render_info()
+    out, err = capsys.readouterr()
+    for path in SEARCH_PATH:
+        assert path in out

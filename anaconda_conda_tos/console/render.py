@@ -18,11 +18,11 @@ from ..api import (
     reject_tos,
 )
 from ..exceptions import CondaToSMissingError
+from ..path import CACHE_DIR, SEARCH_PATH
 from .mappers import accepted_mapping, location_mapping
 
 if TYPE_CHECKING:
     import os
-    from pathlib import Path
 
     from conda.models.channel import Channel
 
@@ -114,4 +114,24 @@ def render_reject(
             console.print(f"ToS not found for {channel}")
         else:
             console.print(f"rejected ToS for {channel}")
+    return 0
+
+
+def render_info(console: Console | None = None) -> int:
+    """Display information about the ToS cache."""
+    table = Table(show_header=False)
+    table.add_column("Key")
+    table.add_column("Value")
+
+    table.add_row("SEARCH_PATH", "\n".join(SEARCH_PATH))
+    try:
+        relative_dir = Path("~", CACHE_DIR.relative_to(Path.home()))
+    except ValueError:
+        # ValueError: CACHE_DIR is not relative to the user's home directory
+        relative_dir = CACHE_DIR
+    table.add_row("CACHE_DIR", str(relative_dir))
+
+    console = console or Console()
+    console.print(table)
+
     return 0
