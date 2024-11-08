@@ -177,7 +177,14 @@ def conda_subcommands() -> Iterator[CondaSubcommand]:
     yield CondaSubcommand(
         name="tos",
         action=execute,
-        summary="View, accept, and interact with a channel's Terms of Service (ToS).",
+        summary=(
+            "A subcommand for viewing, accepting, rejecting, and otherwise interacting "
+            "with a channel's Terms of Service (ToS). This plugin periodically checks "
+            "for updated ToS for the active/selected channels. Channels with a ToS "
+            "will need to be accepted or rejected prior to use. Conda will only allow "
+            "package installation from channels without a ToS or with an accepted ToS. "
+            "Attempting to use a channel with a reject ToS will result in an error."
+        ),
         configure_parser=configure_parser,
     )
 
