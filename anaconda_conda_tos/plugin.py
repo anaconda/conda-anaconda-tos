@@ -19,7 +19,7 @@ from conda.plugins import (
 )
 from rich.console import Console
 
-from .api import get_active_tos
+from .api import get_channels
 from .console import (
     render_accept,
     render_interactive,
@@ -27,7 +27,8 @@ from .console import (
     render_reject,
     render_view,
 )
-from .models import LocalPair
+from .exceptions import CondaToSMissingError
+from .local import get_local_metadata
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 
 if TYPE_CHECKING:
@@ -172,23 +173,21 @@ def conda_pre_commands() -> Iterator[CondaPreCommand]:
 
 
 def _format_active_channels_tos() -> Iterator[tuple[str, int, str, int]]:
-    for channel, metadata_pair in get_active_tos(
-        *context.channels,
-        tos_root=DEFAULT_TOS_ROOT,
-        cache_timeout=DEFAULT_CACHE_TIMEOUT,
-    ):
-        if not metadata_pair:
+    """Return a list of active channels and their local ToS acceptance."""
+    for channel in get_channels(*context.channels):
+        try:
+            local_pair = get_local_metadata(
+                channel,
+                extend_search_path=[DEFAULT_TOS_ROOT],
+            )
+        except CondaToSMissingError:
             continue
 
-        tos_accepted = "unknown"
-        acceptance_timestamp = 0
-        if isinstance(metadata_pair, LocalPair):
-            metadata = metadata_pair.metadata
-            tos_accepted = "accepted" if metadata.tos_accepted else "rejected"
-            acceptance_timestamp = int(metadata.acceptance_timestamp.timestamp())
+        tos_accepted = "accepted" if local_pair.metadata.tos_accepted else "rejected"
+        acceptance_timestamp = int(local_pair.metadata.acceptance_timestamp.timestamp())
         yield (
             channel.base_url,
-            int(metadata_pair.metadata.timestamp.timestamp()),
+            int(local_pair.metadata.timestamp.timestamp()),
             tos_accepted,
             acceptance_timestamp,
         )
