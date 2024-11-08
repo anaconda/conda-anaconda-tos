@@ -38,16 +38,34 @@ DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 
 def configure_parser(parser: ArgumentParser) -> None:
     """Configure the parser for the `tos` subcommand."""
-    parser.add_argument("-c", "--channel", action="append")
-    parser.add_argument("--override-channels", action="store_true")
+    parser.add_argument(
+        "-c",
+        "--channel",
+        action="append",
+        help="Additional channels to search for ToS.",
+    )
+    parser.add_argument(
+        "--override-channels",
+        action="store_true",
+        help="Do not search default or .condarc channels. Requires --channel.",
+    )
 
     prefix_grp = parser.add_argument_group("Conda Environment")
     prefix = prefix_grp.add_mutually_exclusive_group()
-    prefix.add_argument("-n", "--name")
-    prefix.add_argument("-p", "--prefix")
+    prefix.add_argument("-n", "--name", help="Name of environment.")
+    prefix.add_argument(
+        "-p",
+        "--prefix",
+        help="Full path to environment location (i.e. prefix).",
+    )
 
     location_grp = parser.add_argument_group("Local ToS Storage Location")
     location = location_grp.add_mutually_exclusive_group()
+    location.add_argument(
+        "--tos-root",
+        action="store",
+        help="Custom ToS storage location.",
+    )
     for flag, value, text in (
         ("--site", SITE_TOS_ROOT, "System-wide ToS storage location."),
         ("--system", SYSTEM_TOS_ROOT, "Conda installation ToS storage location."),
@@ -61,22 +79,61 @@ def configure_parser(parser: ArgumentParser) -> None:
             const=value,
             help=text,
         )
-    location.add_argument("--file", dest="tos_root", action="store")
 
     action_grp = parser.add_argument_group("Actions")
     action = action_grp.add_mutually_exclusive_group()
-    action.add_argument("--accept", "--agree", action="store_true")
-    action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
-    action.add_argument("--view", "--show", action="store_true")
-    action.add_argument("--interactive", action="store_true")
-    action.add_argument("--info", action="store_true")
+    action.add_argument(
+        "--accept",
+        action="store_true",
+        help=(
+            "Accept the ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
+    )
+    action.add_argument(
+        "--reject",
+        "--withdraw",
+        action="store_true",
+        help=(
+            "Reject the ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
+    )
+    action.add_argument(
+        "--view",
+        action="store_true",
+        help=(
+            "View the ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
+    )
+    action.add_argument(
+        "--interactive",
+        action="store_true",
+        help=(
+            "Interactively accept/reject/view ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
+    )
+    action.add_argument(
+        "--info",
+        action="store_true",
+        help="Display information about the ToS plugin "
+        "(e.g., search path and cache directory).",
+    )
 
-    parser.add_argument("--cache-timeout", action="store", type=int)
+    parser.add_argument(
+        "--cache-timeout",
+        action="store",
+        type=int,
+        help="Cache timeout (in seconds) to check for ToS updates.",
+    )
     parser.add_argument(
         "--ignore-cache",
         dest="cache_timeout",
         action="store_const",
         const=0,
+        help="Ignore the cache and always check for ToS updates.",
     )
 
     parser.set_defaults(

@@ -96,7 +96,7 @@ def test_subcommand_tos_accept(
         "--accept",
         "--override-channels",
         f"--channel={sample_channel}",
-        f"--file={tmp_path}",
+        f"--tos-root={tmp_path}",
     )
     assert out.splitlines() == [f"ToS not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
@@ -107,7 +107,7 @@ def test_subcommand_tos_accept(
         "--accept",
         "--override-channels",
         f"--channel={tos_channel}",
-        f"--file={tmp_path}",
+        f"--tos-root={tmp_path}",
     )
     assert out.splitlines() == [f"accepted ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
@@ -118,7 +118,7 @@ def test_subcommand_tos_accept(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--accept", f"--file={tmp_path}")
+    out, err, code = conda_cli("tos", "--accept", f"--tos-root={tmp_path}")
     assert out.splitlines() == [f"accepted ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
@@ -136,7 +136,7 @@ def test_subcommand_tos_reject(
         "--reject",
         "--override-channels",
         f"--channel={sample_channel}",
-        f"--file={tmp_path}",
+        f"--tos-root={tmp_path}",
     )
     assert out.splitlines() == [f"ToS not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
@@ -147,7 +147,7 @@ def test_subcommand_tos_reject(
         "--reject",
         "--override-channels",
         f"--channel={tos_channel}",
-        f"--file={tmp_path}",
+        f"--tos-root={tmp_path}",
     )
     assert out.splitlines() == [f"rejected ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
@@ -158,7 +158,7 @@ def test_subcommand_tos_reject(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--reject", f"--file={tmp_path}")
+    out, err, code = conda_cli("tos", "--reject", f"--tos-root={tmp_path}")
     assert out.splitlines() == [f"rejected ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
@@ -228,7 +228,7 @@ def test_subcommand_tos_interactive(
         f"--channel={tos_channel}",
         f"--channel={sample_channel}",
         "--interactive",
-        f"--file={user_tos_root}",
+        f"--tos-root={user_tos_root}",
     )
     assert tos_channel.base_url in out
     assert sample_channel.base_url not in out
