@@ -45,6 +45,9 @@ DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 #: Field separator for request header
 FIELD_SEPARATOR = ";"
 
+#: Key-value separator for request header
+KEY_SEPARATOR = "="
+
 
 def configure_parser(parser: ArgumentParser) -> None:
     """Configure the parser for the `tos` subcommand."""
@@ -168,23 +171,27 @@ def conda_pre_commands() -> Iterator[CondaPreCommand]:
     )
 
 
-def _format_active_channels() -> dict[str, tuple[str, int]]:
-    return {
-        channel.base_url: (
-            (
-                "accepted" if metadata_pair.metadata.tos_accepted else "rejected",
-                int(metadata_pair.metadata.acceptance_timestamp.timestamp()),
-            )
-            if isinstance(metadata_pair, LocalPair)
-            else ("unknown", 0)
+def _format_active_channels_tos() -> Iterator[tuple[str, int, str, int]]:
+    for channel, metadata_pair in get_active_tos(
+        *context.channels,
+        tos_root=DEFAULT_TOS_ROOT,
+        cache_timeout=DEFAULT_CACHE_TIMEOUT,
+    ):
+        if not metadata_pair:
+            continue
+
+        tos_accepted = "unknown"
+        acceptance_timestamp = 0
+        if isinstance(metadata_pair, LocalPair):
+            metadata = metadata_pair.metadata
+            tos_accepted = "accepted" if metadata.tos_accepted else "rejected"
+            acceptance_timestamp = int(metadata.acceptance_timestamp.timestamp())
+        yield (
+            channel.base_url,
+            int(metadata_pair.metadata.timestamp.timestamp()),
+            tos_accepted,
+            acceptance_timestamp,
         )
-        for channel, metadata_pair in get_active_tos(
-            *context.channels,
-            tos_root=DEFAULT_TOS_ROOT,
-            cache_timeout=DEFAULT_CACHE_TIMEOUT,
-        )
-        if metadata_pair
-    }
 
 
 @hookimpl
@@ -194,8 +201,7 @@ def conda_request_headers() -> Iterator[CondaRequestHeader]:
         name="Anaconda-ToS-Accept",
         description="Header which specifies when the user has accepted the ToS",
         value=FIELD_SEPARATOR.join(
-            f"{channel}={accepted}={timestamp}"
-            for channel, (accepted, timestamp) in _format_active_channels().items()
+            KEY_SEPARATOR.join(map(str, keys)) for keys in _format_active_channels_tos()
         ),
         hosts={"repo.anaconda.com"},
     )
