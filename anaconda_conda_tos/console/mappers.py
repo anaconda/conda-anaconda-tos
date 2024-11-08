@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 def timestamp_mapping(timestamp: datetime) -> str:
     """Map the UTC ToS timestamp to a localized human-readable string."""
-    return timestamp.astimezone().strftime("%Y-%m-%d")
+    return timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 def accepted_mapping(metadata: RemoteToSMetadata | LocalToSMetadata) -> str:
