@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from contextlib import nullcontext
 from io import StringIO
 from typing import TYPE_CHECKING
 
@@ -98,6 +99,7 @@ def test_render_reject(
     # assert not err  # server log is output to stderr
 
 
+@pytest.mark.parametrize("ci", [True, False])
 def test_render_interactive(
     monkeypatch: MonkeyPatch,
     capsys: CaptureFixture,
@@ -105,7 +107,13 @@ def test_render_interactive(
     tos_channel: Channel,
     tmp_path: Path,
     tos_full_lines: list[str],
+    ci: bool,
 ) -> None:
+    if ci:
+        monkeypatch.setenv("CI", "true")
+    else:
+        monkeypatch.delenv("CI", raising=False)
+
     render_interactive(
         sample_channel, tos_root=tmp_path, cache_timeout=None, auto_accept_tos=False
     )
@@ -113,6 +121,7 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
+        *(["CI detected..."] if ci else []),
         "0 channel ToS accepted",
     ]
 
@@ -127,8 +136,18 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS accepted",
+        *(
+            [
+                "CI detected...",
+                f"implicitly accepting ToS for {tos_channel}",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else [
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS accepted",
+            ]
+        ),
     ]
     render_interactive(
         tos_channel,
@@ -140,11 +159,12 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
+        *(["CI detected..."] if ci else []),
         "1 channel ToS accepted",
     ]
 
     monkeypatch.setattr(sys, "stdin", StringIO("reject\n"))
-    with pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -155,10 +175,20 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS rejected",
+        *(
+            [
+                "CI detected...",
+                f"implicitly accepting ToS for {tos_channel}",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else [
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS rejected",
+            ]
+        ),
     ]
-    with pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -169,7 +199,14 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        "1 channel ToS rejected",
+        *(
+            [
+                "CI detected...",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else ["1 channel ToS rejected"]
+        ),
     ]
 
     monkeypatch.setattr(sys, "stdin", StringIO("view\naccept\n"))
@@ -183,11 +220,21 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject/(v)iew]: " + tos_full_lines[0],
-        *tos_full_lines[1:],
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject]: 1 channel ToS accepted",
+        *(
+            [
+                "CI detected...",
+                f"implicitly accepting ToS for {tos_channel}",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else [
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject/(v)iew]: " + tos_full_lines[0],
+                *tos_full_lines[1:],
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject]: 1 channel ToS accepted",
+            ]
+        ),
     ]
 
 

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -24,7 +25,6 @@ from .mappers import accepted_mapping, location_mapping
 from .prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
-    import os
     from collections.abc import Iterable
 
     from conda.models.channel import Channel
@@ -140,20 +140,14 @@ def _prompt_acceptance(
         return _prompt_acceptance(channel, metadata, console, ("(a)ccept", "(r)eject"))
 
 
-def render_interactive(
+def _gather_tos(
     *channels: str | Channel,
     tos_root: str | os.PathLike | Path,
     cache_timeout: int | float | None,
-    console: Console | None = None,
-    auto_accept_tos: bool,
-) -> int:
-    """Prompt user to accept or reject ToS for channels."""
-    accepted = 0
+) -> tuple[list[Channel], list[Channel], list[tuple[Channel, RemoteToSMetadata]]]:
+    accepted = []
     rejected = []
     channel_metadatas = []
-
-    console = console or Console()
-    console.print("[bold blue]Gathering channels...")
     for channel in get_channels(*channels):
         try:
             metadata = get_one_tos(
@@ -167,27 +161,59 @@ def render_interactive(
             # ToS hasn't been accepted or rejected yet
             channel_metadatas.append((channel, metadata))
         elif metadata.tos_accepted:
-            accepted += 1
+            accepted.append(channel)
         else:
             rejected.append(channel)
+    return accepted, rejected, channel_metadatas
+
+
+def render_interactive(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike | Path,
+    cache_timeout: int | float | None,
+    console: Console | None = None,
+    auto_accept_tos: bool,
+) -> int:
+    """Prompt user to accept or reject ToS for channels."""
+    console = console or Console()
+    console.print("[bold blue]Gathering channels...")
+    accepted, rejected, channel_metadatas = _gather_tos(
+        *channels,
+        tos_root=tos_root,
+        cache_timeout=cache_timeout,
+    )
 
     console.print("[bold yellow]Reviewing channels...")
     if rejected:
         console.print(f"[bold red]{len(rejected)} channel ToS rejected")
         raise CondaToSRejectedError(*rejected)
 
+    if is_non_interactive := (os.getenv("CI") == "true"):
+        console.print("[bold yellow]CI detected...")
+
     for channel, metadata in channel_metadatas:
-        if auto_accept_tos or _prompt_acceptance(channel, metadata, console):
+        if auto_accept_tos:
+            # auto_accept_tos overrides any other setting
             accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
-            accepted += 1
+            accepted.append(channel)
+        elif is_non_interactive:
+            # CI is the same as auto_accept_tos but with a warning
+            console.print(f"[bold yellow]implicitly accepting ToS for {channel}")
+            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            accepted.append(channel)
+        elif _prompt_acceptance(channel, metadata, console):
+            # user manually accepted the ToS
+            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            accepted.append(channel)
         else:
+            # user manually rejected the ToS
             reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
             rejected.append(channel)
 
     if rejected:
         console.print(f"[bold red]{len(rejected)} channel ToS rejected")
         raise CondaToSRejectedError(*rejected)
-    console.print(f"[bold green]{accepted} channel ToS accepted")
+    console.print(f"[bold green]{len(accepted)} channel ToS accepted")
     return 0
 
 
