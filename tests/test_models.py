@@ -21,23 +21,23 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize(
-    "tos_version,text,raises",
+    "version,text,raises",
     [
         pytest.param(None, None, True, id="missing"),
-        pytest.param(1, None, True, id="only tos_version"),
+        pytest.param(1, None, True, id="only version"),
         pytest.param(None, "ToS", True, id="only text"),
-        pytest.param(object(), None, True, id="invalid tos_version"),
+        pytest.param(object(), None, True, id="invalid version"),
         pytest.param(None, object(), True, id="invalid text"),
         pytest.param(1, "ToS", False, id="complete"),
     ],
 )
 def test_RemoteToSMetadata(  # noqa: N802
-    tos_version: int | None,
+    version: int | None,
     text: str | None,
     raises: bool,
 ) -> None:
     remote = {
-        "tos_version": tos_version,
+        "version": version,
         "text": text,
     }
     with pytest.raises(ValidationError) if raises else nullcontext():
@@ -72,7 +72,7 @@ def test_LocalToSMetadata(  # noqa: N802
     raises: bool,
 ) -> None:
     local = {
-        "tos_version": 1,  # tested in test_RemoteToSMetadata
+        "version": 1,  # tested in test_RemoteToSMetadata
         "text": "ToS",  # tested in test_RemoteToSMetadata
         "base_url": base_url,
         "tos_accepted": tos_accepted,
@@ -84,9 +84,9 @@ def test_LocalToSMetadata(  # noqa: N802
         )
 
 
-REMOTE_METADATA = RemoteToSMetadata(tos_version=2, text="ToS")
+REMOTE_METADATA = RemoteToSMetadata(version=2, text="ToS")
 LOCAL_METADATA = LocalToSMetadata(
-    tos_version=1,
+    version=1,
     text="ToS",
     base_url="url",
     tos_accepted=True,

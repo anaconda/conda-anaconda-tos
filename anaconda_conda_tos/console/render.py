@@ -53,7 +53,7 @@ def render_list(
         else:
             table.add_row(
                 channel.base_url,
-                str(metadata_pair.metadata.tos_version),
+                str(metadata_pair.metadata.version),
                 accepted_mapping(metadata_pair.metadata),
                 location_mapping(metadata_pair.path),
             )

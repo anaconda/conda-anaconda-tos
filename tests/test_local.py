@@ -41,7 +41,7 @@ def _similar_metadata(
 CHANNEL = Channel("someplace")
 NOW = datetime.now(tz=timezone.utc)
 REMOTE_METADATA = RemoteToSMetadata(
-    tos_version=42,
+    version=42,
     text=f"ToS full text\n\n{uuid4().hex}",
     **{uuid4().hex: uuid4().hex},
 )
@@ -54,7 +54,7 @@ LOCAL_METADATA = LocalToSMetadata(
 
 
 def test_write_metadata(tmp_path: Path) -> None:
-    path = get_metadata_path(tmp_path, CHANNEL, LOCAL_METADATA.tos_version)
+    path = get_metadata_path(tmp_path, CHANNEL, LOCAL_METADATA.version)
 
     # invalid input
     with pytest.raises(ValueError):
@@ -93,7 +93,7 @@ def test_write_metadata(tmp_path: Path) -> None:
 
 
 def test_read_metadata(tmp_path: Path) -> None:
-    path = get_metadata_path(tmp_path, CHANNEL, REMOTE_METADATA.tos_version)
+    path = get_metadata_path(tmp_path, CHANNEL, REMOTE_METADATA.version)
 
     # missing file
     assert not read_metadata(path)

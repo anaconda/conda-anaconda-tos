@@ -80,7 +80,7 @@ def test_write_cached_endpoint(
     tmp_path: Path,
 ) -> None:
     remote_metadata = RemoteToSMetadata(
-        tos_version=42,
+        version=42,
         text=f"ToS full text\n\n{uuid4().hex}",
         **{uuid4().hex: uuid4().hex},
     )
