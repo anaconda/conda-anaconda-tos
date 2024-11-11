@@ -21,7 +21,7 @@ from ..api import (
 from ..exceptions import CondaToSMissingError, CondaToSRejectedError
 from ..models import RemoteToSMetadata
 from ..path import CACHE_DIR, SEARCH_PATH
-from .mappers import accepted_mapping, location_mapping
+from .mappers import accepted_mapping, location_mapping, timestamp_mapping
 from .prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
@@ -54,7 +54,7 @@ def render_list(
         else:
             table.add_row(
                 channel.base_url,
-                str(metadata_pair.metadata.version),
+                timestamp_mapping(metadata_pair.metadata.version),
                 accepted_mapping(metadata_pair.metadata),
                 location_mapping(metadata_pair.path),
                 metadata_pair.metadata.support,
