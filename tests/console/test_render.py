@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from contextlib import nullcontext
 from io import StringIO
 from typing import TYPE_CHECKING
 
@@ -10,11 +11,13 @@ import pytest
 
 from anaconda_conda_tos.console.render import (
     render_accept,
+    render_info,
     render_interactive,
     render_reject,
     render_view,
 )
 from anaconda_conda_tos.exceptions import CondaToSRejectedError
+from anaconda_conda_tos.path import SEARCH_PATH
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -96,6 +99,7 @@ def test_render_reject(
     # assert not err  # server log is output to stderr
 
 
+@pytest.mark.parametrize("ci", [True, False])
 def test_render_interactive(
     monkeypatch: MonkeyPatch,
     capsys: CaptureFixture,
@@ -103,7 +107,13 @@ def test_render_interactive(
     tos_channel: Channel,
     tmp_path: Path,
     tos_full_lines: list[str],
+    ci: bool,
 ) -> None:
+    if ci:
+        monkeypatch.setenv("CI", "true")
+    else:
+        monkeypatch.delenv("CI", raising=False)
+
     render_interactive(
         sample_channel, tos_root=tmp_path, cache_timeout=None, auto_accept_tos=False
     )
@@ -111,6 +121,7 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
+        *(["CI detected..."] if ci else []),
         "0 channel ToS accepted",
     ]
 
@@ -125,8 +136,18 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS accepted",
+        *(
+            [
+                "CI detected...",
+                f"implicitly accepting ToS for {tos_channel}",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else [
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS accepted",
+            ]
+        ),
     ]
     render_interactive(
         tos_channel,
@@ -138,11 +159,12 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
+        *(["CI detected..."] if ci else []),
         "1 channel ToS accepted",
     ]
 
     monkeypatch.setattr(sys, "stdin", StringIO("reject\n"))
-    with pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -153,10 +175,20 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS rejected",
+        *(
+            [
+                "CI detected...",
+                f"implicitly accepting ToS for {tos_channel}",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else [
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS rejected",
+            ]
+        ),
     ]
-    with pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -167,7 +199,14 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        "1 channel ToS rejected",
+        *(
+            [
+                "CI detected...",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else ["1 channel ToS rejected"]
+        ),
     ]
 
     monkeypatch.setattr(sys, "stdin", StringIO("view\naccept\n"))
@@ -181,9 +220,26 @@ def test_render_interactive(
     assert out.splitlines() == [
         "Gathering channels...",
         "Reviewing channels...",
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject/(v)iew]: " + tos_full_lines[0],
-        *tos_full_lines[1:],
-        f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-        "[(a)ccept/(r)eject]: 1 channel ToS accepted",
+        *(
+            [
+                "CI detected...",
+                f"implicitly accepting ToS for {tos_channel}",
+                "1 channel ToS accepted",
+            ]
+            if ci
+            else [
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject/(v)iew]: " + tos_full_lines[0],
+                *tos_full_lines[1:],
+                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
+                "[(a)ccept/(r)eject]: 1 channel ToS accepted",
+            ]
+        ),
     ]
+
+
+def test_render_info(capsys: CaptureFixture) -> None:
+    render_info()
+    out, err = capsys.readouterr()
+    for path in SEARCH_PATH:
+        assert path in out
