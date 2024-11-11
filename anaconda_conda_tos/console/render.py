@@ -83,7 +83,6 @@ def render_view(
         else:
             console.print(f"viewing ToS for {channel}:")
             console.print(metadata.text)
-            console.print(f"[dim] For additional support visit: {metadata.support}")
     return 0
 
 

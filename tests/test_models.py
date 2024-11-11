@@ -93,6 +93,7 @@ REMOTE_METADATA = RemoteToSMetadata(version=2, text="ToS", support="support.com"
 LOCAL_METADATA = LocalToSMetadata(
     version=1,
     text="ToS",
+    support="support.com",
     base_url="url",
     tos_accepted=True,
     acceptance_timestamp=NOW,
