@@ -96,11 +96,6 @@ def _add_cache(parser: ArgumentParser) -> None:
 
 def configure_parser(parser: ArgumentParser) -> None:
     """Configure the parser for the `tos` subcommand."""
-    _add_channel(parser)
-    add_parser_prefix(parser)
-    _add_location(parser)
-    _add_cache(parser)
-
     subparsers = parser.add_subparsers(
         title="subcommand",
         description="The following subcommands are available.",
@@ -163,6 +158,12 @@ def configure_parser(parser: ArgumentParser) -> None:
             "(e.g., search path and cache directory)."
         ),
     )
+
+    # default behavior (listing current ToS statuses) arguments
+    _add_channel(parser)
+    add_parser_prefix(parser)
+    _add_location(parser)
+    _add_cache(parser)
 
 
 def execute(args: Namespace) -> int:
