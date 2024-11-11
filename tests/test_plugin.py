@@ -53,7 +53,7 @@ def test_subcommand_tos_view(
 ) -> None:
     out, err, code = conda_cli(
         "tos",
-        "--view",
+        "view",
         "--override-channels",
         f"--channel={sample_channel}",
     )
@@ -64,7 +64,7 @@ def test_subcommand_tos_view(
 
     out, err, code = conda_cli(
         "tos",
-        "--view",
+        "view",
         "--override-channels",
         f"--channel={tos_channel}",
     )
@@ -78,7 +78,7 @@ def test_subcommand_tos_view(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--view")
+    out, err, code = conda_cli("tos", "view")
     assert out.splitlines() == tos_lines
     # assert not err  # server log is output to stderr
     assert not code
@@ -93,7 +93,7 @@ def test_subcommand_tos_accept(
 ) -> None:
     out, err, code = conda_cli(
         "tos",
-        "--accept",
+        "accept",
         "--override-channels",
         f"--channel={sample_channel}",
         f"--tos-root={tmp_path}",
@@ -104,7 +104,7 @@ def test_subcommand_tos_accept(
 
     out, err, code = conda_cli(
         "tos",
-        "--accept",
+        "accept",
         "--override-channels",
         f"--channel={tos_channel}",
         f"--tos-root={tmp_path}",
@@ -118,7 +118,7 @@ def test_subcommand_tos_accept(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--accept", f"--tos-root={tmp_path}")
+    out, err, code = conda_cli("tos", "accept", f"--tos-root={tmp_path}")
     assert out.splitlines() == [f"accepted ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
@@ -133,7 +133,7 @@ def test_subcommand_tos_reject(
 ) -> None:
     out, err, code = conda_cli(
         "tos",
-        "--reject",
+        "reject",
         "--override-channels",
         f"--channel={sample_channel}",
         f"--tos-root={tmp_path}",
@@ -144,7 +144,7 @@ def test_subcommand_tos_reject(
 
     out, err, code = conda_cli(
         "tos",
-        "--reject",
+        "reject",
         "--override-channels",
         f"--channel={tos_channel}",
         f"--tos-root={tmp_path}",
@@ -158,7 +158,7 @@ def test_subcommand_tos_reject(
         new_callable=mocker.PropertyMock,
         return_value=(tos_channel,),
     )
-    out, err, code = conda_cli("tos", "--reject", f"--tos-root={tmp_path}")
+    out, err, code = conda_cli("tos", "reject", f"--tos-root={tmp_path}")
     assert out.splitlines() == [f"rejected ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
     assert not code
@@ -224,10 +224,10 @@ def test_subcommand_tos_interactive(
     monkeypatch.setattr(sys, "stdin", StringIO("accept\n"))
     out, err, code = conda_cli(
         "tos",
+        "interactive",
         "--override-channels",
         f"--channel={tos_channel}",
         f"--channel={sample_channel}",
-        "--interactive",
         f"--tos-root={user_tos_root}",
     )
     assert tos_channel.base_url in out
