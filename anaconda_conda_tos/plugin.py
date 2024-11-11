@@ -207,7 +207,7 @@ def conda_subcommands() -> Iterator[CondaSubcommand]:
             "for updated ToS for the active/selected channels. Channels with a ToS "
             "will need to be accepted or rejected prior to use. Conda will only allow "
             "package installation from channels without a ToS or with an accepted ToS. "
-            "Attempting to use a channel with a reject ToS will result in an error."
+            "Attempting to use a channel with a rejected ToS will result in an error."
         ),
         configure_parser=configure_parser,
     )
