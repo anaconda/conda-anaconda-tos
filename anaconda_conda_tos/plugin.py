@@ -36,8 +36,7 @@ DEFAULT_TOS_ROOT = USER_TOS_ROOT
 DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 
 
-def configure_parser(parser: ArgumentParser) -> None:
-    """Configure the parser for the `tos` subcommand."""
+def _add_channel(parser: ArgumentParser) -> None:
     parser.add_argument(
         "-c",
         "--channel",
@@ -50,35 +49,67 @@ def configure_parser(parser: ArgumentParser) -> None:
         help="Do not search default or .condarc channels. Requires --channel.",
     )
 
-    prefix_grp = parser.add_argument_group("Conda Environment")
-    prefix = prefix_grp.add_mutually_exclusive_group()
-    prefix.add_argument("-n", "--name", help="Name of environment.")
-    prefix.add_argument(
+
+def _add_prefix(parser: ArgumentParser) -> None:
+    prefix_group = parser.add_argument_group("Conda Environment")
+    prefix_mutex = prefix_group.add_mutually_exclusive_group()
+    prefix_mutex.add_argument("-n", "--name", help="Name of environment.")
+    prefix_mutex.add_argument(
         "-p",
         "--prefix",
         help="Full path to environment location (i.e. prefix).",
     )
 
-    location_grp = parser.add_argument_group("Local ToS Storage Location")
-    location = location_grp.add_mutually_exclusive_group()
+
+def _add_location(parser: ArgumentParser) -> None:
+    location_group = parser.add_argument_group("Local ToS Storage Location")
+    location_mutex = location_group.add_mutually_exclusive_group()
     for flag, value, text in (
         ("--site", SITE_TOS_ROOT, "System-wide ToS storage location."),
         ("--system", SYSTEM_TOS_ROOT, "Conda installation ToS storage location."),
         ("--user", USER_TOS_ROOT, "User ToS storage location."),
         ("--env", ENV_TOS_ROOT, "Conda environment ToS storage location."),
     ):
-        location.add_argument(
+        location_mutex.add_argument(
             flag,
             dest="tos_root",
             action="store_const",
             const=value,
             help=text,
         )
-    location.add_argument(
+    location_mutex.add_argument(
         "--tos-root",
         action="store",
+        default=DEFAULT_TOS_ROOT,
         help="Custom ToS storage location.",
     )
+
+
+def _add_cache(parser: ArgumentParser) -> None:
+    cache_group = parser.add_argument_group("Cache Control")
+    cache_mutex = cache_group.add_mutually_exclusive_group()
+    cache_mutex.add_argument(
+        "--cache-timeout",
+        action="store",
+        default=DEFAULT_CACHE_TIMEOUT,
+        type=int,
+        help="Cache timeout (in seconds) to check for ToS updates.",
+    )
+    cache_mutex.add_argument(
+        "--ignore-cache",
+        dest="cache_timeout",
+        action="store_const",
+        const=0,
+        help="Ignore the cache and always check for ToS updates.",
+    )
+
+
+def configure_parser(parser: ArgumentParser) -> None:
+    """Configure the parser for the `tos` subcommand."""
+    _add_channel(parser)
+    _add_prefix(parser)
+    _add_location(parser)
+    _add_cache(parser)
 
     action_grp = parser.add_argument_group("Actions")
     action = action_grp.add_mutually_exclusive_group()
@@ -119,25 +150,6 @@ def configure_parser(parser: ArgumentParser) -> None:
         action="store_true",
         help="Display information about the ToS plugin "
         "(e.g., search path and cache directory).",
-    )
-
-    parser.add_argument(
-        "--cache-timeout",
-        action="store",
-        type=int,
-        help="Cache timeout (in seconds) to check for ToS updates.",
-    )
-    parser.add_argument(
-        "--ignore-cache",
-        dest="cache_timeout",
-        action="store_const",
-        const=0,
-        help="Ignore the cache and always check for ToS updates.",
-    )
-
-    parser.set_defaults(
-        tos_root=DEFAULT_TOS_ROOT,
-        cache_timeout=DEFAULT_CACHE_TIMEOUT,
     )
 
 
