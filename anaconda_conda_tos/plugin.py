@@ -8,6 +8,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
+from conda.cli.helpers import add_parser_prefix
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import CondaPreCommand, CondaSetting, CondaSubcommand, hookimpl
@@ -36,53 +37,134 @@ DEFAULT_TOS_ROOT = USER_TOS_ROOT
 DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 
 
-def configure_parser(parser: ArgumentParser) -> None:
-    """Configure the parser for the `tos` subcommand."""
-    parser.add_argument("-c", "--channel", action="append")
-    parser.add_argument("--override-channels", action="store_true")
+def _add_channel(parser: ArgumentParser) -> None:
+    channel_group = parser.add_argument_group("Channel Customization")
+    channel_group.add_argument(
+        "-c",
+        "--channel",
+        action="append",
+        help="Additional channels to search for ToS.",
+    )
+    channel_group.add_argument(
+        "--override-channels",
+        action="store_true",
+        help="Do not search default or .condarc channels. Requires --channel.",
+    )
 
-    prefix_grp = parser.add_argument_group("Conda Environment")
-    prefix = prefix_grp.add_mutually_exclusive_group()
-    prefix.add_argument("-n", "--name")
-    prefix.add_argument("-p", "--prefix")
 
-    location_grp = parser.add_argument_group("Local ToS Storage Location")
-    location = location_grp.add_mutually_exclusive_group()
+def _add_location(parser: ArgumentParser) -> None:
+    location_group = parser.add_argument_group("Local ToS Storage Location")
+    location_mutex = location_group.add_mutually_exclusive_group()
     for flag, value, text in (
         ("--site", SITE_TOS_ROOT, "System-wide ToS storage location."),
         ("--system", SYSTEM_TOS_ROOT, "Conda installation ToS storage location."),
         ("--user", USER_TOS_ROOT, "User ToS storage location."),
         ("--env", ENV_TOS_ROOT, "Conda environment ToS storage location."),
     ):
-        location.add_argument(
+        location_mutex.add_argument(
             flag,
             dest="tos_root",
             action="store_const",
             const=value,
             help=text,
         )
-    location.add_argument("--file", dest="tos_root", action="store")
+    location_mutex.add_argument(
+        "--tos-root",
+        action="store",
+        help="Custom ToS storage location.",
+    )
+    parser.set_defaults(tos_root=DEFAULT_TOS_ROOT)
 
-    action_grp = parser.add_argument_group("Actions")
-    action = action_grp.add_mutually_exclusive_group()
-    action.add_argument("--accept", "--agree", action="store_true")
-    action.add_argument("--reject", "--disagree", "--withdraw", action="store_true")
-    action.add_argument("--view", "--show", action="store_true")
-    action.add_argument("--interactive", action="store_true")
-    action.add_argument("--info", action="store_true")
 
-    parser.add_argument("--cache-timeout", action="store", type=int)
-    parser.add_argument(
+def _add_cache(parser: ArgumentParser) -> None:
+    cache_group = parser.add_argument_group("Cache Control")
+    cache_mutex = cache_group.add_mutually_exclusive_group()
+    cache_mutex.add_argument(
+        "--cache-timeout",
+        action="store",
+        type=int,
+        help="Cache timeout (in seconds) to check for ToS updates.",
+    )
+    cache_mutex.add_argument(
         "--ignore-cache",
         dest="cache_timeout",
         action="store_const",
         const=0,
+        help="Ignore the cache and always check for ToS updates.",
+    )
+    parser.set_defaults(cache_timeout=DEFAULT_CACHE_TIMEOUT)
+
+
+def configure_parser(parser: ArgumentParser) -> None:
+    """Configure the parser for the `tos` subcommand."""
+    subparsers = parser.add_subparsers(
+        title="subcommand",
+        description="The following subcommands are available.",
+        dest="cmd",
+        required=False,
     )
 
-    parser.set_defaults(
-        tos_root=DEFAULT_TOS_ROOT,
-        cache_timeout=DEFAULT_CACHE_TIMEOUT,
+    accept_parser = subparsers.add_parser(
+        "accept",
+        help=(
+            "Accept the ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
     )
+    _add_channel(accept_parser)
+    add_parser_prefix(accept_parser)
+    _add_location(accept_parser)
+    _add_cache(accept_parser)
+
+    reject_parser = subparsers.add_parser(
+        "reject",
+        help=(
+            "Reject the ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
+    )
+    _add_channel(reject_parser)
+    add_parser_prefix(reject_parser)
+    _add_location(reject_parser)
+    _add_cache(reject_parser)
+
+    view_parser = subparsers.add_parser(
+        "view",
+        help=(
+            "View the ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
+    )
+    _add_channel(view_parser)
+    add_parser_prefix(view_parser)
+    _add_location(view_parser)
+    _add_cache(view_parser)
+
+    interactive_parser = subparsers.add_parser(
+        "interactive",
+        help=(
+            "Interactively accept/reject/view ToS for all active channels "
+            "(default, .condarc, and/or those specified via --channel)."
+        ),
+    )
+    _add_channel(interactive_parser)
+    add_parser_prefix(interactive_parser)
+    _add_location(interactive_parser)
+    _add_cache(interactive_parser)
+
+    subparsers.add_parser(
+        "info",
+        help=(
+            "Display information about the ToS plugin "
+            "(e.g., search path and cache directory)."
+        ),
+    )
+
+    # default behavior (listing current ToS statuses) arguments
+    _add_channel(parser)
+    add_parser_prefix(parser)
+    _add_location(parser)
+    _add_cache(parser)
 
 
 def execute(args: Namespace) -> int:
@@ -90,19 +172,19 @@ def execute(args: Namespace) -> int:
     validate_prefix_exists(context.target_prefix)
 
     console = Console()
-    if args.info:
+    if args.cmd == "info":
         # refactor into `conda info` plugin (when possible)
         return render_info(console)
 
     action: Callable = render_list
     kwargs = {}
-    if args.accept:
+    if args.cmd == "accept":
         action = render_accept
-    elif args.reject:
+    elif args.cmd == "reject":
         action = render_reject
-    elif args.view:
+    elif args.cmd == "view":
         action = render_view
-    elif args.interactive:
+    elif args.cmd == "interactive":
         action = render_interactive
         kwargs["auto_accept_tos"] = context.plugins.auto_accept_tos
 
@@ -121,7 +203,14 @@ def conda_subcommands() -> Iterator[CondaSubcommand]:
     yield CondaSubcommand(
         name="tos",
         action=execute,
-        summary="View, accept, and interact with a channel's Terms of Service (ToS).",
+        summary=(
+            "A subcommand for viewing, accepting, rejecting, and otherwise interacting "
+            "with a channel's Terms of Service (ToS). This plugin periodically checks "
+            "for updated ToS for the active/selected channels. Channels with a ToS "
+            "will need to be accepted or rejected prior to use. Conda will only allow "
+            "package installation from channels without a ToS or with an accepted ToS. "
+            "Attempting to use a channel with a rejected ToS will result in an error."
+        ),
         configure_parser=configure_parser,
     )
 
