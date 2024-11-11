@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class _ToSMetadata(BaseModel):
     model_config = ConfigDict(extra="allow")
-    version: int
+    version: datetime
     text: str
     support: str
 

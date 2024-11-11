@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -28,6 +29,14 @@ if TYPE_CHECKING:
 
     from conda.models.channel import Channel
     from pytest_mock import MockerFixture
+
+TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
+REMOTE_METADATA = RemoteToSMetadata(
+    version=TIMESTAMP1,
+    text=f"ToS full text\n\n{uuid4().hex}",
+    support="support.com",
+    **{uuid4().hex: uuid4().hex},
+)
 
 
 def test_get_endpoint(tos_channel: Channel, sample_channel: Channel) -> None:
@@ -79,13 +88,6 @@ def test_write_cached_endpoint(
     mocker: MockerFixture,
     tmp_path: Path,
 ) -> None:
-    remote_metadata = RemoteToSMetadata(
-        version=42,
-        text=f"ToS full text\n\n{uuid4().hex}",
-        support="support.com",
-        **{uuid4().hex: uuid4().hex},
-    )
-
     path = get_cache_path(sample_channel)
     assert not path.exists()
 
@@ -93,9 +95,9 @@ def test_write_cached_endpoint(
     assert path.exists()
     assert not path.read_text()
 
-    write_cached_endpoint(sample_channel, remote_metadata)
+    write_cached_endpoint(sample_channel, REMOTE_METADATA)
     assert path.exists()
-    assert RemoteToSMetadata.model_validate_json(path.read_text()) == remote_metadata
+    assert RemoteToSMetadata.model_validate_json(path.read_text()) == REMOTE_METADATA
 
     with pytest.raises(TypeError):
         write_cached_endpoint(sample_channel, object())  # type: ignore[arg-type]
@@ -105,7 +107,7 @@ def test_write_cached_endpoint(
     try:
         path.chmod(0o000)
         with pytest.raises(CondaToSPermissionError):
-            write_cached_endpoint(sample_channel, remote_metadata)
+            write_cached_endpoint(sample_channel, REMOTE_METADATA)
     finally:
         # cleanup so tmp_path can be removed
         path.chmod(0o644)

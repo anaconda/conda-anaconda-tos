@@ -28,20 +28,11 @@ if TYPE_CHECKING:
     from pytest import MonkeyPatch
 
 
-def _similar_metadata(
-    metadata1: LocalToSMetadata | RemoteToSMetadata,
-    metadata2: LocalToSMetadata | RemoteToSMetadata,
-) -> bool:
-    return type(metadata1) is type(metadata2) and all(
-        getattr(metadata1, key) == getattr(metadata2, key)
-        for key in set(metadata1.model_fields) - {"acceptance_timestamp"}
-    )
-
-
 CHANNEL = Channel("someplace")
+TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
 NOW = datetime.now(tz=timezone.utc)
 REMOTE_METADATA = RemoteToSMetadata(
-    version=42,
+    version=TIMESTAMP1,
     text=f"ToS full text\n\n{uuid4().hex}",
     support="support.com",
     **{uuid4().hex: uuid4().hex},
@@ -52,6 +43,16 @@ LOCAL_METADATA = LocalToSMetadata(
     acceptance_timestamp=NOW,
     base_url=CHANNEL.base_url,
 )
+
+
+def _similar_metadata(
+    metadata1: LocalToSMetadata | RemoteToSMetadata,
+    metadata2: LocalToSMetadata | RemoteToSMetadata,
+) -> bool:
+    return type(metadata1) is type(metadata2) and all(
+        getattr(metadata1, key) == getattr(metadata2, key)
+        for key in set(metadata1.model_fields) - {"acceptance_timestamp"}
+    )
 
 
 def test_write_metadata(tmp_path: Path) -> None:

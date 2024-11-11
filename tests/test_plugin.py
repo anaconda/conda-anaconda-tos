@@ -173,7 +173,7 @@ def test_subcommand_tos_list(
 ) -> None:
     system_tos_root, user_tos_root = mock_search_path
 
-    mocker.patch("os.get_terminal_size", return_value=os.terminal_size((100, 100)))
+    mocker.patch("os.get_terminal_size", return_value=os.terminal_size((200, 200)))
 
     out, err, code = conda_cli(
         "tos",
