@@ -11,6 +11,7 @@ from conda.base.context import context
 from conda.cli.helpers import add_parser_prefix
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
+from conda.gateways.connection.session import CondaSession, get_session
 from conda.plugins import (
     CondaPreCommand,
     CondaRequestHeader,
@@ -247,6 +248,10 @@ def _pre_command_check_tos(_command: str) -> None:
         cache_timeout=DEFAULT_CACHE_TIMEOUT,
         auto_accept_tos=context.plugins.auto_accept_tos,
     )
+
+    # invalidate get_session/CondaSession caches
+    get_session.cache_clear()
+    CondaSession.cache_clear()
 
 
 @hookimpl(tryfirst=True)
