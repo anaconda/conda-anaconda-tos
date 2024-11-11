@@ -42,6 +42,7 @@ def render_list(
     table.add_column("Version")
     table.add_column("Accepted")
     table.add_column("Location")
+    table.add_column("Support")
 
     for channel, metadata_pair in get_all_tos(
         *channels,
@@ -49,13 +50,14 @@ def render_list(
         cache_timeout=cache_timeout,
     ):
         if not metadata_pair:
-            table.add_row(channel.base_url, "-", "-", "-")
+            table.add_row(channel.base_url, "-", "-", "-", "-")
         else:
             table.add_row(
                 channel.base_url,
                 str(metadata_pair.metadata.version),
                 accepted_mapping(metadata_pair.metadata),
                 location_mapping(metadata_pair.path),
+                metadata_pair.metadata.support,
             )
 
     console = console or Console()
@@ -81,6 +83,7 @@ def render_view(
         else:
             console.print(f"viewing ToS for {channel}:")
             console.print(metadata.text)
+            console.print(f"[dim] For additional support visit: {metadata.support}")
     return 0
 
 

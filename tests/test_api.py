@@ -41,6 +41,7 @@ def remote_metadata_pair() -> RemotePair:
         metadata=RemoteToSMetadata(
             version=2,
             text="new ToS",
+            support="support.com",
         ),
     )
 

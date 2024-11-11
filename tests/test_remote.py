@@ -82,6 +82,7 @@ def test_write_cached_endpoint(
     remote_metadata = RemoteToSMetadata(
         version=42,
         text=f"ToS full text\n\n{uuid4().hex}",
+        support="support.com",
         **{uuid4().hex: uuid4().hex},
     )
 

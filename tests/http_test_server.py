@@ -28,7 +28,7 @@ SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
 
 
 TOS_TEXT = "\n".join(("ToS full text", "", uuid4().hex))
-TOS_METADATA = RemoteToSMetadata(version=1, text=TOS_TEXT)
+TOS_METADATA = RemoteToSMetadata(version=1, text=TOS_TEXT, support="support.com")
 
 
 def run_test_server(

@@ -43,6 +43,7 @@ NOW = datetime.now(tz=timezone.utc)
 REMOTE_METADATA = RemoteToSMetadata(
     version=42,
     text=f"ToS full text\n\n{uuid4().hex}",
+    support="support.com",
     **{uuid4().hex: uuid4().hex},
 )
 LOCAL_METADATA = LocalToSMetadata(

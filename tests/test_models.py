@@ -21,24 +21,28 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize(
-    "version,text,raises",
+    "version,text,support,raises",
     [
-        pytest.param(None, None, True, id="missing"),
-        pytest.param(1, None, True, id="only version"),
-        pytest.param(None, "ToS", True, id="only text"),
-        pytest.param(object(), None, True, id="invalid version"),
-        pytest.param(None, object(), True, id="invalid text"),
-        pytest.param(1, "ToS", False, id="complete"),
+        pytest.param(None, None, None, True, id="missing"),
+        pytest.param(1, None, None, True, id="only version"),
+        pytest.param(None, "ToS", None, True, id="only text"),
+        pytest.param(None, None, "support.com", True, id="only text"),
+        pytest.param(object(), None, None, True, id="invalid version"),
+        pytest.param(None, object(), None, True, id="invalid text"),
+        pytest.param(None, None, object(), True, id="invalid text"),
+        pytest.param(1, "ToS", "support.com", False, id="complete"),
     ],
 )
 def test_RemoteToSMetadata(  # noqa: N802
     version: int | None,
     text: str | None,
+    support: str | None,
     raises: bool,
 ) -> None:
     remote = {
         "version": version,
         "text": text,
+        "support": support,
     }
     with pytest.raises(ValidationError) if raises else nullcontext():
         RemoteToSMetadata(
@@ -74,6 +78,7 @@ def test_LocalToSMetadata(  # noqa: N802
     local = {
         "version": 1,  # tested in test_RemoteToSMetadata
         "text": "ToS",  # tested in test_RemoteToSMetadata
+        "support": "support.com",  # tested in test_RemoteToSMetadata
         "base_url": base_url,
         "tos_accepted": tos_accepted,
         "acceptance_timestamp": acceptance_timestamp,
@@ -84,7 +89,7 @@ def test_LocalToSMetadata(  # noqa: N802
         )
 
 
-REMOTE_METADATA = RemoteToSMetadata(version=2, text="ToS")
+REMOTE_METADATA = RemoteToSMetadata(version=2, text="ToS", support="support.com")
 LOCAL_METADATA = LocalToSMetadata(
     version=1,
     text="ToS",

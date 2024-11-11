@@ -18,6 +18,7 @@ class _ToSMetadata(BaseModel):
     model_config = ConfigDict(extra="allow")
     version: int
     text: str
+    support: str
 
     def __ge__(self: Self, other: _ToSMetadata) -> bool:
         """Compare the ToS metadata version."""
