@@ -281,7 +281,7 @@ def _format_active_channels_tos() -> Iterator[tuple[str, int, str, int]]:
         else:
             yield (
                 channel.base_url,
-                int(local_pair.metadata.timestamp.timestamp()),
+                int(local_pair.metadata.version.timestamp()),
                 "accepted" if local_pair.metadata.tos_accepted else "rejected",
                 int(local_pair.metadata.acceptance_timestamp.timestamp()),
             )
