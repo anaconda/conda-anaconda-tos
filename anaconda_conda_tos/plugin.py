@@ -38,13 +38,14 @@ DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 
 
 def _add_channel(parser: ArgumentParser) -> None:
-    parser.add_argument(
+    channel_group = parser.add_argument_group("Channel Customization")
+    channel_group.add_argument(
         "-c",
         "--channel",
         action="append",
         help="Additional channels to search for ToS.",
     )
-    parser.add_argument(
+    channel_group.add_argument(
         "--override-channels",
         action="store_true",
         help="Do not search default or .condarc channels. Requires --channel.",
