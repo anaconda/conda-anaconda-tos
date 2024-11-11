@@ -17,44 +17,36 @@ from anaconda_conda_tos.models import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Final
-
-TIMESTAMP1: Final = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
-TIMESTAMP2: Final = datetime(2024, 11, 1, tzinfo=timezone.utc)  # "version 2"
-NOW: Final = datetime.now(tz=timezone.utc)
-REMOTE_METADATA = RemoteToSMetadata(timestamp=TIMESTAMP2, text="ToS")
-LOCAL_METADATA = LocalToSMetadata(
-    timestamp=TIMESTAMP1,
-    text="ToS",
-    base_url="url",
-    tos_accepted=True,
-    acceptance_timestamp=NOW,
-)
-
-
-def _filter_none_keys(kwargs: dict[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in kwargs.items() if value is not None}
+    from typing import Final
 
 
 @pytest.mark.parametrize(
-    "timestamp,text,raises",
+    "tos_version,text,raises",
     [
         pytest.param(None, None, True, id="missing"),
-        pytest.param(TIMESTAMP1, None, True, id="only timestamp"),
+        pytest.param(1, None, True, id="only tos_version"),
         pytest.param(None, "ToS", True, id="only text"),
-        pytest.param(object(), None, True, id="invalid timestamp"),
+        pytest.param(object(), None, True, id="invalid tos_version"),
         pytest.param(None, object(), True, id="invalid text"),
-        pytest.param(TIMESTAMP1, "ToS", False, id="complete"),
+        pytest.param(1, "ToS", False, id="complete"),
     ],
 )
 def test_RemoteToSMetadata(  # noqa: N802
-    timestamp: datetime | None,
+    tos_version: int | None,
     text: str | None,
     raises: bool,
 ) -> None:
-    kwargs = {"timestamp": timestamp, "text": text}
+    remote = {
+        "tos_version": tos_version,
+        "text": text,
+    }
     with pytest.raises(ValidationError) if raises else nullcontext():
-        RemoteToSMetadata(**_filter_none_keys(kwargs))
+        RemoteToSMetadata(
+            **{key: value for key, value in remote.items() if value is not None},
+        )
+
+
+NOW: Final = datetime.now(tz=timezone.utc)
 
 
 @pytest.mark.parametrize(
@@ -79,15 +71,27 @@ def test_LocalToSMetadata(  # noqa: N802
     acceptance_timestamp: datetime | None,
     raises: bool,
 ) -> None:
-    kwargs = {
-        "timestamp": TIMESTAMP1,  # tested in test_RemoteToSMetadata
+    local = {
+        "tos_version": 1,  # tested in test_RemoteToSMetadata
         "text": "ToS",  # tested in test_RemoteToSMetadata
         "base_url": base_url,
         "tos_accepted": tos_accepted,
         "acceptance_timestamp": acceptance_timestamp,
     }
     with pytest.raises(ValidationError) if raises else nullcontext():
-        LocalToSMetadata(**_filter_none_keys(kwargs))
+        LocalToSMetadata(
+            **{key: value for key, value in local.items() if value is not None},
+        )
+
+
+REMOTE_METADATA = RemoteToSMetadata(tos_version=2, text="ToS")
+LOCAL_METADATA = LocalToSMetadata(
+    tos_version=1,
+    text="ToS",
+    base_url="url",
+    tos_accepted=True,
+    acceptance_timestamp=NOW,
+)
 
 
 def test_ToSMetadata_ge() -> None:  # noqa: N802
@@ -114,8 +118,9 @@ def test_RemotePair(  # noqa: N802
     raises: bool,
 ) -> None:
     kwargs = {"metadata": metadata, "path": path}
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     with pytest.raises(ValidationError) if raises else nullcontext():
-        RemotePair(**_filter_none_keys(kwargs))
+        RemotePair(**kwargs)
 
 
 @pytest.mark.parametrize(
@@ -133,8 +138,9 @@ def test_LocalPair(  # noqa: N802
     raises: bool,
 ) -> None:
     kwargs = {"metadata": metadata, "path": path}
+    kwargs = {key: value for key, value in kwargs.items() if value is not None}
     with pytest.raises(ValidationError) if raises else nullcontext():
-        LocalPair(**_filter_none_keys(kwargs))
+        LocalPair(**kwargs)
 
 
 def test_MetadataPair_lt() -> None:  # noqa: N802

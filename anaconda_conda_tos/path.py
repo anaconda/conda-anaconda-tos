@@ -19,7 +19,6 @@ from . import APP_NAME
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-    from datetime import datetime
     from typing import Final
 
 #: Site ToS directory. This is the highest priority location.
@@ -106,10 +105,10 @@ def get_tos_dir(
 def get_metadata_path(
     tos_root: str | os.PathLike[str] | Path,
     channel: str | Channel,
-    timestamp: datetime,
+    version: int,
 ) -> Path:
     """Get the ToS file path for the given channel and version."""
-    return get_tos_dir(tos_root, channel) / f"{timestamp.timestamp()}.json"
+    return get_tos_dir(tos_root, channel) / f"{version}.json"
 
 
 def get_all_channel_paths(

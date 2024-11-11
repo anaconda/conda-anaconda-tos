@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -75,9 +74,8 @@ def test_get_tos_dir(tmp_path: Path, sample_channel: Channel) -> None:
 
 
 def test_get_metadata_path(tmp_path: Path, sample_channel: Channel) -> None:
-    timestamp = datetime.now(tz=timezone.utc)
-    expected = get_tos_dir(tmp_path, sample_channel) / f"{timestamp.timestamp()}.json"
-    assert get_metadata_path(tmp_path, sample_channel, timestamp) == expected
+    expected = get_tos_dir(tmp_path, sample_channel) / "42.json"
+    assert get_metadata_path(tmp_path, sample_channel, 42) == expected
 
 
 def test_get_all_channel_paths(

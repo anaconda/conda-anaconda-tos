@@ -16,14 +16,14 @@ if TYPE_CHECKING:
 
 class _ToSMetadata(BaseModel):
     model_config = ConfigDict(extra="allow")
-    timestamp: datetime
+    tos_version: int
     text: str
 
     def __ge__(self: Self, other: _ToSMetadata) -> bool:
         """Compare the ToS metadata version."""
         if not isinstance(other, _ToSMetadata):
             return NotImplemented
-        return self.timestamp >= other.timestamp
+        return self.tos_version >= other.tos_version
 
 
 class RemoteToSMetadata(_ToSMetadata):
@@ -50,7 +50,7 @@ class _MetadataPathPair(BaseModel):
         """
         if not isinstance(other, _MetadataPathPair):
             return NotImplemented
-        return self.metadata.timestamp < other.metadata.timestamp
+        return self.metadata.tos_version < other.metadata.tos_version
 
 
 class RemotePair(_MetadataPathPair):

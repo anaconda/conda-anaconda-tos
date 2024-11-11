@@ -30,13 +30,6 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
-REMOTE_METADATA = RemoteToSMetadata(
-    timestamp=42,
-    text=f"ToS full text\n\n{uuid4().hex}",
-    **{uuid4().hex: uuid4().hex},
-)
-
-
 def test_get_endpoint(tos_channel: Channel, sample_channel: Channel) -> None:
     # get ToS endpoint for ToS channel
     assert get_endpoint(tos_channel).status_code == 200
@@ -86,6 +79,12 @@ def test_write_cached_endpoint(
     mocker: MockerFixture,
     tmp_path: Path,
 ) -> None:
+    remote_metadata = RemoteToSMetadata(
+        tos_version=42,
+        text=f"ToS full text\n\n{uuid4().hex}",
+        **{uuid4().hex: uuid4().hex},
+    )
+
     path = get_cache_path(sample_channel)
     assert not path.exists()
 
@@ -93,9 +92,9 @@ def test_write_cached_endpoint(
     assert path.exists()
     assert not path.read_text()
 
-    write_cached_endpoint(sample_channel, REMOTE_METADATA)
+    write_cached_endpoint(sample_channel, remote_metadata)
     assert path.exists()
-    assert RemoteToSMetadata.model_validate_json(path.read_text()) == REMOTE_METADATA
+    assert RemoteToSMetadata.model_validate_json(path.read_text()) == remote_metadata
 
     with pytest.raises(TypeError):
         write_cached_endpoint(sample_channel, object())  # type: ignore[arg-type]
@@ -105,7 +104,7 @@ def test_write_cached_endpoint(
     try:
         path.chmod(0o000)
         with pytest.raises(CondaToSPermissionError):
-            write_cached_endpoint(sample_channel, REMOTE_METADATA)
+            write_cached_endpoint(sample_channel, remote_metadata)
     finally:
         # cleanup so tmp_path can be removed
         path.chmod(0o644)
