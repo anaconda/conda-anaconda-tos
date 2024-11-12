@@ -6,6 +6,9 @@
   "pre-commit": {
     "enabled": true
   },
+  "pip_requirements": {
+    "enabled": false
+  }
   "customManagers": [
     {
       "description": "Upgrade conda dependencies",
