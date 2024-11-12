@@ -2,5 +2,20 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>anaconda/renovate-config"
+  ],
+  "pre-commit": {
+    "enabled": true
+  },
+  "customManagers": [
+    {
+      "description": "Upgrade conda dependencies",
+      "fileMatch": [
+        "(^|/)requirements(.*).txt$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=conda depName=(?<depName>.*?)\\s+-\\s*[\\w-]+\\s*==?\\s*\"?(?<currentValue>.*)\"?"
+      ],
+      "datasourceTemplate": "conda"
+    }
   ]
 }
