@@ -11,6 +11,7 @@ from conda.models.channel import Channel
 from .exceptions import CondaToSMissingError
 from .local import get_local_metadata, get_local_metadatas, write_metadata
 from .models import LocalPair, RemotePair
+from .path import get_all_channel_paths, get_cache_paths
 from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
@@ -134,3 +135,31 @@ def get_all_tos(
         if channel not in seen:
             yield channel, metadata_pair
             seen.add(channel)
+
+
+def clean_cache() -> Iterator[Path]:
+    """Clean all ToS cache files."""
+    for path in get_cache_paths():
+        try:
+            path.unlink()
+        except (PermissionError, FileNotFoundError, IsADirectoryError):
+            # PermissionError: no permission to delete the file
+            # FileNotFoundError: the file doesn't exist
+            # IsADirectoryError: the path is a directory
+            pass
+        else:
+            yield path
+
+
+def clean_tos(tos_root: str | os.PathLike[str] | Path) -> Iterator[Path]:
+    """Clean all ToS directories."""
+    for path in get_all_channel_paths(extend_search_path=[tos_root]):
+        try:
+            path.unlink()
+        except (PermissionError, FileNotFoundError, IsADirectoryError):
+            # PermissionError: no permission to delete the file
+            # FileNotFoundError: the file doesn't exist
+            # IsADirectoryError: the path is a directory
+            pass
+        else:
+            yield path

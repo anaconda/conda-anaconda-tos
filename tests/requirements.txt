@@ -1,4 +1,6 @@
 conda-canary/label/dev::conda >24.9.2
-pydantic
+# renovate: datasource=conda depName=main/pydantic
+pydantic ==2.8.2
 python >=3.9
-rich
+# renovate: datasource=conda depName=main/rich
+rich ==13.7.1

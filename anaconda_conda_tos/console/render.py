@@ -8,11 +8,14 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from conda.exceptions import ArgumentError
 from rich.console import Console
 from rich.table import Table
 
 from ..api import (
     accept_tos,
+    clean_cache,
+    clean_tos,
     get_all_tos,
     get_channels,
     get_one_tos,
@@ -67,7 +70,7 @@ def render_list(
 
 def render_view(
     *channels: str | Channel,
-    tos_root: str | os.PathLike | Path,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
 ) -> int:
@@ -88,7 +91,7 @@ def render_view(
 
 def render_accept(
     *channels: str | Channel,
-    tos_root: str | os.PathLike | Path,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
 ) -> int:
@@ -106,7 +109,7 @@ def render_accept(
 
 def render_reject(
     *channels: str | Channel,
-    tos_root: str | os.PathLike | Path,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
 ) -> int:
@@ -144,7 +147,7 @@ def _prompt_acceptance(
 
 def _gather_tos(
     *channels: str | Channel,
-    tos_root: str | os.PathLike | Path,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> tuple[list[Channel], list[Channel], list[tuple[Channel, RemoteToSMetadata]]]:
     accepted = []
@@ -171,7 +174,7 @@ def _gather_tos(
 
 def render_interactive(
     *channels: str | Channel,
-    tos_root: str | os.PathLike | Path,
+    tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     console: Console | None = None,
     auto_accept_tos: bool,
@@ -219,7 +222,7 @@ def render_interactive(
     return 0
 
 
-def render_info(console: Console | None = None) -> int:
+def render_info(*, console: Console | None = None) -> int:
     """Display information about the ToS cache."""
     table = Table(show_header=False)
     table.add_column("Key")
@@ -235,4 +238,26 @@ def render_info(console: Console | None = None) -> int:
 
     console = console or Console()
     console.print(table)
+    return 0
+
+
+def render_clean(
+    cache: bool,
+    tos: bool,
+    all: bool,  # noqa: A002
+    *,
+    tos_root: str | os.PathLike[str] | Path,
+    console: Console | None = None,
+) -> int:
+    """Clean the ToS cache directories."""
+    if not (all or cache or tos):
+        raise ArgumentError(
+            "At least one removal target must be given. See 'conda tos clean --help'."
+        )
+
+    console = console or Console()
+    if all or cache:
+        console.print(f"Removed {len(list(clean_cache()))} cache files.")
+    if all or tos:
+        console.print(f"Removed {len(list(clean_tos(tos_root)))} ToS files.")
     return 0

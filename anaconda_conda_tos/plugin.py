@@ -24,6 +24,7 @@ from rich.console import Console
 from .api import get_channels
 from .console import (
     render_accept,
+    render_clean,
     render_info,
     render_interactive,
     render_list,
@@ -182,16 +183,32 @@ def configure_parser(parser: ArgumentParser) -> None:
     _add_location(parser)
     _add_cache(parser)
 
+    clean_parser = subparsers.add_parser(
+        "clean",
+        help="Clean the ToS cache directories.",
+    )
+    clean_parser.add_argument(
+        "--cache",
+        action="store_true",
+        help="Remove all ToS cache files.",
+    )
+    clean_parser.add_argument(
+        "--tos",
+        action="store_true",
+        help="Remove all ToS acceptances/rejections.",
+    )
+    clean_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Invoke both `--cache` and `--tos`.",
+    )
+
 
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
     validate_prefix_exists(context.target_prefix)
 
     console = Console()
-    if args.cmd == "info":
-        # refactor into `conda info` plugin (when possible)
-        return render_info(console)
-
     action: Callable = render_list
     kwargs = {}
     if args.cmd == "accept":
@@ -203,6 +220,18 @@ def execute(args: Namespace) -> int:
     elif args.cmd == "interactive":
         action = render_interactive
         kwargs["auto_accept_tos"] = context.plugins.auto_accept_tos
+    elif args.cmd == "info":
+        # refactor into `conda info` plugin (when possible)
+        return render_info(console=console)
+    elif args.cmd == "clean":
+        # refactor into `conda clean` plugin (when possible)
+        return render_clean(
+            cache=args.cache,
+            tos=args.tos,
+            all=args.all,
+            tos_root=args.tos_root,
+            console=console,
+        )
 
     return action(
         *context.channels,
