@@ -8,10 +8,13 @@ from io import StringIO
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
-from conda.gateways.connection.session import CondaSession, get_session
+from conda.common.url import urlparse
+from conda.gateways.connection.session import get_session
 
+from anaconda_conda_tos import plugin
 from anaconda_conda_tos.api import accept_tos, reject_tos
 from anaconda_conda_tos.plugin import (
+    _get_tos_acceptance_header,
     conda_request_headers,
     conda_settings,
     conda_subcommands,
@@ -45,9 +48,15 @@ def test_settings_hook() -> None:
 
 
 def test_request_headers_hook() -> None:
-    headers = list(conda_request_headers())
-    assert len(headers) == 1
+    host, path = "conda.anaconda.org", "/pkgs/main/tos.json"
+    assert not list(conda_request_headers(host, path))
 
+    host, path = "repo.anaconda.com", "/pkgs/main/tos.json"
+    assert not list(conda_request_headers(host, path))
+
+    host, path = "repo.anaconda.com", "/pkgs/main/repodata.json"
+    headers = list(conda_request_headers(host, path))
+    assert len(headers) == 1
     assert headers[0].name == "Anaconda-ToS-Accept"
 
 
@@ -156,30 +165,36 @@ def test_subcommand_tos_interactive(
 
 
 def test_request_headers(
+    monkeypatch: MonkeyPatch,
     tos_channel: Channel,
     mock_search_path: tuple[Path, Path],
     tos_metadata: RemoteToSMetadata,
 ) -> None:
+    monkeypatch.setattr(plugin, "HOSTS", {urlparse(tos_channel.base_url).netloc})
     system_tos_root, user_tos_root = mock_search_path
 
-    get_session.cache_clear()
-    CondaSession.cache_clear()
-    session = get_session("https://repo.anaconda.com/pkgs/main/tos.json")
-    assert "Anaconda-ToS-Accept" in session.headers
-    assert session.headers["Anaconda-ToS-Accept"] == ""
+    url = f"{tos_channel}/tos.json"
+
+    request = get_session(url).get(url).request
+    assert "Anaconda-ToS-Accept" not in request.headers
+
+    url = f"{tos_channel}/repodata.json"
+
+    request = get_session(url).get(url).request
+    assert request.headers["Anaconda-ToS-Accept"] == ""
 
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
-    get_session.cache_clear()
-    CondaSession.cache_clear()
-    session = get_session("https://repo.anaconda.com/pkgs/main/tos.json")
-    assert "Anaconda-ToS-Accept" in session.headers
+    _get_tos_acceptance_header.cache_clear()
+    context.plugin_manager.get_cached_request_headers.cache_clear()
+    request = get_session(url).get(url).request
     value = f"{tos_channel.base_url}={int(tos_metadata.version.timestamp())}=accepted="
-    assert session.headers["Anaconda-ToS-Accept"].startswith(value)
+    print(request.headers["Anaconda-ToS-Accept"])
+    assert request.headers["Anaconda-ToS-Accept"].startswith(value)
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
-    get_session.cache_clear()
-    CondaSession.cache_clear()
-    session = get_session("https://repo.anaconda.com/pkgs/main/tos.json")
-    assert "Anaconda-ToS-Accept" in session.headers
+    _get_tos_acceptance_header.cache_clear()
+    context.plugin_manager.get_cached_request_headers.cache_clear()
+    request = get_session(url).get(url).request
     value = f"{tos_channel.base_url}={int(tos_metadata.version.timestamp())}=rejected="
-    assert session.headers["Anaconda-ToS-Accept"].startswith(value)
+    print(request.headers["Anaconda-ToS-Accept"])
+    assert request.headers["Anaconda-ToS-Accept"].startswith(value)
