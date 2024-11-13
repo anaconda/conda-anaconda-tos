@@ -7,6 +7,7 @@ import sys
 from io import StringIO
 from typing import TYPE_CHECKING
 
+import pytest
 from conda.base.context import context
 from conda.common.url import urlparse
 from conda.gateways.connection.session import get_session
@@ -164,37 +165,52 @@ def test_subcommand_tos_interactive(
     assert not code
 
 
+def _cache_clear() -> None:
+    _get_tos_acceptance_header.cache_clear()
+    context.plugin_manager.get_cached_request_headers.cache_clear()
+
+
+@pytest.mark.parametrize("ci", [True, False])
 def test_request_headers(
     monkeypatch: MonkeyPatch,
     tos_channel: Channel,
     mock_search_path: tuple[Path, Path],
     tos_metadata: RemoteToSMetadata,
+    ci: bool,
 ) -> None:
+    monkeypatch.setattr(plugin, "CI", ci)
     monkeypatch.setattr(plugin, "HOSTS", {urlparse(tos_channel.base_url).netloc})
     system_tos_root, user_tos_root = mock_search_path
 
     url = f"{tos_channel}/tos.json"
 
+    _cache_clear()
     request = get_session(url).get(url).request
     assert "Anaconda-ToS-Accept" not in request.headers
 
     url = f"{tos_channel}/repodata.json"
 
+    _cache_clear()
     request = get_session(url).get(url).request
-    assert request.headers["Anaconda-ToS-Accept"] == ""
+    if ci:
+        assert request.headers["Anaconda-ToS-Accept"] == "CI=true"
+    else:
+        assert request.headers["Anaconda-ToS-Accept"] == ""
 
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
-    _get_tos_acceptance_header.cache_clear()
-    context.plugin_manager.get_cached_request_headers.cache_clear()
+    _cache_clear()
     request = get_session(url).get(url).request
-    value = f"{tos_channel.base_url}={int(tos_metadata.version.timestamp())}=accepted="
-    print(request.headers["Anaconda-ToS-Accept"])
-    assert request.headers["Anaconda-ToS-Accept"].startswith(value)
+    if ci:
+        assert request.headers["Anaconda-ToS-Accept"] == "CI=true"
+    else:
+        value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=accepted="
+        assert request.headers["Anaconda-ToS-Accept"].startswith(value)
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
-    _get_tos_acceptance_header.cache_clear()
-    context.plugin_manager.get_cached_request_headers.cache_clear()
+    _cache_clear()
     request = get_session(url).get(url).request
-    value = f"{tos_channel.base_url}={int(tos_metadata.version.timestamp())}=rejected="
-    print(request.headers["Anaconda-ToS-Accept"])
-    assert request.headers["Anaconda-ToS-Accept"].startswith(value)
+    if ci:
+        assert request.headers["Anaconda-ToS-Accept"] == "CI=true"
+    else:
+        value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=rejected="
+        assert request.headers["Anaconda-ToS-Accept"].startswith(value)
