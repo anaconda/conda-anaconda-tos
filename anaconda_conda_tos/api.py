@@ -142,8 +142,10 @@ def clean_cache() -> Iterator[Path]:
     for path in get_cache_paths():
         try:
             path.unlink()
-        except OSError:
-            # OSError: some IO error
+        except (PermissionError, FileNotFoundError, IsADirectoryError):
+            # PermissionError: no permission to delete the file
+            # FileNotFoundError: the file doesn't exist
+            # IsADirectoryError: the path is a directory
             pass
         else:
             yield path
@@ -154,8 +156,10 @@ def clean_tos(tos_root: str | os.PathLike[str] | Path) -> Iterator[Path]:
     for path in get_all_channel_paths(extend_search_path=[tos_root]):
         try:
             path.unlink()
-        except OSError:
-            # OSError: some IO error
+        except (PermissionError, FileNotFoundError, IsADirectoryError):
+            # PermissionError: no permission to delete the file
+            # FileNotFoundError: the file doesn't exist
+            # IsADirectoryError: the path is a directory
             pass
         else:
             yield path
