@@ -14,6 +14,7 @@ repos:
           (?x)^(
             recipe/meta.yaml
           )
+      - id: check-json
       # catch git merge/rebase problems
       - id: check-merge-conflict
   # Python verification and formatting
@@ -52,11 +53,12 @@ repos:
           (?x)^(
             recipe/meta.yaml
           )
-  # - repo: https://github.com/python-jsonschema/check-jsonschema
-  #   rev: 0.29.4
-  #   hooks:
-  #     # verify github syntaxes
-  #     - id: check-github-workflows
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.29.4
+    hooks:
+      # verify github syntaxes
+      - id: check-github-workflows
+      - id: check-renovate
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.13.0
     hooks:
