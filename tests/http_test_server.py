@@ -8,43 +8,53 @@ import argparse
 import contextlib
 import http.server
 import queue
-import shutil
 import socket
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from anaconda_conda_tos.console.mappers import timestamp_mapping
 from anaconda_conda_tos.models import RemoteToSMetadata
+from anaconda_conda_tos.remote import ENDPOINT
 
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterator
-    from contextlib import AbstractContextManager
 
 DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
 
 
-TOS_TEXT = "\n".join(("ToS full text", "", uuid4().hex))
-TOS_METADATA = RemoteToSMetadata(
-    version=datetime.now(tz=timezone.utc),
-    text=TOS_TEXT,
-    support="support.com",
-)
+def get_url(http: http.server.ThreadingHTTPServer) -> str:
+    host, port = http.server_address
+    if isinstance(host, bytes):
+        host = host.decode()
+    host = f"[{host}]" if ":" in host else host
+    return f"http://{host}:{port}"
 
 
 def run_test_server(
     directory: str | os.PathLike | Path,
+    metadata: RemoteToSMetadata | None,
 ) -> http.server.ThreadingHTTPServer:
     """
     Run a test server on a random port. Inspect returned server to get port,
     shutdown etc.
     """
 
-    class DualStackServer(http.server.ThreadingHTTPServer):
+    class CustomRequestHandler(http.server.SimpleHTTPRequestHandler):
+        def do_GET(self):  # noqa: ANN101, ANN202, N802
+            if metadata and self.path.startswith(f"/{ENDPOINT}"):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(metadata.model_dump_json().encode())
+            else:
+                super().do_GET()
+
+    class CustomHTTPServer(http.server.ThreadingHTTPServer):
         daemon_threads = False  # These are per-request threads
         allow_reuse_address = True  # Good for tests
         request_queue_size = 64  # Should be more than the number of test packages
@@ -59,18 +69,11 @@ def run_test_server(
             self.RequestHandlerClass(request, client_address, self, directory=directory)
 
     def start_server(queue):  # noqa: ANN001, ANN202
-        with DualStackServer(
-            ("127.0.0.1", 0), http.server.SimpleHTTPRequestHandler
-        ) as httpd:
-            host, port = httpd.socket.getsockname()[:2]
-            queue.put(httpd)
-            url_host = f"[{host}]" if ":" in host else host
-            print(
-                f"Serving HTTP on {host} port {port} "
-                f"(http://{url_host}:{port}/) ..."
-            )
+        with CustomHTTPServer(("127.0.0.1", 0), CustomRequestHandler) as http:
+            queue.put(http)
+            print(f"Serving HTTP at {get_url(http)}...")
             try:
-                httpd.serve_forever()
+                http.serve_forever()
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt received, exiting.")
 
@@ -82,30 +85,10 @@ def run_test_server(
 
 
 @contextlib.contextmanager
-def serve_channel(path: Path) -> Iterator[str]:
-    http = run_test_server(path)
-    host, port = http.server_address
-    if isinstance(host, bytes):
-        host = host.decode()
-    url_host = f"[{host}]" if ":" in host else host
-    yield f"http://{url_host}:{port}"
+def serve_channel(path: Path, metadata: RemoteToSMetadata | None) -> Iterator[str]:
+    http = run_test_server(path, metadata)
+    yield get_url(http)
     http.shutdown()
-
-
-def serve_tos_channel(path: str | os.PathLike | Path) -> AbstractContextManager[str]:
-    path = Path(path)
-
-    # Copy the sample channel to a temporary directory and add ToS files
-    shutil.copytree(SAMPLE_CHANNEL_DIR, path, dirs_exist_ok=True)
-
-    (path / "tos.json").write_text(TOS_METADATA.model_dump_json())
-
-    return serve_channel(path)
-
-
-def serve_sample_channel() -> AbstractContextManager[str]:
-    # Serve the sample channel as-is
-    return serve_channel(SAMPLE_CHANNEL_DIR)
 
 
 if __name__ == "__main__":
@@ -116,7 +99,20 @@ if __name__ == "__main__":
     mutex.add_argument("--tos", action="store_true", help="Serve the ToS channel")
     args = parser.parse_args()
 
-    with TemporaryDirectory() as tmpdir:
-        server = serve_sample_channel() if args.sample else serve_tos_channel(tmpdir)
-        with server as url:
-            input("Press Enter to exit")
+    if args.tos:
+        with serve_channel(
+            SAMPLE_CHANNEL_DIR,
+            metadata := RemoteToSMetadata(
+                version=datetime.now(tz=timezone.utc),
+                text=f"ToS Text\n\n{uuid4().hex}",
+                support="support.com",
+            ),
+        ):
+            while not input(
+                f"Current ToS version: {timestamp_mapping(metadata.version)}\n"
+                f"Press Enter to increment ToS version, Ctrl-C to exit."
+            ):
+                metadata.version = datetime.now(tz=timezone.utc)
+    else:
+        with serve_channel(SAMPLE_CHANNEL_DIR, None):
+            input("Press Enter or Ctrl-C to exit.")

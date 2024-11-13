@@ -3,18 +3,16 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 import pytest
 from conda.models.channel import Channel
-from http_test_server import (
-    TOS_METADATA,
-    TOS_TEXT,
-    serve_sample_channel,
-    serve_tos_channel,
-)
+from http_test_server import SAMPLE_CHANNEL_DIR, serve_channel
 
 from anaconda_conda_tos import path
+from anaconda_conda_tos.models import RemoteToSMetadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -22,36 +20,30 @@ if TYPE_CHECKING:
 
     from pytest import MonkeyPatch, TempPathFactory
 
-    from anaconda_conda_tos.models import RemoteToSMetadata
-
 pytest_plugins = (
     # Add testing fixtures and internal pytest plugins here
     "conda.testing.fixtures",
 )
 
 
-@pytest.fixture(scope="session")
-def tos_channel(tmp_path_factory: TempPathFactory) -> Iterator[Channel]:
-    path = tmp_path_factory.mktemp("tos_channel")
-    with serve_tos_channel(path) as url:
-        yield Channel(url)
+@pytest.fixture
+def tos_channel() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
+    with serve_channel(
+        SAMPLE_CHANNEL_DIR,
+        metadata := RemoteToSMetadata(
+            version=datetime.now(tz=timezone.utc),
+            text=f"ToS Text\n\n{uuid4().hex}",
+            support="support.com",
+        ),
+    ) as url:
+        yield Channel(url), metadata
 
 
 @pytest.fixture(scope="session")
 def sample_channel() -> Iterator[Channel]:
     # Serve the sample channel as-is
-    with serve_sample_channel() as url:
+    with serve_channel(SAMPLE_CHANNEL_DIR, None) as url:
         yield Channel(url)
-
-
-@pytest.fixture(scope="session")
-def tos_full_lines() -> list[str]:
-    return TOS_TEXT.splitlines()
-
-
-@pytest.fixture(scope="session")
-def tos_metadata() -> RemoteToSMetadata:
-    return TOS_METADATA
 
 
 @pytest.fixture
