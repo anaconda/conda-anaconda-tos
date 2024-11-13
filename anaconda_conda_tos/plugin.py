@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from functools import cache
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
@@ -21,7 +22,7 @@ from conda.plugins import (
 )
 from rich.console import Console
 
-from .api import get_channels
+from .api import CI, get_channels
 from .console import (
     render_accept,
     render_clean,
@@ -34,6 +35,7 @@ from .console import (
 from .exceptions import CondaToSMissingError
 from .local import get_local_metadata
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
+from .remote import ENDPOINT
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -52,6 +54,9 @@ FIELD_SEPARATOR = ";"
 
 #: Key-value separator for request header
 KEY_SEPARATOR = "="
+
+#: Hosts to which the ToS header is added
+HOSTS = {"repo.anaconda.com"}
 
 
 def _add_channel(parser: ArgumentParser) -> None:
@@ -302,8 +307,12 @@ def conda_pre_commands() -> Iterator[CondaPreCommand]:
     )
 
 
-def _format_active_channels_tos() -> Iterator[tuple[str, int, str, int]]:
-    """Return a list of active channels and their local ToS acceptance."""
+@cache
+def _get_tos_acceptance_header() -> str:
+    if CI:
+        return "CI=true"
+
+    values = []
     for channel in get_channels(*context.channels):
         try:
             local_pair = get_local_metadata(
@@ -313,22 +322,29 @@ def _format_active_channels_tos() -> Iterator[tuple[str, int, str, int]]:
         except CondaToSMissingError:
             pass
         else:
-            yield (
-                channel.base_url,
-                int(local_pair.metadata.version.timestamp()),
-                "accepted" if local_pair.metadata.tos_accepted else "rejected",
-                int(local_pair.metadata.acceptance_timestamp.timestamp()),
+            values.append(
+                KEY_SEPARATOR.join(
+                    (
+                        channel.base_url,
+                        str(int(local_pair.metadata.version.timestamp())),
+                        "accepted" if local_pair.metadata.tos_accepted else "rejected",
+                        str(int(local_pair.metadata.acceptance_timestamp.timestamp())),
+                    )
+                )
             )
+    return FIELD_SEPARATOR.join(values)
 
 
 @hookimpl
-def conda_request_headers() -> Iterator[CondaRequestHeader]:
+def conda_request_headers(host: str, path: str) -> Iterator[CondaRequestHeader]:
     """Return a list of request headers for the anaconda-conda-tos plugin."""
-    yield CondaRequestHeader(
-        name="Anaconda-ToS-Accept",
-        description="Header which specifies when the user has accepted the ToS",
-        value=FIELD_SEPARATOR.join(
-            KEY_SEPARATOR.join(map(str, keys)) for keys in _format_active_channels_tos()
-        ),
-        hosts={"repo.anaconda.com"},
-    )
+    if (
+        # only add the header to anaconda.com endpoints
+        host in HOSTS
+        # only add the ToS header for non-ToS endpoints
+        and not path.endswith(f"/{ENDPOINT}")
+    ):
+        yield CondaRequestHeader(
+            name="Anaconda-ToS-Accept",
+            value=_get_tos_acceptance_header(),
+        )
