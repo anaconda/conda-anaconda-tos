@@ -8,7 +8,7 @@
   },
   "pip_requirements": {
     "enabled": false
-  }
+  },
   "customManagers": [
     {
       "description": "Upgrade conda dependencies",
