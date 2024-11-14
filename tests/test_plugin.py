@@ -70,15 +70,17 @@ def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
 
 def test_subcommand_tos_view(
     conda_cli: CondaCLIFixture,
+    tos_channel: Channel,
+    tos_metadata: RemoteToSMetadata,
+    sample_channel: Channel,
     mock_channels: tuple[Channel, Channel],
-    tos_full_lines: list[str],
 ) -> None:
     tos_channel, sample_channel = mock_channels
 
     out, err, code = conda_cli("tos", "view")
     assert out.splitlines() == [
         f"viewing ToS for {tos_channel}:",
-        *tos_full_lines,
+        *tos_metadata.text.splitlines(),
         f"no ToS for {sample_channel}",
     ]
     # assert not err  # server log is output to stderr
