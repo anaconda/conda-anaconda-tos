@@ -21,17 +21,19 @@ requirements:
     - setuptools-scm
   run:
     - python >=3.9
-    - conda >24.9.2
+    - conda-canary/label/dev::conda >24.9.2
     - rich
     - pydantic
 
 test:
+  requires:
+    - pip
+    - conda-canary/label/dev::conda >24.9.2
   imports:
     - anaconda_conda_tos
   commands:
     - pip check
-  requires:
-    - pip
+    - conda tos --version
 
 about:
   home: https://github.com/anaconda/{{ name }}
