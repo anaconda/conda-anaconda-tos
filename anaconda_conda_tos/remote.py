@@ -167,6 +167,7 @@ def get_remote_metadata(
         # TypeError: invalid JSON
         # JSONDecodeError: invalid JSON
         # ValidationError: invalid JSON schema
+        write_cached_endpoint(channel, None)
         raise CondaToSInvalidError(channel) from exc
     else:
         write_cached_endpoint(channel, metadata)

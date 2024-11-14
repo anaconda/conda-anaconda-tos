@@ -46,14 +46,20 @@ def get_one_tos(
 ) -> LocalPair | RemotePair:
     """Get the ToS metadata for the given channel."""
     # fetch remote metadata
-    remote_metadata = get_remote_metadata(channel, cache_timeout=cache_timeout)
+    remote_exc = None
+    try:
+        remote_metadata = get_remote_metadata(channel, cache_timeout=cache_timeout)
+    except CondaToSMissingError as exc:
+        # CondaToSMissingError: no remote ToS metadata
+        remote_exc = exc
 
     # fetch local metadata
     try:
         local_pair = get_local_metadata(channel, extend_search_path=[tos_root])
-    except CondaToSMissingError:
+    except CondaToSMissingError as exc:
         # CondaToSMissingError: no local ToS metadata
-        pass
+        if remote_exc:
+            raise remote_exc from exc
     else:
         # return local metadata if it's the same version as the remote
         if local_pair.metadata >= remote_metadata:
