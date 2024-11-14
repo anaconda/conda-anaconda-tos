@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
         exclude:
           # Windows: only test lowest and highest Python versions
@@ -170,3 +170,89 @@ jobs:
         with:
           filename: .github/TEST_FAILURE_REPORT_TEMPLATE.md
           update_existing: false
+
+  # canary builds
+  build:
+    needs: [analyze]
+    # only build canary build if
+    # - prior steps succeeded,
+    # - this is the main repo, and
+    # - we are on the main, feature, or release branch
+    if: >-
+      !cancelled()
+      && !github.event.repository.fork
+      && (
+        github.ref_name == 'main'
+        || startsWith(github.ref_name, 'feature/')
+        || endsWith(github.ref_name, '.x')
+      )
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            subdir: linux-64
+          - runner: macos-13
+            subdir: osx-64
+          - runner: macos-latest
+            subdir: osx-arm64
+          - runner: windows-latest
+            subdir: win-64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      # Clean checkout of specific git ref needed for package metadata version
+      # which needs env vars GIT_DESCRIBE_TAG and GIT_BUILD_STR:
+      - name: Checkout Source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.ref }}
+          clean: true
+          fetch-depth: 0
+
+      # Explicitly use Python 3.11 since each of the OSes has a different default Python
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: '3.11'
+
+      - name: Detect Label
+        shell: python
+        run: |
+          import re
+          from pathlib import Path
+          from os import environ
+          from subprocess import check_output
+
+          # unless otherwise specified, commits are uploaded to the dev label
+          # e.g., `main` branch commits
+          envs = {"ANACONDA_ORG_LABEL": "dev"}
+
+          if "${{ github.ref_name }}".startswith("feature/"):
+              # feature branch commits are uploaded to a custom label
+              envs["ANACONDA_ORG_LABEL"] = "${{ github.ref_name }}"
+          elif re.match(r"\d+(\.\d+)+\.x", "${{ github.ref_name }}"):
+              # release branch commits are added to the rc label
+              # see https://github.com/conda/infrastructure/issues/760
+              _, name = "${{ github.repository }}".split("/")
+              envs["ANACONDA_ORG_LABEL"] = f"rc-{name}-${{ github.ref_name }}"
+
+              # if no releases have occurred on this branch yet then `git describe --tag`
+              # will misleadingly produce a version number relative to the last release
+              # and not relative to the current release branch, if this is the case we need
+              # to override the version with a derivative of the branch name
+
+              # override the version if `git describe --tag` does not start with the branch version
+              last_release = check_output(["git", "describe", "--tag"])
+              prefix = "${{ github.ref_name }}"[:-1]  # without x suffix
+              if not last_release.startswith(prefix):
+                  envs["VERSION_OVERRIDE"] = "${{ github.ref_name }}"
+
+          Path(environ["GITHUB_ENV"]).write_text("\n".join(f"{name}={value}" for name, value in envs.items()))
+
+      - name: Create & Upload
+        uses: conda/actions/canary-release@6e72e0db87e72f0020e493aeb02f864363bd9258 # v24.11.1
+        with:
+          package-name: ${{ github.event.repository.name }}
+          subdir: ${{ matrix.subdir }}
+          anaconda-org-channel: distribution-plugins
+          anaconda-org-label: ${{ env.ANACONDA_ORG_LABEL }}
+          anaconda-org-token: ${{ secrets.ANACONDA_ORG_TOKEN }}

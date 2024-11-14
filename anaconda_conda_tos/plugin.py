@@ -21,6 +21,7 @@ from conda.plugins import (
 )
 from rich.console import Console
 
+from . import APP_NAME, APP_VERSION
 from .api import CI, get_channels
 from .console import (
     render_accept,
@@ -118,6 +119,14 @@ def _add_cache(parser: ArgumentParser) -> None:
 
 def configure_parser(parser: ArgumentParser) -> None:
     """Configure the parser for the `tos` subcommand."""
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"{APP_NAME} {APP_VERSION}",
+        help=f"Show the {APP_NAME} version number and exit.",
+    )
+
     subparsers = parser.add_subparsers(
         title="subcommand",
         description="The following subcommands are available.",
