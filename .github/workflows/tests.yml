@@ -85,6 +85,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       ErrorActionPreference: Stop  # powershell exit immediately on error
+      CONDA_PKGS_DIR: ${{ matrix.os == 'windows-latest' && 'D:\conda_pkgs_dir' || '~/conda_pkgs_dir' }}
+      CONDA_INSTALL_DIR: ${{ matrix.os == 'windows-latest' && 'D:\conda' || '' }}
 
     steps:
       - name: Checkout Source
@@ -98,7 +100,9 @@ jobs:
       - name: Cache Conda
         uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
         with:
-          path: ~/conda_pkgs_dir
+          # use faster GNU tar for all runners
+          enableCrossOsArchive: true
+          path: ${{ end.CONDA_PKGS_DIR }}
           key: cache-${{ env.HASH }}
 
       - name: Setup Miniconda
@@ -108,6 +112,8 @@ jobs:
           # conda not preinstalled in arm64 runners
           miniconda-version: ${{ runner.arch == 'ARM64' && 'latest' || null }}
           architecture: ${{ runner.arch }}
+          pkgs-dirs: ${{ env.CONDA_PKGS_DIR }}
+          installation-dir: ${{ env.CONDA_INSTALL_DIR }}
 
       - name: Conda Install
         run: >
