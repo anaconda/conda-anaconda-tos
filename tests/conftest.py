@@ -7,12 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from conda.models.channel import Channel
-from http_test_server import (
-    TOS_METADATA,
-    TOS_TEXT,
-    serve_sample_channel,
-    serve_tos_channel,
-)
+from http_test_server import SAMPLE_CHANNEL_DIR, generate_metadata, serve_channel
 
 from anaconda_conda_tos import path
 
@@ -21,6 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pytest import MonkeyPatch, TempPathFactory
+    from pytest_mock import MockerFixture
 
     from anaconda_conda_tos.models import RemoteToSMetadata
 
@@ -30,28 +26,34 @@ pytest_plugins = (
 )
 
 
-@pytest.fixture(scope="session")
-def tos_channel(tmp_path_factory: TempPathFactory) -> Iterator[Channel]:
-    path = tmp_path_factory.mktemp("tos_channel")
-    with serve_tos_channel(path) as url:
-        yield Channel(url)
+@pytest.fixture
+def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
+    """Serve the sample channel but with a `tos.json` endpoint.
+
+    Also returning a mutable RemoteToSMetadata so tests can modify the endpoint to mock
+    ToS updates.
+    """
+    with serve_channel(SAMPLE_CHANNEL_DIR, metadata := generate_metadata()) as url:
+        yield Channel(url), metadata
+
+
+@pytest.fixture
+def tos_channel(tos_server: tuple[Channel, RemoteToSMetadata]) -> Channel:
+    """The channel URL for the ToS server, see `tos_server` fixture."""
+    return tos_server[0]
+
+
+@pytest.fixture
+def tos_metadata(tos_server: tuple[Channel, RemoteToSMetadata]) -> RemoteToSMetadata:
+    """The metadata for the ToS server, see `tos_server` fixture."""
+    return tos_server[1]
 
 
 @pytest.fixture(scope="session")
 def sample_channel() -> Iterator[Channel]:
-    # Serve the sample channel as-is
-    with serve_sample_channel() as url:
+    """Serve the sample channel as-is without a `tos.json` endpoint."""
+    with serve_channel(SAMPLE_CHANNEL_DIR, None) as url:
         yield Channel(url)
-
-
-@pytest.fixture(scope="session")
-def tos_full_lines() -> list[str]:
-    return TOS_TEXT.splitlines()
-
-
-@pytest.fixture(scope="session")
-def tos_metadata() -> RemoteToSMetadata:
-    return TOS_METADATA
 
 
 @pytest.fixture
@@ -75,3 +77,17 @@ def mock_cache_dir(monkeypatch: MonkeyPatch, tmp_path_factory: TempPathFactory) 
     cache_dir = tmp_path_factory.mktemp("cache")
     monkeypatch.setattr(path, "CACHE_DIR", cache_dir)
     return cache_dir
+
+
+@pytest.fixture(autouse=True)
+def mock_channels(
+    mocker: MockerFixture,
+    tos_channel: Channel,
+    sample_channel: Channel,
+) -> tuple[Channel, Channel]:
+    mocker.patch(
+        "conda.base.context.Context.channels",
+        new_callable=mocker.PropertyMock,
+        return_value=(channels := (tos_channel, sample_channel)),
+    )
+    return channels

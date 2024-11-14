@@ -21,7 +21,7 @@ requirements:
     - setuptools-scm
   run:
     - python >=3.9
-    - conda >=23.9.0
+    - conda >24.9.2
     - rich
     - pydantic
 

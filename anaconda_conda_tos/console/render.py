@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -13,6 +12,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ..api import (
+    CI,
     accept_tos,
     clean_cache,
     clean_tos,
@@ -28,6 +28,7 @@ from .mappers import accepted_mapping, location_mapping, timestamp_mapping
 from .prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
+    import os
     from collections.abc import Iterable
 
     from conda.models.channel import Channel
@@ -193,7 +194,7 @@ def render_interactive(
         console.print(f"[bold red]{len(rejected)} channel ToS rejected")
         raise CondaToSRejectedError(*rejected)
 
-    if is_non_interactive := (os.getenv("CI") == "true"):
+    if CI:
         console.print("[bold yellow]CI detected...")
 
     for channel, metadata in channel_metadatas:
@@ -201,7 +202,7 @@ def render_interactive(
             # auto_accept_tos overrides any other setting
             accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
             accepted.append(channel)
-        elif is_non_interactive:
+        elif CI:
             # CI is the same as auto_accept_tos but with a warning
             console.print(f"[bold yellow]implicitly accepting ToS for {channel}")
             accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
