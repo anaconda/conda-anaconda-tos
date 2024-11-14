@@ -25,18 +25,23 @@ if TYPE_CHECKING:
     from conda.models.channel import Channel
     from pytest import CaptureFixture, MonkeyPatch
 
+    from anaconda_conda_tos.models import RemoteToSMetadata
+
 
 def test_render_view(
     capsys: CaptureFixture,
     tos_channel: Channel,
     sample_channel: Channel,
-    tos_full_lines: list[str],
+    tos_metadata: RemoteToSMetadata,
     tmp_path: Path,
 ) -> None:
     render_view(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
-    assert tos_lines == [f"viewing ToS for {tos_channel}:", *tos_full_lines]
+    assert tos_lines == [
+        f"viewing ToS for {tos_channel}:",
+        *tos_metadata.text.splitlines(),
+    ]
     # assert not err  # server log is output to stderr
 
     render_view(sample_channel, tos_root=tmp_path, cache_timeout=None)
@@ -106,7 +111,7 @@ def test_render_interactive(
     sample_channel: Channel,
     tos_channel: Channel,
     tmp_path: Path,
-    tos_full_lines: list[str],
+    tos_metadata: RemoteToSMetadata,
     ci: bool,
 ) -> None:
     if ci:
@@ -229,8 +234,7 @@ def test_render_interactive(
             if ci
             else [
                 f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                "[(a)ccept/(r)eject/(v)iew]: " + tos_full_lines[0],
-                *tos_full_lines[1:],
+                *f"[(a)ccept/(r)eject/(v)iew]: {tos_metadata.text}".splitlines(),
                 f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
                 "[(a)ccept/(r)eject]: 1 channel ToS accepted",
             ]

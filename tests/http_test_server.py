@@ -27,14 +27,6 @@ DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
 
 
-def get_url(http: http.server.ThreadingHTTPServer) -> str:
-    host, port = http.server_address
-    if isinstance(host, bytes):
-        host = host.decode()
-    host = f"[{host}]" if ":" in host else host
-    return f"http://{host}:{port}"
-
-
 def run_test_server(
     directory: str | os.PathLike | Path,
     metadata: RemoteToSMetadata | None,
@@ -71,11 +63,7 @@ def run_test_server(
     def start_server(queue):  # noqa: ANN001, ANN202
         with CustomHTTPServer(("127.0.0.1", 0), CustomRequestHandler) as http:
             queue.put(http)
-            print(f"Serving HTTP at {get_url(http)}...")
-            try:
-                http.serve_forever()
-            except KeyboardInterrupt:
-                print("\nKeyboard interrupt received, exiting.")
+            http.serve_forever()
 
     started: queue.Queue[http.server.ThreadingHTTPServer] = queue.Queue()
 
@@ -87,16 +75,22 @@ def run_test_server(
 @contextlib.contextmanager
 def serve_channel(path: Path, metadata: RemoteToSMetadata | None) -> Iterator[str]:
     http = run_test_server(path, metadata)
-    yield get_url(http)
+    host, port = http.server_address
+    if isinstance(host, bytes):
+        host = host.decode()
+    host = f"[{host}]" if ":" in host else host
+    yield f"http://{host}:{port}"
     http.shutdown()
 
 
 if __name__ == "__main__":
     # demo server for testing purposes
     parser = argparse.ArgumentParser()
-    mutex = parser.add_mutually_exclusive_group()
-    mutex.add_argument("--sample", action="store_true", help="Serve the sample channel")
-    mutex.add_argument("--tos", action="store_true", help="Serve the ToS channel")
+    parser.add_argument(
+        "--tos",
+        action="store_true",
+        help="Serve the sample channel with a `tos.json` endpoint.",
+    )
     args = parser.parse_args()
 
     if args.tos:
@@ -107,12 +101,14 @@ if __name__ == "__main__":
                 text=f"ToS Text\n\n{uuid4().hex}",
                 support="support.com",
             ),
-        ):
+        ) as url:
+            print(f"Serving HTTP at {url}...")
             while not input(
                 f"Current ToS version: {timestamp_mapping(metadata.version)}\n"
                 f"Press Enter to increment ToS version, Ctrl-C to exit."
             ):
                 metadata.version = datetime.now(tz=timezone.utc)
     else:
-        with serve_channel(SAMPLE_CHANNEL_DIR, None):
+        with serve_channel(SAMPLE_CHANNEL_DIR, None) as url:
+            print(f"Serving HTTP at {url}...")
             input("Press Enter or Ctrl-C to exit.")

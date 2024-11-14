@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from pytest import MonkeyPatch
     from pytest_mock import MockerFixture
 
+    from anaconda_conda_tos.models import RemoteToSMetadata
+
 
 def test_subcommands_hook() -> None:
     subcommands = list(conda_subcommands())
@@ -49,7 +51,7 @@ def test_subcommand_tos_view(
     conda_cli: CondaCLIFixture,
     tos_channel: Channel,
     sample_channel: Channel,
-    tos_full_lines: list[str],
+    tos_metadata: RemoteToSMetadata,
 ) -> None:
     out, err, code = conda_cli(
         "tos",
@@ -69,7 +71,10 @@ def test_subcommand_tos_view(
         f"--channel={tos_channel}",
     )
     tos_lines = out.splitlines()
-    assert tos_lines == [f"viewing ToS for {tos_channel}:", *tos_full_lines]
+    assert tos_lines == [
+        f"viewing ToS for {tos_channel}:",
+        *tos_metadata.text.splitlines(),
+    ]
     # assert not err  # server log is output to stderr
     assert not code
 

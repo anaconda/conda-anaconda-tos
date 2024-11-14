@@ -27,7 +27,7 @@ pytest_plugins = (
 
 
 @pytest.fixture
-def tos_channel() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
+def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
     with serve_channel(
         SAMPLE_CHANNEL_DIR,
         metadata := RemoteToSMetadata(
@@ -37,6 +37,16 @@ def tos_channel() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
         ),
     ) as url:
         yield Channel(url), metadata
+
+
+@pytest.fixture
+def tos_channel(tos_server: tuple[Channel, RemoteToSMetadata]) -> Channel:
+    return tos_server[0]
+
+
+@pytest.fixture
+def tos_metadata(tos_server: tuple[Channel, RemoteToSMetadata]) -> RemoteToSMetadata:
+    return tos_server[1]
 
 
 @pytest.fixture(scope="session")
