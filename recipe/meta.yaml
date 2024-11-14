@@ -18,7 +18,8 @@ requirements:
   host:
     - python >=3.9
     - pip
-    - setuptools-scm
+    - hatchling >=1.12.2
+    - hatch-vcs >=0.2.0
   run:
     - python >=3.9
     - conda-canary/label/dev::conda >24.9.2
