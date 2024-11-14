@@ -256,3 +256,4 @@ jobs:
           anaconda-org-channel: distribution-plugins
           anaconda-org-label: ${{ env.ANACONDA_ORG_LABEL }}
           anaconda-org-token: ${{ secrets.ANACONDA_ORG_TOKEN }}
+          conda-build-argumetns: --channel conda-canary/label/dev
