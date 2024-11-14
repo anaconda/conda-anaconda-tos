@@ -1,6 +1,9 @@
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "hatchling.build"
+requires = [
+  "hatchling >=1.12.2",
+  "hatch-vcs >=0.2.0",
+]
 
 [project]
 classifiers = [
@@ -18,10 +21,10 @@ dependencies = [
   "conda",
 ]
 description = "Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS)."
+dynamic = ["version"]
 license = {file = "LICENSE"}
 name = "anaconda-conda-tos"
 requires-python = ">=3.9"
-version = "0.1.0"
 
 [project.entry-points.conda]
 anaconda-conda-tos = "anaconda_conda_tos.plugin"
@@ -41,6 +44,15 @@ sort = "Miss"
 [tool.coverage.run]
 # store relative paths in coverage information
 relative_files = true
+
+[tool.hatch.build.hooks.vcs]
+version-file = "anaconda_conda_tos/_version.py"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+local_scheme = "dirty-tag"
 
 [tool.pytest.ini_options]
 addopts = [
