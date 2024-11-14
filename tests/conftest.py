@@ -3,22 +3,21 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
 import pytest
 from conda.models.channel import Channel
-from http_test_server import SAMPLE_CHANNEL_DIR, serve_channel
+from http_test_server import SAMPLE_CHANNEL_DIR, generate_metadata, serve_channel
 
 from anaconda_conda_tos import path
-from anaconda_conda_tos.models import RemoteToSMetadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
     from pytest import MonkeyPatch, TempPathFactory
+
+    from anaconda_conda_tos.models import RemoteToSMetadata
 
 pytest_plugins = (
     # Add testing fixtures and internal pytest plugins here
@@ -28,14 +27,7 @@ pytest_plugins = (
 
 @pytest.fixture
 def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
-    with serve_channel(
-        SAMPLE_CHANNEL_DIR,
-        metadata := RemoteToSMetadata(
-            version=datetime.now(tz=timezone.utc),
-            text=f"ToS Text\n\n{uuid4().hex}",
-            support="support.com",
-        ),
-    ) as url:
+    with serve_channel(SAMPLE_CHANNEL_DIR, metadata := generate_metadata()) as url:
         yield Channel(url), metadata
 
 

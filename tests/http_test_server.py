@@ -72,6 +72,14 @@ def run_test_server(
     return started.get(timeout=1)
 
 
+def generate_metadata() -> RemoteToSMetadata:
+    return RemoteToSMetadata(
+        version=datetime.now(tz=timezone.utc),
+        text=f"ToS Text\n\n{uuid4().hex}",
+        support="support.com",
+    )
+
+
 @contextlib.contextmanager
 def serve_channel(path: Path, metadata: RemoteToSMetadata | None) -> Iterator[str]:
     http = run_test_server(path, metadata)
@@ -94,14 +102,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.tos:
-        with serve_channel(
-            SAMPLE_CHANNEL_DIR,
-            metadata := RemoteToSMetadata(
-                version=datetime.now(tz=timezone.utc),
-                text=f"ToS Text\n\n{uuid4().hex}",
-                support="support.com",
-            ),
-        ) as url:
+        with serve_channel(SAMPLE_CHANNEL_DIR, metadata := generate_metadata()) as url:
             print(f"Serving HTTP at {url}...")
             while not input(
                 f"Current ToS version: {timestamp_mapping(metadata.version)}\n"
