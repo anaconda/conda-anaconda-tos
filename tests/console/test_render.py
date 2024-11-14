@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from anaconda_conda_tos.console import render
 from anaconda_conda_tos.console.render import (
     render_accept,
     render_info,
@@ -114,10 +115,7 @@ def test_render_interactive(
     tos_metadata: RemoteToSMetadata,
     ci: bool,
 ) -> None:
-    if ci:
-        monkeypatch.setenv("CI", "true")
-    else:
-        monkeypatch.delenv("CI", raising=False)
+    monkeypatch.setattr(render, "CI", ci)
 
     render_interactive(
         sample_channel, tos_root=tmp_path, cache_timeout=None, auto_accept_tos=False

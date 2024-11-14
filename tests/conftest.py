@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pytest import MonkeyPatch, TempPathFactory
+    from pytest_mock import MockerFixture
 
     from anaconda_conda_tos.models import RemoteToSMetadata
 
@@ -76,3 +77,17 @@ def mock_cache_dir(monkeypatch: MonkeyPatch, tmp_path_factory: TempPathFactory) 
     cache_dir = tmp_path_factory.mktemp("cache")
     monkeypatch.setattr(path, "CACHE_DIR", cache_dir)
     return cache_dir
+
+
+@pytest.fixture(autouse=True)
+def mock_channels(
+    mocker: MockerFixture,
+    tos_channel: Channel,
+    sample_channel: Channel,
+) -> tuple[Channel, Channel]:
+    mocker.patch(
+        "conda.base.context.Context.channels",
+        new_callable=mocker.PropertyMock,
+        return_value=(channels := (tos_channel, sample_channel)),
+    )
+    return channels

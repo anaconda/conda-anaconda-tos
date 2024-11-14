@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from json import JSONDecodeError
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
@@ -161,9 +162,10 @@ def get_remote_metadata(
         # create an empty cache to prevent repeated requests
         write_cached_endpoint(channel, None)
         raise
-    except (AttributeError, TypeError, ValidationError) as exc:
+    except (AttributeError, TypeError, JSONDecodeError, ValidationError) as exc:
         # AttributeError: response has no JSON
         # TypeError: invalid JSON
+        # JSONDecodeError: invalid JSON
         # ValidationError: invalid JSON schema
         raise CondaToSInvalidError(channel) from exc
     else:

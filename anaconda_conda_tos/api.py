@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from conda.models.channel import Channel
@@ -15,9 +16,13 @@ from .path import get_all_channel_paths, get_cache_paths
 from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
-    import os
     from collections.abc import Iterable, Iterator
     from pathlib import Path
+    from typing import Final
+
+
+#: Whether the current environment is a CI environment
+CI: Final = os.getenv("CI", "").lower() == "true"
 
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:
