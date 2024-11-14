@@ -27,23 +27,30 @@ pytest_plugins = (
 
 @pytest.fixture
 def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
+    """Serve the sample channel but with a `tos.json` endpoint.
+
+    Also returning a mutable RemoteToSMetadata so tests can modify the endpoint to mock
+    ToS updates.
+    """
     with serve_channel(SAMPLE_CHANNEL_DIR, metadata := generate_metadata()) as url:
         yield Channel(url), metadata
 
 
 @pytest.fixture
 def tos_channel(tos_server: tuple[Channel, RemoteToSMetadata]) -> Channel:
+    """The channel URL for the ToS server, see `tos_server` fixture."""
     return tos_server[0]
 
 
 @pytest.fixture
 def tos_metadata(tos_server: tuple[Channel, RemoteToSMetadata]) -> RemoteToSMetadata:
+    """The metadata for the ToS server, see `tos_server` fixture."""
     return tos_server[1]
 
 
 @pytest.fixture(scope="session")
 def sample_channel() -> Iterator[Channel]:
-    # Serve the sample channel as-is
+    """Serve the sample channel as-is without a `tos.json` endpoint."""
     with serve_channel(SAMPLE_CHANNEL_DIR, None) as url:
         yield Channel(url)
 
