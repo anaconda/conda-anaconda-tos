@@ -78,9 +78,10 @@ def test_subcommand_tos_view(
     tos_channel, sample_channel = mock_channels
 
     out, err, code = conda_cli("tos", "view")
-    assert tos_lines == [
+    assert out.splitlines() == [
         f"viewing ToS for {tos_channel}:",
         *tos_metadata.text.splitlines(),
+        f"no ToS for {sample_channel}",
     ]
     # assert not err  # server log is output to stderr
     assert not code
