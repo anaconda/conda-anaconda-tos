@@ -102,7 +102,7 @@ jobs:
         with:
           # use faster GNU tar for all runners
           enableCrossOsArchive: true
-          path: ${{ end.CONDA_PKGS_DIR }}
+          path: ${{ env.CONDA_PKGS_DIR }}
           key: cache-${{ env.HASH }}
 
       - name: Setup Miniconda
