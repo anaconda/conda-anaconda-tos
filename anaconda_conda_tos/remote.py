@@ -52,9 +52,7 @@ def get_endpoint(channel: str | Channel) -> Response:
         context.add_anaconda_token = False
         response = session.get(
             url,
-            headers={"Content-Type": "text/plain"},
-            proxies=session.proxies,
-            auth=None,
+            headers={"Content-Type": "application/json"},
             timeout=(
                 context.remote_connect_timeout_secs,
                 context.remote_read_timeout_secs,
