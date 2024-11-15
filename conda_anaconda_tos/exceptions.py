@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class CondaToSError(CondaError):
-    """Base class for anaconda-conda-tos errors."""
+    """Base exception."""
 
 
 class CondaToSMissingError(CondaToSError):

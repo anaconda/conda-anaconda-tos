@@ -1,4 +1,4 @@
-{% set name = "anaconda-conda-tos" %}
+{% set name = "conda-anaconda-tos" %}
 
 package:
   name: {{ name|lower }}
@@ -18,19 +18,20 @@ requirements:
   host:
     - python >=3.9
     - pip
-    - setuptools-scm
+    - hatchling >=1.12.2
+    - hatch-vcs >=0.2.0
   run:
     - python >=3.9
-    - conda-canary/label/dev::conda >24.9.2
+    - conda >24.9.2
     - rich
     - pydantic
 
 test:
   requires:
     - pip
-    - conda-canary/label/dev::conda >24.9.2
+    - conda >24.9.2
   imports:
-    - anaconda_conda_tos
+    - conda_anaconda_tos
   commands:
     - pip check
     - conda tos --version

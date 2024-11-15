@@ -10,7 +10,7 @@ import pytest
 from conda.base.context import context
 from conda.common.compat import on_win
 
-from anaconda_conda_tos.path import (
+from conda_anaconda_tos.path import (
     ENV_TOS_ROOT,
     SITE_TOS_ROOT,
     SYSTEM_TOS_ROOT,

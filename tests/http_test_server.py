@@ -15,9 +15,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from anaconda_conda_tos.console.mappers import timestamp_mapping
-from anaconda_conda_tos.models import RemoteToSMetadata
-from anaconda_conda_tos.remote import ENDPOINT
+from conda_anaconda_tos.console.mappers import timestamp_mapping
+from conda_anaconda_tos.models import RemoteToSMetadata
+from conda_anaconda_tos.remote import ENDPOINT
 
 if TYPE_CHECKING:
     import os

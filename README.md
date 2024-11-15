@@ -1,12 +1,12 @@
-# anaconda-conda-tos
+# conda-anaconda-tos
 
 Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS).
 
 ## Installation
 
 ```bash
-$ git clone https://github.com/anaconda/anaconda-conda-tos.git
-$ cd anaconda-conda-tos
+$ git clone https://github.com/anaconda/conda-anaconda-tos.git
+$ cd conda-anaconda-tos
 $ conda create --name=conda-tos --file=tests/requirements.txt
 $ conda activate conda-tos
 (conda-tos) $ pip install -e .
@@ -56,5 +56,5 @@ Press Enter to exit
 ```bash
 $ conda activate conda-tos
 (conda-tos) $ conda install --file=tests/requirements-ci.txt
-(conda-tos) $ pytest --cov=anaconda_conda_tos
+(conda-tos) $ pytest --cov=conda_anaconda_tos
 ```
