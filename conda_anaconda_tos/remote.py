@@ -13,7 +13,7 @@ from conda.common.url import join_url
 from conda.gateways.connection.session import get_session
 from conda.models.channel import Channel
 from pydantic import ValidationError
-from requests.exceptions import ConnectionError, HTTPError
+from requests.exceptions import RequestException
 
 from .exceptions import (
     CondaToSInvalidError,
@@ -59,13 +59,9 @@ def get_endpoint(channel: str | Channel) -> Response:
             ),
         )
         response.raise_for_status()
-    except ConnectionError as exc:
+    except RequestException as exc:
+        # RequestException: failed to get ToS endpoint
         raise CondaToSMissingError(channel) from exc
-    except HTTPError as exc:
-        if exc.response.status_code == 404:
-            raise CondaToSMissingError(channel) from exc
-        else:
-            raise
     finally:
         context.add_anaconda_token = saved_token_setting
     return response
@@ -165,6 +161,7 @@ def get_remote_metadata(
         # TypeError: invalid JSON
         # JSONDecodeError: invalid JSON
         # ValidationError: invalid JSON schema
+        write_cached_endpoint(channel, None)
         raise CondaToSInvalidError(channel) from exc
     else:
         write_cached_endpoint(channel, metadata)

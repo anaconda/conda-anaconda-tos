@@ -29,7 +29,8 @@ SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
 
 def run_test_server(
     directory: str | os.PathLike | Path,
-    metadata: RemoteToSMetadata | None,
+    metadata: RemoteToSMetadata | str | None,
+    port: int = 0,
 ) -> http.server.ThreadingHTTPServer:
     """
     Run a test server on a random port. Inspect returned server to get port,
@@ -42,7 +43,10 @@ def run_test_server(
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
-                self.wfile.write(metadata.model_dump_json().encode())
+                if isinstance(metadata, RemoteToSMetadata):
+                    self.wfile.write(metadata.model_dump_json().encode())
+                else:
+                    self.wfile.write(metadata.encode())
             else:
                 super().do_GET()
 
@@ -61,7 +65,7 @@ def run_test_server(
             self.RequestHandlerClass(request, client_address, self, directory=directory)
 
     def start_server(queue):  # noqa: ANN001, ANN202
-        with CustomHTTPServer(("127.0.0.1", 0), CustomRequestHandler) as http:
+        with CustomHTTPServer(("127.0.0.1", port), CustomRequestHandler) as http:
             queue.put(http)
             http.serve_forever()
 
@@ -81,8 +85,12 @@ def generate_metadata() -> RemoteToSMetadata:
 
 
 @contextlib.contextmanager
-def serve_channel(path: Path, metadata: RemoteToSMetadata | None) -> Iterator[str]:
-    http = run_test_server(path, metadata)
+def serve_channel(
+    path: Path,
+    metadata: RemoteToSMetadata | str | None,
+    port: int = 0,
+) -> Iterator[str]:
+    http = run_test_server(path, metadata, port)
     host, port = http.server_address
     if isinstance(host, bytes):
         host = host.decode()
@@ -94,15 +102,30 @@ def serve_channel(path: Path, metadata: RemoteToSMetadata | None) -> Iterator[st
 if __name__ == "__main__":
     # demo server for testing purposes
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+    parser.add_argument("--port", type=int, default=0, help="Port to serve on.")
+    action_mutex = parser.add_mutually_exclusive_group()
+    action_mutex.add_argument(
         "--tos",
         action="store_true",
         help="Serve the sample channel with a `tos.json` endpoint.",
     )
+    action_mutex.add_argument(
+        "--invalid-json",
+        action="store_true",
+        help="Serve the sample channel with an invalid JSON `tos.json` endpoint.",
+    )
+    action_mutex.add_argument(
+        "--invalid-schema",
+        action="store_true",
+        help="Serve the sample channel with an invalid schema `tos.json` endpoint.",
+    )
     args = parser.parse_args()
 
+    metadata: RemoteToSMetadata | str | None
     if args.tos:
-        with serve_channel(SAMPLE_CHANNEL_DIR, metadata := generate_metadata()) as url:
+        with serve_channel(
+            SAMPLE_CHANNEL_DIR, metadata := generate_metadata(), args.port
+        ) as url:
             print(f"Serving HTTP at {url}...")
             while not input(
                 f"Current ToS version: {timestamp_mapping(metadata.version)}\n"
@@ -110,6 +133,11 @@ if __name__ == "__main__":
             ):
                 metadata.version = datetime.now(tz=timezone.utc)
     else:
-        with serve_channel(SAMPLE_CHANNEL_DIR, None) as url:
+        metadata = None
+        if args.invalid_json:
+            metadata = "?"  # not JSON
+        elif args.invalid_schema:
+            metadata = "{'version': null}"  # missing keys and invalid value
+        with serve_channel(SAMPLE_CHANNEL_DIR, metadata, args.port) as url:
             print(f"Serving HTTP at {url}...")
             input("Press Enter or Ctrl-C to exit.")
