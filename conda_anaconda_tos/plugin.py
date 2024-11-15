@@ -257,7 +257,7 @@ def execute(args: Namespace) -> int:
 
 @hookimpl
 def conda_subcommands() -> Iterator[CondaSubcommand]:
-    """Return a list of subcommands for the anaconda-conda-tos plugin."""
+    """Return a list of subcommands for the plugin."""
     yield CondaSubcommand(
         name="tos",
         action=execute,
@@ -275,7 +275,7 @@ def conda_subcommands() -> Iterator[CondaSubcommand]:
 
 @hookimpl
 def conda_settings() -> Iterator[CondaSetting]:
-    """Return a list of settings for the anaconda-conda-tos plugin."""
+    """Return a list of settings for the plugin."""
     yield CondaSetting(
         name="auto_accept_tos",
         description="Automatically accept Terms of Service (ToS) for all channels.",
@@ -294,7 +294,7 @@ def _pre_command_check_tos(_command: str) -> None:
 
 @hookimpl(tryfirst=True)
 def conda_pre_commands() -> Iterator[CondaPreCommand]:
-    """Return a list of pre-commands for the anaconda-conda-tos plugin."""
+    """Return a list of pre-commands for the plugin."""
     yield CondaPreCommand(
         name="check_tos",
         action=_pre_command_check_tos,
@@ -341,7 +341,7 @@ def _get_tos_acceptance_header() -> str:
 
 @hookimpl
 def conda_request_headers(host: str, path: str) -> Iterator[CondaRequestHeader]:
-    """Return a list of request headers for the anaconda-conda-tos plugin."""
+    """Return a list of request headers for the plugin."""
     if (
         # only add the header to anaconda.com endpoints
         host in HOSTS

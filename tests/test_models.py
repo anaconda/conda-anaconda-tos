@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 from pydantic import ValidationError
 
-from anaconda_conda_tos.models import (
+from conda_anaconda_tos.models import (
     LocalPair,
     LocalToSMetadata,
     RemotePair,

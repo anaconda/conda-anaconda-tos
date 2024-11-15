@@ -12,9 +12,9 @@ from conda.base.context import context
 from conda.common.url import urlparse
 from conda.gateways.connection.session import get_session
 
-from anaconda_conda_tos import plugin
-from anaconda_conda_tos.api import accept_tos, reject_tos
-from anaconda_conda_tos.plugin import (
+from conda_anaconda_tos import plugin
+from conda_anaconda_tos.api import accept_tos, reject_tos
+from conda_anaconda_tos.plugin import (
     _get_tos_acceptance_header,
     conda_request_headers,
     conda_settings,
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from pytest import MonkeyPatch
     from pytest_mock import MockerFixture
 
-    from anaconda_conda_tos.models import RemoteToSMetadata
+    from conda_anaconda_tos.models import RemoteToSMetadata
 
 
 def test_subcommands_hook() -> None:

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from typing import Final
 
 #: Application name.
-APP_NAME: Final = "anaconda-conda-tos"
+APP_NAME: Final = "conda-anaconda-tos"
 
 try:
     from ._version import __version__
@@ -24,7 +24,7 @@ except ImportError:
         # ImportError: setuptools_scm isn't installed
         # OSError: git isn't installed
         # LookupError: setuptools_scm unable to detect version
-        # anaconda-conda-tos follows SemVer, so the dev version is:
+        # conda-anaconda-tos follows SemVer, so the dev version is:
         #     MJ.MN.MICRO.devN+gHASH[.dirty]
         __version__ = "0.0.0.dev0+placeholder"
 
