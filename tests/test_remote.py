@@ -10,14 +10,14 @@ from uuid import uuid4
 import pytest
 from conda.common.compat import on_win
 
-from anaconda_conda_tos.exceptions import (
+from conda_anaconda_tos.exceptions import (
     CondaToSInvalidError,
     CondaToSMissingError,
     CondaToSPermissionError,
 )
-from anaconda_conda_tos.models import RemoteToSMetadata
-from anaconda_conda_tos.path import get_cache_path
-from anaconda_conda_tos.remote import (
+from conda_anaconda_tos.models import RemoteToSMetadata
+from conda_anaconda_tos.path import get_cache_path
+from conda_anaconda_tos.remote import (
     get_cached_endpoint,
     get_endpoint,
     get_remote_metadata,
@@ -103,7 +103,7 @@ def test_write_cached_endpoint(
         write_cached_endpoint(sample_channel, object())  # type: ignore[arg-type]
 
     (path := tmp_path / "cache").touch()
-    mocker.patch("anaconda_conda_tos.remote.get_cache_path", return_value=path)
+    mocker.patch("conda_anaconda_tos.remote.get_cache_path", return_value=path)
     try:
         path.chmod(0o000)
         with pytest.raises(CondaToSPermissionError):
@@ -135,20 +135,20 @@ def test_get_remote_metadata(
     with pytest.raises(CondaToSMissingError):
         get_remote_metadata(uuid4().hex)
 
-    mocker.patch("anaconda_conda_tos.remote.get_endpoint", return_value=None)
+    mocker.patch("conda_anaconda_tos.remote.get_endpoint", return_value=None)
     with pytest.raises(CondaToSInvalidError):
         get_remote_metadata(tos_channel)
 
-    mocker.patch("anaconda_conda_tos.remote.get_endpoint", return_value=42)
+    mocker.patch("conda_anaconda_tos.remote.get_endpoint", return_value=42)
     with pytest.raises(CondaToSInvalidError):
         get_remote_metadata(tos_channel)
 
-    mocker.patch("anaconda_conda_tos.remote.get_endpoint", return_value={})
+    mocker.patch("conda_anaconda_tos.remote.get_endpoint", return_value={})
     with pytest.raises(CondaToSInvalidError):
         get_remote_metadata(tos_channel)
 
     cache = tmp_path / "cache"
-    mocker.patch("anaconda_conda_tos.remote.get_cached_endpoint", return_value=cache)
+    mocker.patch("conda_anaconda_tos.remote.get_cached_endpoint", return_value=cache)
     with pytest.raises(CondaToSMissingError):
         get_remote_metadata(tos_channel)
 

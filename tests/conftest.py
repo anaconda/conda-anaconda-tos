@@ -9,7 +9,7 @@ import pytest
 from conda.models.channel import Channel
 from http_test_server import SAMPLE_CHANNEL_DIR, generate_metadata, serve_channel
 
-from anaconda_conda_tos import path
+from conda_anaconda_tos import path
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pytest import MonkeyPatch, TempPathFactory
     from pytest_mock import MockerFixture
 
-    from anaconda_conda_tos.models import RemoteToSMetadata
+    from conda_anaconda_tos.models import RemoteToSMetadata
 
 pytest_plugins = (
     # Add testing fixtures and internal pytest plugins here

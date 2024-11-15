@@ -41,7 +41,7 @@ jobs:
         with:
           filters: |
             code:
-              - 'anaconda_conda_tos/**'
+              - 'conda_anaconda_tos/**'
               - 'tests/**'
               - '*.py'
               - 'recipe/**'
@@ -143,7 +143,7 @@ jobs:
         # keep the test directories shorter
         run: >
           pytest
-          --cov=anaconda_conda_tos
+          --cov=conda_anaconda_tos
           --basetemp=${{ runner.temp }}
           -n auto
 

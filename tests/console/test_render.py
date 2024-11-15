@@ -9,16 +9,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from anaconda_conda_tos.console import render
-from anaconda_conda_tos.console.render import (
+from conda_anaconda_tos.console import render
+from conda_anaconda_tos.console.render import (
     render_accept,
     render_info,
     render_interactive,
     render_reject,
     render_view,
 )
-from anaconda_conda_tos.exceptions import CondaToSRejectedError
-from anaconda_conda_tos.path import SEARCH_PATH
+from conda_anaconda_tos.exceptions import CondaToSRejectedError
+from conda_anaconda_tos.path import SEARCH_PATH
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from conda.models.channel import Channel
     from pytest import CaptureFixture, MonkeyPatch
 
-    from anaconda_conda_tos.models import RemoteToSMetadata
+    from conda_anaconda_tos.models import RemoteToSMetadata
 
 
 def test_render_view(

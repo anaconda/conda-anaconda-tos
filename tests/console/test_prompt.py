@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 from rich.prompt import InvalidResponse
 
-from anaconda_conda_tos.console.prompt import FuzzyPrompt
+from conda_anaconda_tos.console.prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
     from typing import Self
