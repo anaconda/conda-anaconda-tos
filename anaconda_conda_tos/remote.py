@@ -54,7 +54,6 @@ def get_endpoint(channel: str | Channel) -> Response:
             url,
             headers={"Content-Type": "text/plain"},
             proxies=session.proxies,
-            auth=None,
             timeout=(
                 context.remote_connect_timeout_secs,
                 context.remote_read_timeout_secs,
