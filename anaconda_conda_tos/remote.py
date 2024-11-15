@@ -53,7 +53,6 @@ def get_endpoint(channel: str | Channel) -> Response:
         response = session.get(
             url,
             headers={"Content-Type": "text/plain"},
-            proxies=session.proxies,
             timeout=(
                 context.remote_connect_timeout_secs,
                 context.remote_read_timeout_secs,
