@@ -24,7 +24,7 @@ from ..api import (
 from ..exceptions import CondaToSMissingError, CondaToSRejectedError
 from ..models import RemoteToSMetadata
 from ..path import CACHE_DIR, SEARCH_PATH
-from .mappers import accepted_mapping, location_mapping, timestamp_mapping
+from .mappers import NULL_CHAR, accepted_mapping, location_mapping, version_mapping
 from .prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
@@ -48,17 +48,19 @@ def render_list(
     table.add_column("Location")
     table.add_column("Support")
 
+    outdated = False
     for channel, metadata_pair in get_all_tos(
         *channels,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
     ):
         if not metadata_pair:
-            table.add_row(channel.base_url, "-", "-", "-", "-")
+            table.add_row(channel.base_url, NULL_CHAR, NULL_CHAR, NULL_CHAR, NULL_CHAR)
         else:
+            outdated = outdated or bool(metadata_pair.remote)
             table.add_row(
                 channel.base_url,
-                timestamp_mapping(metadata_pair.metadata.version),
+                version_mapping(metadata_pair.metadata.version, metadata_pair.remote),
                 accepted_mapping(metadata_pair.metadata),
                 location_mapping(metadata_pair.path),
                 metadata_pair.metadata.support,
@@ -66,6 +68,8 @@ def render_list(
 
     console = console or Console()
     console.print(table)
+    if outdated:
+        console.print("[bold yellow]* ToS version(s) are outdated.")
     return 0
 
 
@@ -156,9 +160,8 @@ def _gather_tos(
     channel_metadatas = []
     for channel in get_channels(*channels):
         try:
-            metadata = get_one_tos(
-                channel, tos_root=tos_root, cache_timeout=cache_timeout
-            ).metadata
+            pair = get_one_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            metadata = pair.remote or pair.metadata
         except CondaToSMissingError:
             # CondaToSMissingError: no ToS metadata found
             continue

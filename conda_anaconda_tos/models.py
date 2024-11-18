@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class _ToSMetadata(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", frozen=True)
     version: datetime
     text: str
     support: str
@@ -40,9 +40,12 @@ class LocalToSMetadata(_ToSMetadata):
 
 
 class _MetadataPathPair(BaseModel):
+    model_config = ConfigDict(frozen=True)
     metadata: _ToSMetadata
     # FUTURE: Python 3.10+, switch to `Path | None`
     path: Optional[Path]  # noqa: UP007
+    # FUTURE: Python 3.10+, switch to `_ToSMetadata | None`
+    remote: Optional[RemoteToSMetadata] = None  # noqa: UP007
 
     def __lt__(self: Self, other: _MetadataPathPair) -> bool:
         """Compare the ToS metadata version.
@@ -59,6 +62,7 @@ class RemotePair(_MetadataPathPair):
 
     metadata: RemoteToSMetadata
     path: None = None
+    remote: None = None
 
 
 class LocalPair(_MetadataPathPair):
