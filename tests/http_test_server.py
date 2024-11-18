@@ -24,6 +24,7 @@ from conda_anaconda_tos.remote import ENDPOINT
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterator
+    from typing import Self
 
 DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
@@ -80,6 +81,12 @@ def run_test_server(
 
 class MutableToSMetadata(RemoteToSMetadata):
     model_config = ConfigDict(frozen=False)
+
+    def __eq__(self: Self, other: object) -> bool:
+        return (
+            isinstance(other, (MutableToSMetadata, RemoteToSMetadata))
+            and self.model_dump() == other.model_dump()
+        )
 
 
 def generate_metadata() -> RemoteToSMetadata:
