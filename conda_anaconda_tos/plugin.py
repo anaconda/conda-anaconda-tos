@@ -9,7 +9,7 @@ from functools import cache
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
-from conda.cli.helpers import add_parser_prefix
+from conda.cli.helpers import add_parser_prefix, add_parser_verbose
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.plugins import (
@@ -119,6 +119,7 @@ def _add_cache(parser: ArgumentParser) -> None:
 
 def configure_parser(parser: ArgumentParser) -> None:
     """Configure the parser for the `tos` subcommand."""
+    # conda tos --version
     parser.add_argument(
         "-V",
         "--version",
@@ -127,6 +128,14 @@ def configure_parser(parser: ArgumentParser) -> None:
         help=f"Show the {APP_NAME} version number and exit.",
     )
 
+    # conda tos (default behavior)
+    _add_channel(parser)
+    add_parser_prefix(parser)
+    _add_location(parser)
+    _add_cache(parser)
+    add_parser_verbose(parser)
+
+    # conda tos <COMMAND>
     subparsers = parser.add_subparsers(
         title="subcommand",
         description="The following subcommands are available.",
@@ -134,6 +143,7 @@ def configure_parser(parser: ArgumentParser) -> None:
         required=False,
     )
 
+    # conda tos accept
     accept_parser = subparsers.add_parser(
         "accept",
         help=(
@@ -146,6 +156,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     _add_location(accept_parser)
     _add_cache(accept_parser)
 
+    # conda tos reject
     reject_parser = subparsers.add_parser(
         "reject",
         help=(
@@ -158,6 +169,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     _add_location(reject_parser)
     _add_cache(reject_parser)
 
+    # conda tos view
     view_parser = subparsers.add_parser(
         "view",
         help=(
@@ -170,6 +182,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     _add_location(view_parser)
     _add_cache(view_parser)
 
+    # conda tos interactive
     interactive_parser = subparsers.add_parser(
         "interactive",
         help=(
@@ -182,6 +195,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     _add_location(interactive_parser)
     _add_cache(interactive_parser)
 
+    # conda tos info
     subparsers.add_parser(
         "info",
         help=(
@@ -190,12 +204,7 @@ def configure_parser(parser: ArgumentParser) -> None:
         ),
     )
 
-    # default behavior (listing current ToS statuses) arguments
-    _add_channel(parser)
-    add_parser_prefix(parser)
-    _add_location(parser)
-    _add_cache(parser)
-
+    # conda tos clean
     clean_parser = subparsers.add_parser(
         "clean",
         help="Clean the ToS cache directories.",
@@ -222,7 +231,7 @@ def execute(args: Namespace) -> int:
     validate_prefix_exists(context.target_prefix)
 
     console = Console()
-    action: Callable = render_list
+    action: Callable
     kwargs = {}
     if args.cmd == "accept":
         action = render_accept
@@ -245,6 +254,10 @@ def execute(args: Namespace) -> int:
             tos_root=args.tos_root,
             console=console,
         )
+    else:
+        # default
+        action = render_list
+        kwargs["verbose"] = context.verbose
 
     return action(
         *context.channels,
