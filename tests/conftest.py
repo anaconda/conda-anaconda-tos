@@ -26,7 +26,7 @@ pytest_plugins = (
 )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
     """Serve the sample channel but with a `tos.json` endpoint.
 
@@ -37,13 +37,13 @@ def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
         yield Channel(url), metadata
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tos_channel(tos_server: tuple[Channel, RemoteToSMetadata]) -> Channel:
     """The channel URL for the ToS server, see `tos_server` fixture."""
     return tos_server[0]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tos_metadata(tos_server: tuple[Channel, RemoteToSMetadata]) -> RemoteToSMetadata:
     """The metadata for the ToS server, see `tos_server` fixture."""
     return tos_server[1]
