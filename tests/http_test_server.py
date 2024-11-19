@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from pydantic import ConfigDict
+
 from conda_anaconda_tos.console.mappers import timestamp_mapping
 from conda_anaconda_tos.models import RemoteToSMetadata
 from conda_anaconda_tos.remote import ENDPOINT
@@ -22,6 +24,7 @@ from conda_anaconda_tos.remote import ENDPOINT
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterator
+    from typing import Self
 
 DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
@@ -76,8 +79,18 @@ def run_test_server(
     return started.get(timeout=1)
 
 
+class MutableToSMetadata(RemoteToSMetadata):
+    model_config = ConfigDict(frozen=False)
+
+    def __eq__(self: Self, other: object) -> bool:
+        return (
+            isinstance(other, (MutableToSMetadata, RemoteToSMetadata))
+            and self.model_dump() == other.model_dump()
+        )
+
+
 def generate_metadata() -> RemoteToSMetadata:
-    return RemoteToSMetadata(
+    return MutableToSMetadata(
         version=datetime.now(tz=timezone.utc),
         text=f"ToS Text\n\n{uuid4().hex}",
         support="support.com",

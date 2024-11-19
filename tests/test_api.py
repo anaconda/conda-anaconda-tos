@@ -63,7 +63,10 @@ def local_metadata_pair(
 
 
 @pytest.fixture(scope="session")
-def old_metadata_pair(sample_channel: Channel) -> LocalPair:
+def old_metadata_pair(
+    sample_channel: Channel,
+    remote_metadata_pair: RemotePair,
+) -> LocalPair:
     return LocalPair(
         metadata=LocalToSMetadata(
             version=datetime(2024, 10, 1, tzinfo=timezone.utc),
@@ -74,6 +77,7 @@ def old_metadata_pair(sample_channel: Channel) -> LocalPair:
             acceptance_timestamp=datetime.now(tz=timezone.utc),
         ),
         path=uuid4().hex,
+        remote=remote_metadata_pair.metadata,
     )
 
 
@@ -123,7 +127,7 @@ def test_get_single_metadata(
         tos_root=tmp_path,
         cache_timeout=None,
     )
-    assert metadata_pair == remote_metadata_pair
+    assert metadata_pair == old_metadata_pair
 
 
 def test_get_stored_metadatas(
@@ -159,4 +163,4 @@ def test_get_stored_metadatas(
         return_value=[(sample_channel, old_metadata_pair)],
     )
     metadata_pairs = list(get_stored_tos(tos_root=tmp_path, cache_timeout=None))
-    assert metadata_pairs == [(sample_channel, remote_metadata_pair)]
+    assert metadata_pairs == [(sample_channel, old_metadata_pair)]

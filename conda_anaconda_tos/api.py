@@ -60,21 +60,24 @@ def get_one_tos(
         # CondaToSMissingError: no local ToS metadata
         if remote_exc:
             raise remote_exc from exc
+        # no local ToS metadata
+        return RemotePair(metadata=remote_metadata)
     else:
-        # return local metadata if it's the same version as the remote
+        # return local ToS metadata, include remote ToS metadata if newer
         if local_pair.metadata >= remote_metadata:
             return local_pair
-
-    # cache is stale, remote ToS metadata exists, and local ToS metadata is missing or
-    # local ToS metadata is outdated (i.e., remote has a newer version)
-    return RemotePair(metadata=remote_metadata)
+        return LocalPair(
+            metadata=local_pair.metadata,
+            path=local_pair.path,
+            remote=remote_metadata,
+        )
 
 
 def get_stored_tos(
     *,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-) -> Iterator[tuple[Channel, LocalPair | RemotePair]]:
+) -> Iterator[tuple[Channel, LocalPair]]:
     """Yield all ToS metadatas."""
     for channel, local_pair in get_local_metadatas(extend_search_path=[tos_root]):
         try:
@@ -83,11 +86,18 @@ def get_stored_tos(
             # CondaToSMissingError: no remote ToS metadata
             continue
 
-        # yield local metadata if it's the same version as the remote
+        # yield local ToS metadata, include remote ToS metadata if newer
         if local_pair.metadata >= remote_metadata:
             yield channel, local_pair
         else:
-            yield channel, RemotePair(metadata=remote_metadata)
+            yield (
+                channel,
+                LocalPair(
+                    metadata=local_pair.metadata,
+                    path=local_pair.path,
+                    remote=remote_metadata,
+                ),
+            )
 
 
 def accept_tos(
@@ -97,11 +107,12 @@ def accept_tos(
     cache_timeout: int | float | None,
 ) -> LocalPair:
     """Accept the ToS metadata for the given channel."""
-    metadata = get_one_tos(
+    pair = get_one_tos(
         channel,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
-    ).metadata
+    )
+    metadata = pair.remote or pair.metadata
     return write_metadata(tos_root, channel, metadata, tos_accepted=True)
 
 
@@ -112,11 +123,12 @@ def reject_tos(
     cache_timeout: int | float | None,
 ) -> LocalPair:
     """Reject the ToS metadata for the given channel."""
-    metadata = get_one_tos(
+    pair = get_one_tos(
         channel,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
-    ).metadata
+    )
+    metadata = pair.remote or pair.metadata
     return write_metadata(tos_root, channel, metadata, tos_accepted=False)
 
 
