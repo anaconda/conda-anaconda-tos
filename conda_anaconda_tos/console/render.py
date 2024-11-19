@@ -38,6 +38,7 @@ def render_list(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    verbose: bool,
     console: Console | None = None,
 ) -> int:
     """Display listing of unaccepted, accepted, and rejected ToS."""
@@ -45,8 +46,12 @@ def render_list(
     table.add_column("Channel")
     table.add_column("Version")
     table.add_column("Accepted")
-    table.add_column("Location")
     table.add_column("Support")
+    if verbose:
+        table.add_column("Location")
+        add_row = table.add_row
+    else:
+        add_row = lambda *args: table.add_row(*args[:-1])  # noqa: E731
 
     outdated = False
     for channel, metadata_pair in get_all_tos(
@@ -55,15 +60,15 @@ def render_list(
         cache_timeout=cache_timeout,
     ):
         if not metadata_pair:
-            table.add_row(channel.base_url, NULL_CHAR, NULL_CHAR, NULL_CHAR, NULL_CHAR)
+            add_row(channel.base_url, NULL_CHAR, NULL_CHAR, NULL_CHAR, NULL_CHAR)
         else:
             outdated = outdated or bool(metadata_pair.remote)
-            table.add_row(
+            add_row(
                 channel.base_url,
                 version_mapping(metadata_pair.metadata.version, metadata_pair.remote),
                 accepted_mapping(metadata_pair.metadata),
-                location_mapping(metadata_pair.path),
                 metadata_pair.metadata.support,
+                location_mapping(metadata_pair.path),
             )
 
     console = console or Console()
