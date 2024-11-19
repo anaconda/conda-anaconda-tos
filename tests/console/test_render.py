@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import sys
 from contextlib import nullcontext
+from datetime import datetime, timezone
 from io import StringIO
 from typing import TYPE_CHECKING
 
 import pytest
 
+from conda_anaconda_tos.api import accept_tos
 from conda_anaconda_tos.console import render
 from conda_anaconda_tos.console.render import (
+    TOS_OUTDATED,
     render_accept,
     render_info,
     render_interactive,
+    render_list,
     render_reject,
     render_view,
 )
@@ -245,3 +249,31 @@ def test_render_info(capsys: CaptureFixture) -> None:
     out, err = capsys.readouterr()
     for path in SEARCH_PATH:
         assert path in out
+
+
+def test_render_list(
+    tos_channel: Channel,
+    tos_metadata: RemoteToSMetadata,
+    tmp_path: Path,
+    capsys: CaptureFixture,
+    terminal_width: int,  # noqa: ARG001
+) -> None:
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
+    out, err = capsys.readouterr()
+    assert str(tos_channel) in out
+    assert TOS_OUTDATED not in out
+    # assert not err  # server log is output to stderr
+
+    accept_tos(tos_channel, tos_root=tmp_path, cache_timeout=None)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
+    out, err = capsys.readouterr()
+    assert str(tos_channel) in out
+    assert TOS_OUTDATED not in out
+    # assert not err  # server log is output to stderr
+
+    tos_metadata.version = datetime.now(tz=timezone.utc)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
+    out, err = capsys.readouterr()
+    assert str(tos_channel) in out
+    assert TOS_OUTDATED in out
+    # assert not err  # server log is output to stderr

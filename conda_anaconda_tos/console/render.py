@@ -30,8 +30,12 @@ from .prompt import FuzzyPrompt
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterable
+    from typing import Final
 
     from conda.models.channel import Channel
+
+
+TOS_OUTDATED: Final = "* ToS version(s) are outdated."
 
 
 def render_list(
@@ -69,7 +73,7 @@ def render_list(
     console = console or Console()
     console.print(table)
     if outdated:
-        console.print("[bold yellow]* ToS version(s) are outdated.")
+        console.print(f"[bold yellow]{TOS_OUTDATED}")
     return 0
 
 

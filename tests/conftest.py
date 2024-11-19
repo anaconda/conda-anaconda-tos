@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 import pytest
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
-    from pytest import MonkeyPatch, TempPathFactory
+    from pytest import FixtureRequest, MonkeyPatch, TempPathFactory
     from pytest_mock import MockerFixture
 
     from conda_anaconda_tos.models import RemoteToSMetadata
@@ -26,7 +27,7 @@ pytest_plugins = (
 )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
     """Serve the sample channel but with a `tos.json` endpoint.
 
@@ -37,13 +38,13 @@ def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
         yield Channel(url), metadata
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tos_channel(tos_server: tuple[Channel, RemoteToSMetadata]) -> Channel:
     """The channel URL for the ToS server, see `tos_server` fixture."""
     return tos_server[0]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tos_metadata(tos_server: tuple[Channel, RemoteToSMetadata]) -> RemoteToSMetadata:
     """The metadata for the ToS server, see `tos_server` fixture."""
     return tos_server[1]
@@ -91,3 +92,15 @@ def mock_channels(
         return_value=(channels := (tos_channel, sample_channel)),
     )
     return channels
+
+
+@pytest.fixture
+def terminal_width(mocker: MockerFixture, request: FixtureRequest) -> int:
+    """Mock the terminal width for console output.
+
+    If the default width is not sufficient, use an `indirect=True` parameterization with
+    the desired width.
+    """
+    width = getattr(request, "param", 200)
+    mocker.patch("os.get_terminal_size", return_value=os.terminal_size((width, 200)))
+    return width
