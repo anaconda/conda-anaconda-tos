@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import os
 import sys
 from io import StringIO
 from typing import TYPE_CHECKING
@@ -27,7 +26,6 @@ if TYPE_CHECKING:
     from conda.models.channel import Channel
     from conda.testing.fixtures import CondaCLIFixture
     from pytest import MonkeyPatch
-    from pytest_mock import MockerFixture
 
     from conda_anaconda_tos.models import RemoteToSMetadata
 
@@ -120,14 +118,13 @@ def test_subcommand_tos_reject(
 
 
 def test_subcommand_tos_list(
-    mocker: MockerFixture,
     conda_cli: CondaCLIFixture,
     mock_channels: tuple[Channel, Channel],
     mock_search_path: tuple[Path, Path],
+    terminal_width: int,  # noqa: ARG001
 ) -> None:
     system_tos_root, user_tos_root = mock_search_path
     tos_channel, sample_channel = mock_channels
-    mocker.patch("os.get_terminal_size", return_value=os.terminal_size((200, 200)))
 
     out, err, code = conda_cli("tos")
     assert tos_channel.base_url in out
