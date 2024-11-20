@@ -55,6 +55,9 @@ FIELD_SEPARATOR = ";"
 #: Key-value separator for request header
 KEY_SEPARATOR = "="
 
+#: ToS acceptance request header
+TOS_ACCEPT_HEADER = "Anaconda-ToS-Accept"
+
 #: Hosts to which the ToS header is added
 HOSTS = {"repo.anaconda.com"}
 
@@ -362,6 +365,6 @@ def conda_request_headers(host: str, path: str) -> Iterator[CondaRequestHeader]:
         and not path.endswith(f"/{ENDPOINT}")
     ):
         yield CondaRequestHeader(
-            name="Anaconda-ToS-Accept",
+            name=TOS_ACCEPT_HEADER,
             value=_get_tos_acceptance_header(),
         )
