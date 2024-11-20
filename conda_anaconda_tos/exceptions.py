@@ -60,3 +60,16 @@ class CondaToSRejectedError(CondaToSError):
             str(Channel(channel).base_url or channel) for channel in channels
         )
         super().__init__(f"ToS rejected for {channels_str}.")
+
+
+class CondaToSNonInteractiveError(CondaToSError):
+    """Error class when ToS is not actionable in non-interactive mode."""
+
+    def __init__(self: Self, *channels: str | Channel) -> None:
+        """Format error message with channel base URL."""
+        channels_str = ", ".join(
+            str(Channel(channel).base_url or channel) for channel in channels
+        )
+        super().__init__(
+            f"ToS not actionable for {channels_str} in non-interactive mode."
+        )

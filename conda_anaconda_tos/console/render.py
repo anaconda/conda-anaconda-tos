@@ -21,7 +21,11 @@ from ..api import (
     get_one_tos,
     reject_tos,
 )
-from ..exceptions import CondaToSMissingError, CondaToSRejectedError
+from ..exceptions import (
+    CondaToSMissingError,
+    CondaToSNonInteractiveError,
+    CondaToSRejectedError,
+)
 from ..models import RemoteToSMetadata
 from ..path import CACHE_DIR, SEARCH_PATH
 from .mappers import NULL_CHAR, accepted_mapping, location_mapping, version_mapping
@@ -30,7 +34,7 @@ from .prompt import FuzzyPrompt
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterable
-    from typing import Final
+    from typing import Any, Callable, Final
 
     from conda.models.channel import Channel
 
@@ -38,10 +42,20 @@ if TYPE_CHECKING:
 TOS_OUTDATED: Final = "* ToS version(s) are outdated."
 
 
+def _get_printer(
+    console: Console | None, json: bool
+) -> tuple[Callable[..., None], Callable[..., None]]:
+    console = console or Console()
+    if json:
+        return lambda *_, **__: None, console.print_json
+    return console.print, console.print_json
+
+
 def render_list(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    json: bool,
     verbose: bool,
     console: Console | None = None,
 ) -> int:
@@ -57,6 +71,7 @@ def render_list(
     else:
         add_row = lambda *args: table.add_row(*args[:-1])  # noqa: E731
 
+    json_output: dict[str, Any] = {}
     outdated = False
     for channel, metadata_pair in get_all_tos(
         *channels,
@@ -64,8 +79,13 @@ def render_list(
         cache_timeout=cache_timeout,
     ):
         if not metadata_pair:
+            json_output[channel.base_url] = None
             add_row(channel.base_url, NULL_CHAR, NULL_CHAR, NULL_CHAR, NULL_CHAR)
         else:
+            json_output[channel.base_url] = {
+                **metadata_pair.metadata.model_dump(mode="json"),
+                "outdated": bool(metadata_pair.remote),
+            }
             outdated = outdated or bool(metadata_pair.remote)
             add_row(
                 channel.base_url,
@@ -75,10 +95,13 @@ def render_list(
                 location_mapping(metadata_pair.path),
             )
 
-    console = console or Console()
-    console.print(table)
-    if outdated:
-        console.print(f"[bold yellow]{TOS_OUTDATED}")
+    printer, json_printer = _get_printer(console, json)
+    if json:
+        json_printer(data=json_output)
+    else:
+        printer(table)
+        if outdated:
+            printer(f"[bold yellow]{TOS_OUTDATED}")
     return 0
 
 
@@ -86,20 +109,29 @@ def render_view(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    json: bool,
     console: Console | None = None,
 ) -> int:
     """Display the ToS text for the given channels."""
-    console = console or Console()
+    json_output: dict[str, Any] = {}
+    printer, json_printer = _get_printer(console, json)
     for channel in get_channels(*channels):
         try:
             metadata = get_one_tos(
-                channel, tos_root=tos_root, cache_timeout=cache_timeout
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
             ).metadata
         except CondaToSMissingError:
-            console.print(f"no ToS for {channel}")
+            json_output[channel.base_url] = None
+            printer(f"no ToS for {channel}")
         else:
-            console.print(f"viewing ToS for {channel}:")
-            console.print(metadata.text)
+            json_output[channel.base_url] = metadata.model_dump(mode="json")
+            printer(f"viewing ToS for {channel}:")
+            printer(metadata.text)
+
+    if json:
+        json_printer(data=json_output)
     return 0
 
 
@@ -107,17 +139,28 @@ def render_accept(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    json: bool,
     console: Console | None = None,
 ) -> int:
     """Display acceptance of the ToS for the given channels."""
-    console = console or Console()
+    json_output: dict[str, Any] = {}
+    printer, json_printer = _get_printer(console, json)
     for channel in get_channels(*channels):
         try:
-            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            metadata = accept_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+            ).metadata
         except CondaToSMissingError:
-            console.print(f"ToS not found for {channel}")
+            json_output[channel.base_url] = None
+            printer(f"ToS not found for {channel}")
         else:
-            console.print(f"accepted ToS for {channel}")
+            json_output[channel.base_url] = metadata.model_dump(mode="json")
+            printer(f"accepted ToS for {channel}")
+
+    if json:
+        json_printer(data=json_output)
     return 0
 
 
@@ -125,17 +168,28 @@ def render_reject(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    json: bool,
     console: Console | None = None,
 ) -> int:
     """Display rejection of the ToS for the given channels."""
-    console = console or Console()
+    json_output: dict[str, Any] = {}
+    printer, json_printer = _get_printer(console, json)
     for channel in get_channels(*channels):
         try:
-            reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            metadata = reject_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+            ).metadata
         except CondaToSMissingError:
-            console.print(f"ToS not found for {channel}")
+            json_output[channel.base_url] = None
+            printer(f"ToS not found for {channel}")
         else:
-            console.print(f"rejected ToS for {channel}")
+            json_output[channel.base_url] = metadata.model_dump(mode="json")
+            printer(f"rejected ToS for {channel}")
+
+    if json:
+        json_printer(data=json_output)
     return 0
 
 
@@ -163,8 +217,8 @@ def _gather_tos(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-) -> tuple[list[Channel], list[Channel], list[tuple[Channel, RemoteToSMetadata]]]:
-    accepted = []
+) -> tuple[dict[str, dict], list[Channel], list[tuple[Channel, RemoteToSMetadata]]]:
+    accepted = {}
     rejected = []
     channel_metadatas = []
     for channel in get_channels(*channels):
@@ -179,78 +233,106 @@ def _gather_tos(
             # ToS hasn't been accepted or rejected yet
             channel_metadatas.append((channel, metadata))
         elif metadata.tos_accepted:
-            accepted.append(channel)
+            accepted[channel.base_url] = metadata.model_dump(mode="json")
         else:
             rejected.append(channel)
     return accepted, rejected, channel_metadatas
 
 
-def render_interactive(
+def render_interactive(  # noqa: C901
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    json: bool,
     console: Console | None = None,
     auto_accept_tos: bool,
 ) -> int:
     """Prompt user to accept or reject ToS for channels."""
-    console = console or Console()
-    console.print("[bold blue]Gathering channels...")
+    printer, json_printer = _get_printer(console, json)
+
+    printer("[bold blue]Gathering channels...")
     accepted, rejected, channel_metadatas = _gather_tos(
         *channels,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
     )
 
-    console.print("[bold yellow]Reviewing channels...")
+    printer("[bold yellow]Reviewing channels...")
     if rejected:
-        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+        printer(f"[bold red]{len(rejected)} channel ToS rejected")
         raise CondaToSRejectedError(*rejected)
+    elif CI:
+        printer("[bold yellow]CI detected...")
 
-    if CI:
-        console.print("[bold yellow]CI detected...")
-
+    non_interactive = []
     for channel, metadata in channel_metadatas:
         if auto_accept_tos:
             # auto_accept_tos overrides any other setting
-            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
-            accepted.append(channel)
+            accepted[channel.base_url] = accept_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+            ).metadata
         elif CI:
             # CI is the same as auto_accept_tos but with a warning
-            console.print(f"[bold yellow]implicitly accepting ToS for {channel}")
-            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
-            accepted.append(channel)
+            printer(f"[bold yellow]implicitly accepting ToS for {channel}")
+            accepted[channel.base_url] = accept_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+            ).metadata
+        elif json:
+            # json output doesn't support interactive prompts
+            non_interactive.append(channel)
         elif _prompt_acceptance(channel, metadata, console):
             # user manually accepted the ToS
-            accept_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
-            accepted.append(channel)
+            accepted[channel.base_url] = accept_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+            ).metadata
         else:
             # user manually rejected the ToS
             reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
             rejected.append(channel)
 
-    if rejected:
-        console.print(f"[bold red]{len(rejected)} channel ToS rejected")
+    if non_interactive:
+        raise CondaToSNonInteractiveError(*non_interactive)
+    elif rejected:
+        printer(f"[bold red]{len(rejected)} channel ToS rejected")
         raise CondaToSRejectedError(*rejected)
-    console.print(f"[bold green]{len(accepted)} channel ToS accepted")
+    printer(f"[bold green]{len(accepted)} channel ToS accepted")
+
+    if json:
+        json_printer(data=accepted)
     return 0
 
 
-def render_info(*, console: Console | None = None) -> int:
+def render_info(*, json: bool, console: Console | None = None) -> int:
     """Display information about the ToS cache."""
-    table = Table(show_header=False)
-    table.add_column("Key")
-    table.add_column("Value")
-
-    table.add_row("SEARCH_PATH", "\n".join(SEARCH_PATH))
+    data: dict[str, str | tuple[str, ...]] = {}
+    data["SEARCH_PATH"] = SEARCH_PATH
     try:
         relative_dir = Path("~", CACHE_DIR.relative_to(Path.home()))
     except ValueError:
         # ValueError: CACHE_DIR is not relative to the user's home directory
         relative_dir = CACHE_DIR
-    table.add_row("CACHE_DIR", str(relative_dir))
+    data["CACHE_DIR"] = str(relative_dir)
 
-    console = console or Console()
-    console.print(table)
+    printer, json_printer = _get_printer(console, json)
+    if json:
+        json_printer(data=data)
+    else:
+        table = Table(show_header=False)
+        table.add_column("Key")
+        table.add_column("Value")
+        for key, value in data.items():
+            if isinstance(value, (tuple, list)):
+                value = "\n".join(map(str, value))
+            else:
+                value = str(value)
+            table.add_row(key, value)
+        printer(table)
     return 0
 
 
@@ -260,6 +342,7 @@ def render_clean(
     all: bool,  # noqa: A002
     *,
     tos_root: str | os.PathLike[str] | Path,
+    json: bool,
     console: Console | None = None,
 ) -> int:
     """Clean the ToS cache directories."""
@@ -268,9 +351,15 @@ def render_clean(
             "At least one removal target must be given. See 'conda tos clean --help'."
         )
 
-    console = console or Console()
+    json_output: dict[str, Any] = {}
+    printer, json_printer = _get_printer(console, json)
     if all or cache:
-        console.print(f"Removed {len(list(clean_cache()))} cache files.")
+        json_output["cache"] = cache_files = list(map(str, clean_cache()))
+        printer(f"Removed {len(cache_files)} cache files.")
     if all or tos:
-        console.print(f"Removed {len(list(clean_tos(tos_root)))} ToS files.")
+        json_output["tos"] = tos_files = list(map(str, clean_tos(tos_root)))
+        printer(f"Removed {len(tos_files)} ToS files.")
+
+    if json:
+        json_printer(data=json_output)
     return 0
