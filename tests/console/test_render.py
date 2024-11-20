@@ -258,21 +258,21 @@ def test_render_list(
     capsys: CaptureFixture,
     terminal_width: int,  # noqa: ARG001
 ) -> None:
-    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=False)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
     # assert not err  # server log is output to stderr
 
     accept_tos(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=False)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
     # assert not err  # server log is output to stderr
 
     tos_metadata.version = datetime.now(tz=timezone.utc)
-    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=False)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED in out
