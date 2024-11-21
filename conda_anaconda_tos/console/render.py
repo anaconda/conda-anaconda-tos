@@ -8,7 +8,6 @@ import functools
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from conda.common.constants import NULL
 from conda.exceptions import ArgumentError
 from rich.console import Console
 from rich.table import Table
@@ -74,7 +73,7 @@ def render_list(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool = NULL,
+    json: bool = False,
     verbose: bool,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
@@ -131,7 +130,7 @@ def render_view(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool = NULL,
+    json: bool = False,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
     json_printer: Callable[..., None],
@@ -163,7 +162,7 @@ def render_accept(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool = NULL,
+    json: bool = False,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
     json_printer: Callable[..., None],
@@ -194,7 +193,7 @@ def render_reject(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool = NULL,
+    json: bool = False,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
     json_printer: Callable[..., None],
@@ -271,7 +270,7 @@ def render_interactive(  # noqa: C901
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool = NULL,
+    json: bool = False,
     console: Console | None = None,
     auto_accept_tos: bool,
     printer: Callable[..., None],
@@ -339,7 +338,7 @@ def render_interactive(  # noqa: C901
 @printable
 def render_info(
     *,
-    json: bool = NULL,
+    json: bool = False,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
     json_printer: Callable[..., None],
@@ -377,7 +376,7 @@ def render_clean(
     all: bool,  # noqa: A002
     *,
     tos_root: str | os.PathLike[str] | Path,
-    json: bool = NULL,
+    json: bool = False,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
     json_printer: Callable[..., None],
