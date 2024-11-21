@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from conda.common.constants import NULL
 from conda.exceptions import ArgumentError
 from rich.console import Console
 from rich.table import Table
@@ -43,7 +44,7 @@ TOS_OUTDATED: Final = "* ToS version(s) are outdated."
 
 
 def _get_printer(
-    console: Console | None, json: bool
+    console: Console | None, json: bool = NULL
 ) -> tuple[Callable[..., None], Callable[..., None]]:
     console = console or Console()
     if json:
@@ -55,7 +56,7 @@ def render_list(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool,
+    json: bool = NULL,
     verbose: bool,
     console: Console | None = None,
 ) -> int:
@@ -109,7 +110,7 @@ def render_view(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool,
+    json: bool = NULL,
     console: Console | None = None,
 ) -> int:
     """Display the ToS text for the given channels."""
@@ -139,7 +140,7 @@ def render_accept(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool,
+    json: bool = NULL,
     console: Console | None = None,
 ) -> int:
     """Display acceptance of the ToS for the given channels."""
@@ -168,7 +169,7 @@ def render_reject(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool,
+    json: bool = NULL,
     console: Console | None = None,
 ) -> int:
     """Display rejection of the ToS for the given channels."""
@@ -243,7 +244,7 @@ def render_interactive(  # noqa: C901
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-    json: bool,
+    json: bool = NULL,
     console: Console | None = None,
     auto_accept_tos: bool,
 ) -> int:
@@ -308,7 +309,7 @@ def render_interactive(  # noqa: C901
     return 0
 
 
-def render_info(*, json: bool, console: Console | None = None) -> int:
+def render_info(*, json: bool = NULL, console: Console | None = None) -> int:
     """Display information about the ToS cache."""
     data: dict[str, str | tuple[str, ...]] = {}
     data["SEARCH_PATH"] = SEARCH_PATH
@@ -342,7 +343,7 @@ def render_clean(
     all: bool,  # noqa: A002
     *,
     tos_root: str | os.PathLike[str] | Path,
-    json: bool,
+    json: bool = NULL,
     console: Console | None = None,
 ) -> int:
     """Clean the ToS cache directories."""
