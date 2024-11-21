@@ -144,7 +144,11 @@ def test_render_interactive(
     monkeypatch.setattr(render, "CI", ci)
 
     render_interactive(
-        sample_channel, tos_root=tmp_path, cache_timeout=None, auto_accept_tos=False
+        sample_channel,
+        tos_root=tmp_path,
+        cache_timeout=None,
+        auto_accept_tos=False,
+        always_yes=False,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
@@ -160,6 +164,7 @@ def test_render_interactive(
         tos_root=tmp_path / "accepted",
         cache_timeout=None,
         auto_accept_tos=False,
+        always_yes=False,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
@@ -168,7 +173,7 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"implicitly accepting ToS for {tos_channel}",
+                f"ToS implicitly accepted for {tos_channel}",
                 "1 channel ToS accepted",
             ]
             if ci
@@ -183,6 +188,7 @@ def test_render_interactive(
         tos_root=tmp_path / "accepted",
         cache_timeout=None,
         auto_accept_tos=False,
+        always_yes=False,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
@@ -199,6 +205,7 @@ def test_render_interactive(
             tos_root=tmp_path / "rejected",
             cache_timeout=None,
             auto_accept_tos=False,
+            always_yes=False,
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
@@ -207,7 +214,7 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"implicitly accepting ToS for {tos_channel}",
+                f"ToS implicitly accepted for {tos_channel}",
                 "1 channel ToS accepted",
             ]
             if ci
@@ -223,6 +230,7 @@ def test_render_interactive(
             tos_root=tmp_path / "rejected",
             cache_timeout=None,
             auto_accept_tos=False,
+            always_yes=False,
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
@@ -244,6 +252,7 @@ def test_render_interactive(
         tos_root=tmp_path / "viewed",
         cache_timeout=None,
         auto_accept_tos=False,
+        always_yes=False,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
@@ -252,7 +261,7 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"implicitly accepting ToS for {tos_channel}",
+                f"ToS implicitly accepted for {tos_channel}",
                 "1 channel ToS accepted",
             ]
             if ci
