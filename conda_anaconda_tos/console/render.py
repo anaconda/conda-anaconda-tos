@@ -271,8 +271,9 @@ def render_interactive(  # noqa: C901
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = False,
-    console: Console | None = None,
     auto_accept_tos: bool,
+    always_yes: bool,
+    console: Console | None = None,
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
@@ -293,8 +294,9 @@ def render_interactive(  # noqa: C901
 
     non_interactive = []
     for channel, metadata in channel_metadatas:
-        if auto_accept_tos:
+        if auto_accept_tos or always_yes:
             # auto_accept_tos overrides any other setting
+            printer(f"[bold yellow]ToS auto accepted for {channel}")
             accepted[channel.base_url] = accept_tos(
                 channel,
                 tos_root=tos_root,
@@ -302,7 +304,7 @@ def render_interactive(  # noqa: C901
             ).metadata
         elif CI:
             # CI is the same as auto_accept_tos but with a warning
-            printer(f"[bold yellow]implicitly accepting ToS for {channel}")
+            printer(f"[bold yellow]ToS implicitly accepted for {channel}")
             accepted[channel.base_url] = accept_tos(
                 channel,
                 tos_root=tos_root,
