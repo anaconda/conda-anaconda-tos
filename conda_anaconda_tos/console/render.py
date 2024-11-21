@@ -45,14 +45,14 @@ TOS_OUTDATED: Final = "* ToS version(s) are outdated."
 
 
 def printable(func: Callable[..., int]) -> Callable[..., int]:
-    """Pass console and printe rfunctions to the decorated function.
+    """Pass console and printer functions to the decorated function.
 
-    This instantiate a console for the render functions if not provided and
+    This instantiates a console for the render functions if not provided and
     the console and json printers to pass them to the decorated function.
     """
 
     @functools.wraps(func)
-    def wrapper(*args: tuple, **kwargs: dict) -> int:
+    def wrapper(*args: Any, **kwargs: Any) -> int:  # noqa: ANN401
         console = kwargs.pop("console", Console())
         if kwargs.get("json"):
             printer, json_printer = lambda *_, **__: None, console.print_json
