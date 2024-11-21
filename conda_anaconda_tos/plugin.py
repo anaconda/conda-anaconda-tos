@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 DEFAULT_TOS_ROOT = USER_TOS_ROOT
 
 #: Default cache timeout in seconds.
-DEFAULT_CACHE_TIMEOUT = timedelta(days=1).total_seconds()
+DEFAULT_CACHE_TIMEOUT = timedelta(hours=1).total_seconds()
 
 #: Field separator for request header
 FIELD_SEPARATOR = ";"
