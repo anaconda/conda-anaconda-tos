@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import functools
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -43,22 +44,41 @@ if TYPE_CHECKING:
 TOS_OUTDATED: Final = "* ToS version(s) are outdated."
 
 
-def _get_printer(
-    console: Console | None, json: bool = NULL
-) -> tuple[Callable[..., None], Callable[..., None]]:
-    console = console or Console()
-    if json:
-        return lambda *_, **__: None, console.print_json
-    return console.print, console.print_json
+def printable(func: Callable[..., int]) -> Callable[..., int]:
+    """Pass console and printe rfunctions to the decorated function.
+
+    This instantiate a console for the render functions if not provided and
+    the console and json printers to pass them to the decorated function.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args: tuple, **kwargs: dict) -> int:
+        console = kwargs.pop("console", Console())
+        if kwargs.get("json"):
+            printer, json_printer = lambda *_, **__: None, console.print_json
+        else:
+            printer, json_printer = console.print, console.print_json
+        return func(
+            *args,
+            **kwargs,
+            console=console,
+            printer=printer,
+            json_printer=json_printer,
+        )
+
+    return wrapper
 
 
+@printable
 def render_list(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = NULL,
     verbose: bool,
-    console: Console | None = None,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
 ) -> int:
     """Display listing of unaccepted, accepted, and rejected ToS."""
     table = Table()
@@ -86,6 +106,7 @@ def render_list(
             json_output[channel.base_url] = {
                 **metadata_pair.metadata.model_dump(mode="json"),
                 "outdated": bool(metadata_pair.remote),
+                "path": str(metadata_pair.path),
             }
             outdated = outdated or bool(metadata_pair.remote)
             add_row(
@@ -96,7 +117,6 @@ def render_list(
                 location_mapping(metadata_pair.path),
             )
 
-    printer, json_printer = _get_printer(console, json)
     if json:
         json_printer(data=json_output)
     else:
@@ -106,16 +126,18 @@ def render_list(
     return 0
 
 
+@printable
 def render_view(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = NULL,
-    console: Console | None = None,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
 ) -> int:
     """Display the ToS text for the given channels."""
     json_output: dict[str, Any] = {}
-    printer, json_printer = _get_printer(console, json)
     for channel in get_channels(*channels):
         try:
             metadata = get_one_tos(
@@ -136,16 +158,18 @@ def render_view(
     return 0
 
 
+@printable
 def render_accept(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = NULL,
-    console: Console | None = None,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
 ) -> int:
     """Display acceptance of the ToS for the given channels."""
     json_output: dict[str, Any] = {}
-    printer, json_printer = _get_printer(console, json)
     for channel in get_channels(*channels):
         try:
             metadata = accept_tos(
@@ -165,16 +189,18 @@ def render_accept(
     return 0
 
 
+@printable
 def render_reject(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = NULL,
-    console: Console | None = None,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
 ) -> int:
     """Display rejection of the ToS for the given channels."""
     json_output: dict[str, Any] = {}
-    printer, json_printer = _get_printer(console, json)
     for channel in get_channels(*channels):
         try:
             metadata = reject_tos(
@@ -240,6 +266,7 @@ def _gather_tos(
     return accepted, rejected, channel_metadatas
 
 
+@printable
 def render_interactive(  # noqa: C901
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
@@ -247,10 +274,10 @@ def render_interactive(  # noqa: C901
     json: bool = NULL,
     console: Console | None = None,
     auto_accept_tos: bool,
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
 ) -> int:
     """Prompt user to accept or reject ToS for channels."""
-    printer, json_printer = _get_printer(console, json)
-
     printer("[bold blue]Gathering channels...")
     accepted, rejected, channel_metadatas = _gather_tos(
         *channels,
@@ -309,7 +336,14 @@ def render_interactive(  # noqa: C901
     return 0
 
 
-def render_info(*, json: bool = NULL, console: Console | None = None) -> int:
+@printable
+def render_info(
+    *,
+    json: bool = NULL,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
+) -> int:
     """Display information about the ToS cache."""
     data: dict[str, str | tuple[str, ...]] = {}
     data["SEARCH_PATH"] = SEARCH_PATH
@@ -320,7 +354,6 @@ def render_info(*, json: bool = NULL, console: Console | None = None) -> int:
         relative_dir = CACHE_DIR
     data["CACHE_DIR"] = str(relative_dir)
 
-    printer, json_printer = _get_printer(console, json)
     if json:
         json_printer(data=data)
     else:
@@ -337,6 +370,7 @@ def render_info(*, json: bool = NULL, console: Console | None = None) -> int:
     return 0
 
 
+@printable
 def render_clean(
     cache: bool,
     tos: bool,
@@ -344,7 +378,9 @@ def render_clean(
     *,
     tos_root: str | os.PathLike[str] | Path,
     json: bool = NULL,
-    console: Console | None = None,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
 ) -> int:
     """Clean the ToS cache directories."""
     if not (all or cache or tos):
@@ -353,7 +389,6 @@ def render_clean(
         )
 
     json_output: dict[str, Any] = {}
-    printer, json_printer = _get_printer(console, json)
     if all or cache:
         json_output["cache"] = cache_files = list(map(str, clean_cache()))
         printer(f"Removed {len(cache_files)} cache files.")
