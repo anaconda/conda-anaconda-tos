@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import json
 import sys
 from contextlib import nullcontext
 from datetime import datetime, timezone
@@ -49,6 +50,13 @@ def test_render_view(
     ]
     # assert not err  # server log is output to stderr
 
+    render_view(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
+    out, err = capsys.readouterr()
+    view_json = json.loads(out)
+    for tos in view_json.values():
+        assert tos["text"] == tos_metadata.text
+    # assert not err  # server log is output to stderr
+
     render_view(sample_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
@@ -73,6 +81,13 @@ def test_render_accept(
     assert tos_lines == [f"accepted ToS for {tos_channel}"]
     # assert not err  # server log is output to stderr
 
+    render_accept(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
+    out, err = capsys.readouterr()
+    accept_json = json.loads(out)
+    for tos in accept_json.values():
+        assert tos["tos_accepted"] is True
+    # assert not err  # server log is output to stderr
+
     render_accept(sample_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
@@ -95,6 +110,13 @@ def test_render_reject(
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [f"rejected ToS for {tos_channel}"]
+    # assert not err  # server log is output to stderr
+
+    render_reject(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
+    out, err = capsys.readouterr()
+    reject_json = json.loads(out)
+    for tos in reject_json.values():
+        assert tos["tos_accepted"] is False
     # assert not err  # server log is output to stderr
 
     render_reject(sample_channel, tos_root=tmp_path, cache_timeout=None)
@@ -251,6 +273,14 @@ def test_render_info(capsys: CaptureFixture) -> None:
         assert path in out
 
 
+def test_render_info_json(capsys: CaptureFixture) -> None:
+    render_info(json=True)
+    out, err = capsys.readouterr()
+    info_json = json.loads(out)
+    for path in info_json["SEARCH_PATH"]:
+        assert path in out
+
+
 def test_render_list(
     tos_channel: Channel,
     tos_metadata: RemoteToSMetadata,
@@ -269,6 +299,15 @@ def test_render_list(
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
+    # assert not err  # server log is output to stderr
+
+    render_list(
+        tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=True, json=True
+    )
+    out, err = capsys.readouterr()
+    list_json = json.loads(out)
+    for tos in list_json.values():
+        assert "path" in tos
     # assert not err  # server log is output to stderr
 
     tos_metadata.version = datetime.now(tz=timezone.utc)

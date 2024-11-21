@@ -12,6 +12,7 @@ from conda.base.context import context
 from conda.cli.helpers import add_parser_prefix, add_parser_verbose
 from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
+from conda.common.constants import NULL
 from conda.plugins import (
     CondaPreCommand,
     CondaRequestHeader,
@@ -120,6 +121,16 @@ def _add_cache(parser: ArgumentParser) -> None:
     parser.set_defaults(cache_timeout=DEFAULT_CACHE_TIMEOUT)
 
 
+def _add_json(parser: ArgumentParser) -> None:
+    # TODO: replace with conda.cli.helpers.add_parser_json
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        default=NULL,
+        help="Report all output as json. Suitable for using conda programmatically.",
+    )
+
+
 def configure_parser(parser: ArgumentParser) -> None:
     """Configure the parser for the `tos` subcommand."""
     # conda tos --version
@@ -136,6 +147,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     add_parser_prefix(parser)
     _add_location(parser)
     _add_cache(parser)
+    _add_json(parser)
     add_parser_verbose(parser)
 
     # conda tos <COMMAND>
@@ -158,6 +170,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     add_parser_prefix(accept_parser)
     _add_location(accept_parser)
     _add_cache(accept_parser)
+    _add_json(accept_parser)
 
     # conda tos reject
     reject_parser = subparsers.add_parser(
@@ -171,6 +184,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     add_parser_prefix(reject_parser)
     _add_location(reject_parser)
     _add_cache(reject_parser)
+    _add_json(reject_parser)
 
     # conda tos view
     view_parser = subparsers.add_parser(
@@ -184,6 +198,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     add_parser_prefix(view_parser)
     _add_location(view_parser)
     _add_cache(view_parser)
+    _add_json(view_parser)
 
     # conda tos interactive
     interactive_parser = subparsers.add_parser(
@@ -197,15 +212,17 @@ def configure_parser(parser: ArgumentParser) -> None:
     add_parser_prefix(interactive_parser)
     _add_location(interactive_parser)
     _add_cache(interactive_parser)
+    _add_json(interactive_parser)
 
     # conda tos info
-    subparsers.add_parser(
+    info_parser = subparsers.add_parser(
         "info",
         help=(
             "Display information about the ToS plugin "
             "(e.g., search path and cache directory)."
         ),
     )
+    _add_json(info_parser)
 
     # conda tos clean
     clean_parser = subparsers.add_parser(
@@ -227,6 +244,7 @@ def configure_parser(parser: ArgumentParser) -> None:
         action="store_true",
         help="Invoke both `--cache` and `--tos`.",
     )
+    _add_json(clean_parser)
 
 
 def execute(args: Namespace) -> int:
@@ -247,7 +265,7 @@ def execute(args: Namespace) -> int:
         kwargs["auto_accept_tos"] = context.plugins.auto_accept_tos
     elif args.cmd == "info":
         # refactor into `conda info` plugin (when possible)
-        return render_info(console=console)
+        return render_info(json=context.json, console=console)
     elif args.cmd == "clean":
         # refactor into `conda clean` plugin (when possible)
         return render_clean(
@@ -255,6 +273,7 @@ def execute(args: Namespace) -> int:
             tos=args.tos,
             all=args.all,
             tos_root=args.tos_root,
+            json=context.json,
             console=console,
         )
     else:
@@ -266,6 +285,7 @@ def execute(args: Namespace) -> int:
         *context.channels,
         tos_root=args.tos_root,
         cache_timeout=args.cache_timeout,
+        json=context.json,
         console=console,
         **kwargs,
     )
@@ -304,6 +324,7 @@ def _pre_command_check_tos(_command: str) -> None:
         *context.channels,
         tos_root=DEFAULT_TOS_ROOT,
         cache_timeout=DEFAULT_CACHE_TIMEOUT,
+        json=context.json,
         auto_accept_tos=context.plugins.auto_accept_tos,
     )
 
