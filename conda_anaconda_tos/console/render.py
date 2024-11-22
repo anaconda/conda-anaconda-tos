@@ -294,7 +294,7 @@ def render_interactive(  # noqa: C901
 
     non_interactive = []
     for channel, metadata in channel_metadatas:
-        if auto_accept_tos or always_yes:
+        if auto_accept_tos:
             # auto_accept_tos overrides any other setting
             printer(f"[bold yellow]ToS auto accepted for {channel}")
             accepted[channel.base_url] = accept_tos(
@@ -310,8 +310,8 @@ def render_interactive(  # noqa: C901
                 tos_root=tos_root,
                 cache_timeout=cache_timeout,
             ).metadata
-        elif json:
-            # json output doesn't support interactive prompts
+        elif json or always_yes:
+            # --json and --yes doesn't support interactive prompts
             non_interactive.append(channel)
         elif _prompt_acceptance(channel, metadata, console):
             # user manually accepted the ToS
