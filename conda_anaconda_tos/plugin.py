@@ -263,6 +263,7 @@ def execute(args: Namespace) -> int:
     elif args.cmd == "interactive":
         action = render_interactive
         kwargs["auto_accept_tos"] = context.plugins.auto_accept_tos
+        kwargs["always_yes"] = context.always_yes
     elif args.cmd == "info":
         # refactor into `conda info` plugin (when possible)
         return render_info(json=context.json, console=console)
@@ -326,6 +327,7 @@ def _pre_command_check_tos(_command: str) -> None:
         cache_timeout=DEFAULT_CACHE_TIMEOUT,
         json=context.json,
         auto_accept_tos=context.plugins.auto_accept_tos,
+        always_yes=context.always_yes,
     )
 
 
