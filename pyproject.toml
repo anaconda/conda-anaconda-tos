@@ -18,7 +18,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "conda >24.9.2",
+  "conda >=24.11",
   "rich",
   "pydantic",
 ]

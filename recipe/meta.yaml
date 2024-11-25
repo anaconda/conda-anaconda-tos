@@ -22,14 +22,14 @@ requirements:
     - hatch-vcs >=0.2.0
   run:
     - python >=3.9
-    - conda >24.9.2
+    - conda >=24.11
     - rich
     - pydantic
 
 test:
   requires:
     - pip
-    - conda >24.9.2
+    - conda
   imports:
     - conda_anaconda_tos
   commands:
