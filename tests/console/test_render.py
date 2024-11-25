@@ -177,7 +177,7 @@ def test_render_interactive(
             [
                 "CI detected...",
                 f"Terms of Service implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else []
@@ -200,7 +200,7 @@ def test_render_interactive(
             [
                 "CI detected...",
                 f"Terms of Service implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else [
@@ -241,7 +241,7 @@ def test_render_interactive(
             [
                 "CI detected...",
                 f"Terms of Service implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else [
@@ -288,7 +288,7 @@ def test_render_interactive(
             [
                 "CI detected...",
                 f"Terms of Service implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else [
