@@ -29,7 +29,7 @@ requirements:
 test:
   requires:
     - pip
-    - conda >=24.11
+    - conda
   imports:
     - conda_anaconda_tos
   commands:
