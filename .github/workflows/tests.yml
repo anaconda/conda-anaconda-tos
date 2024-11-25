@@ -114,6 +114,7 @@ jobs:
           architecture: ${{ runner.arch }}
           pkgs-dirs: ${{ env.CONDA_PKGS_DIR }}
           installation-dir: ${{ env.CONDA_INSTALL_DIR }}
+          channels: defaults
 
       - name: Conda Install
         run: >
