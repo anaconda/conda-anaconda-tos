@@ -83,11 +83,7 @@ def _add_location(parser: ArgumentParser) -> None:
     location_mutex = location_group.add_mutually_exclusive_group()
     for flag, value, text in (
         ("--site", SITE_TOS_ROOT, "System-wide storage location."),
-        (
-            "--system",
-            SYSTEM_TOS_ROOT,
-            "Conda installation storage location.",
-        ),
+        ("--system", SYSTEM_TOS_ROOT, "Conda installation storage location."),
         ("--user", USER_TOS_ROOT, "User storage location."),
         ("--env", ENV_TOS_ROOT, "Conda environment storage location."),
     ):

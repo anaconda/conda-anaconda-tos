@@ -63,8 +63,7 @@ def get_one_tos(
         # no local ToS metadata
         return RemotePair(metadata=remote_metadata)
     else:
-        # return local metadata,
-        # include remote metadata if newer
+        # return local metadata, include remote metadata if newer
         if not remote_metadata or local_pair.metadata >= remote_metadata:
             return local_pair
         return LocalPair(
@@ -87,8 +86,7 @@ def get_stored_tos(
             # CondaToSMissingError: no remote metadata
             continue
 
-        # yield local metadata,
-        # include remote metadata if newer
+        # yield local metadata, include remote metadata if newer
         if local_pair.metadata >= remote_metadata:
             yield channel, local_pair
         else:
