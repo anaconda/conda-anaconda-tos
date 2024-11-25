@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Low-level remote (the "raw" endpoint JSON) ToS metadata management."""
+"""Low-level remote (the "raw" endpoint JSON) Terms of Service metadata management."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ ENDPOINT: Final = "tos.json"
 
 
 def get_endpoint(channel: str | Channel) -> Response:
-    """Get the ToS endpoint for the given channel."""
+    """Get the metadata endpoint for the given channel."""
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError(
@@ -47,8 +47,9 @@ def get_endpoint(channel: str | Channel) -> Response:
     saved_token_setting = context.add_anaconda_token
     try:
         # do not inject conda/binstar token into URL for two reasons:
-        # 1. ToS shouldn't be a protected endpoint
-        # 2. CondaHttpAuth.add_binstar_token adds subdir to the URL which ToS don't have
+        # 1. Metadata endpoint shouldn't be a protected endpoint
+        # 2. CondaHttpAuth.add_binstar_token adds subdir to the URL
+        #    which the metadata endpoint doesn't have
         context.add_anaconda_token = False
         response = session.get(
             url,
@@ -60,7 +61,7 @@ def get_endpoint(channel: str | Channel) -> Response:
         )
         response.raise_for_status()
     except RequestException as exc:
-        # RequestException: failed to get ToS endpoint
+        # RequestException: failed to get metadata endpoint
         raise CondaToSMissingError(channel) from exc
     finally:
         context.add_anaconda_token = saved_token_setting
@@ -100,7 +101,7 @@ def write_cached_endpoint(
     channel: str | Channel,
     metadata: RemoteToSMetadata | None,
 ) -> Path:
-    """Write the ToS cache for the given channel."""
+    """Write the metadata cache for the given channel."""
     # argument validation/coercion
     path = get_cache_path(channel)
     if metadata and not isinstance(metadata, RemoteToSMetadata):
@@ -125,7 +126,7 @@ def get_remote_metadata(
     *,
     cache_timeout: int | float | None = None,
 ) -> RemoteToSMetadata:
-    """Get the ToS metadata for the given channel."""
+    """Get the metadata metadata for the given channel."""
     # argument validation/coercion
     cache = get_cached_endpoint(channel, cache_timeout=cache_timeout)
 
@@ -152,7 +153,7 @@ def get_remote_metadata(
     try:
         metadata = RemoteToSMetadata(**get_endpoint(channel).json())
     except CondaToSMissingError:
-        # CondaToSMissingError: no ToS for this channel
+        # CondaToSMissingError: no Terms of Service for this channel
         # create an empty cache to prevent repeated requests
         write_cached_endpoint(channel, None)
         raise

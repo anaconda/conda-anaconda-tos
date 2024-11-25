@@ -44,7 +44,7 @@ if TYPE_CHECKING:
     from typing import Callable
 
 
-#: Default ToS storage location.
+#: Default metadata storage location.
 DEFAULT_TOS_ROOT = USER_TOS_ROOT
 
 #: Default cache timeout in seconds.
@@ -56,10 +56,10 @@ FIELD_SEPARATOR = ";"
 #: Key-value separator for request header
 KEY_SEPARATOR = "="
 
-#: ToS acceptance request header
+#: Terms of Service acceptance request header
 TOS_ACCEPT_HEADER = "Anaconda-ToS-Accept"
 
-#: Hosts to which the ToS header is added
+#: Hosts to which the Terms of Service header is added
 HOSTS = {"repo.anaconda.com"}
 
 
@@ -69,7 +69,7 @@ def _add_channel(parser: ArgumentParser) -> None:
         "-c",
         "--channel",
         action="append",
-        help="Additional channels to search for ToS.",
+        help="Additional channels to search for Terms of Service.",
     )
     channel_group.add_argument(
         "--override-channels",
@@ -79,13 +79,13 @@ def _add_channel(parser: ArgumentParser) -> None:
 
 
 def _add_location(parser: ArgumentParser) -> None:
-    location_group = parser.add_argument_group("Local ToS Storage Location")
+    location_group = parser.add_argument_group("Local Metadata Storage Location")
     location_mutex = location_group.add_mutually_exclusive_group()
     for flag, value, text in (
-        ("--site", SITE_TOS_ROOT, "System-wide ToS storage location."),
-        ("--system", SYSTEM_TOS_ROOT, "Conda installation ToS storage location."),
-        ("--user", USER_TOS_ROOT, "User ToS storage location."),
-        ("--env", ENV_TOS_ROOT, "Conda environment ToS storage location."),
+        ("--site", SITE_TOS_ROOT, "System-wide storage location."),
+        ("--system", SYSTEM_TOS_ROOT, "Conda installation storage location."),
+        ("--user", USER_TOS_ROOT, "User storage location."),
+        ("--env", ENV_TOS_ROOT, "Conda environment storage location."),
     ):
         location_mutex.add_argument(
             flag,
@@ -97,7 +97,7 @@ def _add_location(parser: ArgumentParser) -> None:
     location_mutex.add_argument(
         "--tos-root",
         action="store",
-        help="Custom ToS storage location.",
+        help="Custom storage location.",
     )
     parser.set_defaults(tos_root=DEFAULT_TOS_ROOT)
 
@@ -109,14 +109,14 @@ def _add_cache(parser: ArgumentParser) -> None:
         "--cache-timeout",
         action="store",
         type=int,
-        help="Cache timeout (in seconds) to check for ToS updates.",
+        help="Cache timeout (in seconds) to check for Terms of Service updates.",
     )
     cache_mutex.add_argument(
         "--ignore-cache",
         dest="cache_timeout",
         action="store_const",
         const=0,
-        help="Ignore the cache and always check for ToS updates.",
+        help="Ignore the cache and always check for Terms of Service updates.",
     )
     parser.set_defaults(cache_timeout=DEFAULT_CACHE_TIMEOUT)
 
@@ -162,7 +162,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     accept_parser = subparsers.add_parser(
         "accept",
         help=(
-            "Accept the ToS for all active channels "
+            "Accept the Terms of Service for all active channels "
             "(default, .condarc, and/or those specified via --channel)."
         ),
     )
@@ -176,7 +176,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     reject_parser = subparsers.add_parser(
         "reject",
         help=(
-            "Reject the ToS for all active channels "
+            "Reject the Terms of Service for all active channels "
             "(default, .condarc, and/or those specified via --channel)."
         ),
     )
@@ -190,7 +190,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     view_parser = subparsers.add_parser(
         "view",
         help=(
-            "View the ToS for all active channels "
+            "View the Terms of Service for all active channels "
             "(default, .condarc, and/or those specified via --channel)."
         ),
     )
@@ -204,7 +204,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     interactive_parser = subparsers.add_parser(
         "interactive",
         help=(
-            "Interactively accept/reject/view ToS for all active channels "
+            "Interactively accept/reject/view Terms of Service for all active channels "
             "(default, .condarc, and/or those specified via --channel)."
         ),
     )
@@ -218,7 +218,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     info_parser = subparsers.add_parser(
         "info",
         help=(
-            "Display information about the ToS plugin "
+            "Display information about the plugin "
             "(e.g., search path and cache directory)."
         ),
     )
@@ -227,17 +227,17 @@ def configure_parser(parser: ArgumentParser) -> None:
     # conda tos clean
     clean_parser = subparsers.add_parser(
         "clean",
-        help="Clean the ToS cache directories.",
+        help="Clean the cache directories.",
     )
     clean_parser.add_argument(
         "--cache",
         action="store_true",
-        help="Remove all ToS cache files.",
+        help="Remove all cache files.",
     )
     clean_parser.add_argument(
         "--tos",
         action="store_true",
-        help="Remove all ToS acceptances/rejections.",
+        help="Remove all acceptances/rejections.",
     )
     clean_parser.add_argument(
         "--all",
@@ -301,10 +301,12 @@ def conda_subcommands() -> Iterator[CondaSubcommand]:
         summary=(
             "A subcommand for viewing, accepting, rejecting, and otherwise interacting "
             "with a channel's Terms of Service (ToS). This plugin periodically checks "
-            "for updated ToS for the active/selected channels. Channels with a ToS "
-            "will need to be accepted or rejected prior to use. Conda will only allow "
-            "package installation from channels without a ToS or with an accepted ToS. "
-            "Attempting to use a channel with a rejected ToS will result in an error."
+            "for updated Terms of Service for the active/selected channels. "
+            "Channels with a Terms of Service will need to be accepted or rejected "
+            "prior to use. Conda will only allow package installation from channels "
+            "without a Terms of Service or with an accepted Terms of Service. "
+            "Attempting to use a channel with a rejected Terms of Service will result "
+            "in an error."
         ),
         configure_parser=configure_parser,
     )
@@ -384,7 +386,7 @@ def conda_request_headers(host: str, path: str) -> Iterator[CondaRequestHeader]:
     if (
         # only add the header to anaconda.com endpoints
         host in HOSTS
-        # only add the ToS header for non-ToS endpoints
+        # only add the Terms of Service header for non-Terms of Service endpoints
         and not path.endswith(f"/{ENDPOINT}")
     ):
         yield CondaRequestHeader(

@@ -54,8 +54,7 @@ To test with a local server use `tests/http_test_server.py` (see below) and use 
 (conda-tos) $ $CONDA_PREFIX/bin/conda tos --channel=http://127.0.0.1:53095/
 ```
 
-
-#### A sample channel without a ToS
+### A sample channel without Terms of Service
 
 ```bash
 $ conda activate conda-tos
@@ -64,7 +63,7 @@ Serving HTTP at http://127.0.0.1:54115...
 Press Enter or Ctrl-C to exit.
 ```
 
-#### A sample channel with a ToS
+### A sample channel with Terms of Service
 
 ```bash
 $ conda activate conda-tos

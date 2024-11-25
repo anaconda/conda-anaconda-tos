@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from conda.models.channel import Channel
 
 
-TOS_OUTDATED: Final = "* ToS version(s) are outdated."
+TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
 
 def printable(func: Callable[..., int]) -> Callable[..., int]:
@@ -79,7 +79,7 @@ def render_list(
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
-    """Display listing of unaccepted, accepted, and rejected ToS."""
+    """Display listing of unaccepted, accepted, and rejected Terms of Service."""
     table = Table()
     table.add_column("Channel")
     table.add_column("Version")
@@ -135,7 +135,7 @@ def render_view(
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
-    """Display the ToS text for the given channels."""
+    """Display the Terms of Service text for the given channels."""
     json_output: dict[str, Any] = {}
     for channel in get_channels(*channels):
         try:
@@ -146,10 +146,10 @@ def render_view(
             ).metadata
         except CondaToSMissingError:
             json_output[channel.base_url] = None
-            printer(f"no ToS for {channel}")
+            printer(f"no Terms of Service for {channel}")
         else:
             json_output[channel.base_url] = metadata.model_dump(mode="json")
-            printer(f"viewing ToS for {channel}:")
+            printer(f"viewing Terms of Service for {channel}:")
             printer(metadata.text)
 
     if json:
@@ -167,7 +167,7 @@ def render_accept(
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
-    """Display acceptance of the ToS for the given channels."""
+    """Display acceptance of the Terms of Service for the given channels."""
     json_output: dict[str, Any] = {}
     for channel in get_channels(*channels):
         try:
@@ -178,10 +178,10 @@ def render_accept(
             ).metadata
         except CondaToSMissingError:
             json_output[channel.base_url] = None
-            printer(f"ToS not found for {channel}")
+            printer(f"Terms of Service not found for {channel}")
         else:
             json_output[channel.base_url] = metadata.model_dump(mode="json")
-            printer(f"accepted ToS for {channel}")
+            printer(f"accepted Terms of Service for {channel}")
 
     if json:
         json_printer(data=json_output)
@@ -198,7 +198,7 @@ def render_reject(
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
-    """Display rejection of the ToS for the given channels."""
+    """Display rejection of the Terms of Service for the given channels."""
     json_output: dict[str, Any] = {}
     for channel in get_channels(*channels):
         try:
@@ -209,10 +209,10 @@ def render_reject(
             ).metadata
         except CondaToSMissingError:
             json_output[channel.base_url] = None
-            printer(f"ToS not found for {channel}")
+            printer(f"Terms of Service not found for {channel}")
         else:
             json_output[channel.base_url] = metadata.model_dump(mode="json")
-            printer(f"rejected ToS for {channel}")
+            printer(f"rejected Terms of Service for {channel}")
 
     if json:
         json_printer(data=json_output)
@@ -252,11 +252,11 @@ def _gather_tos(
             pair = get_one_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
             metadata = pair.remote or pair.metadata
         except CondaToSMissingError:
-            # CondaToSMissingError: no ToS metadata found
+            # CondaToSMissingError: no metadata found
             continue
 
         if isinstance(metadata, RemoteToSMetadata):
-            # ToS hasn't been accepted or rejected yet
+            # Terms of Service haven't been accepted or rejected yet
             channel_metadatas.append((channel, metadata))
         elif metadata.tos_accepted:
             accepted[channel.base_url] = metadata.model_dump(mode="json")
@@ -277,7 +277,7 @@ def render_interactive(  # noqa: C901
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
-    """Prompt user to accept or reject ToS for channels."""
+    """Prompt user to accept or reject Terms of Service for channels."""
     printer("[bold blue]Gathering channels...")
     accepted, rejected, channel_metadatas = _gather_tos(
         *channels,
@@ -287,7 +287,7 @@ def render_interactive(  # noqa: C901
 
     printer("[bold yellow]Reviewing channels...")
     if rejected:
-        printer(f"[bold red]{len(rejected)} channel ToS rejected")
+        printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
     elif CI:
         printer("[bold yellow]CI detected...")
@@ -304,7 +304,7 @@ def render_interactive(  # noqa: C901
             ).metadata
         elif CI:
             # CI is the same as auto_accept_tos but with a warning
-            printer(f"[bold yellow]ToS implicitly accepted for {channel}")
+            printer(f"[bold yellow]Terms of Service implicitly accepted for {channel}")
             accepted[channel.base_url] = accept_tos(
                 channel,
                 tos_root=tos_root,
@@ -314,23 +314,23 @@ def render_interactive(  # noqa: C901
             # --json and --yes doesn't support interactive prompts
             non_interactive.append(channel)
         elif _prompt_acceptance(channel, metadata, console):
-            # user manually accepted the ToS
+            # user manually accepted the Terms of Service
             accepted[channel.base_url] = accept_tos(
                 channel,
                 tos_root=tos_root,
                 cache_timeout=cache_timeout,
             ).metadata
         else:
-            # user manually rejected the ToS
+            # user manually rejected the Terms of Service
             reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
             rejected.append(channel)
 
     if non_interactive:
         raise CondaToSNonInteractiveError(*non_interactive)
     elif rejected:
-        printer(f"[bold red]{len(rejected)} channel ToS rejected")
+        printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
-    printer(f"[bold green]{len(accepted)} channel ToS accepted")
+    printer(f"[bold green]{len(accepted)} channel Terms of Service accepted")
 
     if json:
         json_printer(data=accepted)
@@ -345,7 +345,7 @@ def render_info(
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
-    """Display information about the ToS cache."""
+    """Display information about the Terms of Service cache."""
     data: dict[str, str | tuple[str, ...]] = {}
     data["SEARCH_PATH"] = SEARCH_PATH
     try:
@@ -383,7 +383,7 @@ def render_clean(
     printer: Callable[..., None],
     json_printer: Callable[..., None],
 ) -> int:
-    """Clean the ToS cache directories."""
+    """Clean the metadata cache directories."""
     if not (all or cache or tos):
         raise ArgumentError(
             "At least one removal target must be given. See 'conda tos clean --help'."
@@ -395,7 +395,7 @@ def render_clean(
         printer(f"Removed {len(cache_files)} cache files.")
     if all or tos:
         json_output["tos"] = tos_files = list(map(str, clean_tos(tos_root)))
-        printer(f"Removed {len(tos_files)} ToS files.")
+        printer(f"Removed {len(tos_files)} Terms of Service files.")
 
     if json:
         json_printer(data=json_output)

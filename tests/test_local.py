@@ -33,7 +33,7 @@ TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
 NOW = datetime.now(tz=timezone.utc)
 REMOTE_METADATA = RemoteToSMetadata(
     version=TIMESTAMP1,
-    text=f"ToS full text\n\n{uuid4().hex}",
+    text=f"Terms of Service full text\n\n{uuid4().hex}",
     support="support.com",
     **{uuid4().hex: uuid4().hex},
 )
@@ -151,7 +151,7 @@ def test_get_local_metadatas(
     expected = write_metadata(tmp_path, CHANNEL, REMOTE_METADATA, tos_accepted=True)
     assert list(get_local_metadatas()) == [(CHANNEL, expected)]
 
-    # user ToS root is higher priority over custom ToS root
+    # user metadata root is higher priority over custom metadata root
     expected = write_metadata(
         user_tos_root,
         CHANNEL,
@@ -160,7 +160,7 @@ def test_get_local_metadatas(
     )
     assert list(get_local_metadatas()) == [(CHANNEL, expected)]
 
-    # system ToS root is highest priority
+    # system metadata root is highest priority
     expected = write_metadata(
         system_tos_root,
         CHANNEL,

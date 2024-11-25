@@ -48,7 +48,7 @@ def test_render_view(
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [
-        f"viewing ToS for {tos_channel}:",
+        f"viewing Terms of Service for {tos_channel}:",
         *tos_metadata.text.splitlines(),
     ]
     # assert not err  # server log is output to stderr
@@ -63,7 +63,7 @@ def test_render_view(
     render_view(sample_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
-    assert sample_lines == [f"no ToS for {sample_channel}"]
+    assert sample_lines == [f"no Terms of Service for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
     render_view(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=None)
@@ -81,7 +81,7 @@ def test_render_accept(
     render_accept(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
-    assert tos_lines == [f"accepted ToS for {tos_channel}"]
+    assert tos_lines == [f"accepted Terms of Service for {tos_channel}"]
     # assert not err  # server log is output to stderr
 
     render_accept(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
@@ -94,7 +94,7 @@ def test_render_accept(
     render_accept(sample_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
-    assert sample_lines == [f"ToS not found for {sample_channel}"]
+    assert sample_lines == [f"Terms of Service not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
     render_accept(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=None)
@@ -112,7 +112,7 @@ def test_render_reject(
     render_reject(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
-    assert tos_lines == [f"rejected ToS for {tos_channel}"]
+    assert tos_lines == [f"rejected Terms of Service for {tos_channel}"]
     # assert not err  # server log is output to stderr
 
     render_reject(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
@@ -125,7 +125,7 @@ def test_render_reject(
     render_reject(sample_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     sample_lines = out.splitlines()
-    assert sample_lines == [f"ToS not found for {sample_channel}"]
+    assert sample_lines == [f"Terms of Service not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
     render_reject(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=None)
@@ -158,7 +158,7 @@ def test_render_interactive(
         "Gathering channels...",
         "Reviewing channels...",
         *(["CI detected..."] if ci else []),
-        "0 channel ToS accepted",
+        "0 channel Terms of Service accepted",
     ]
 
     with nullcontext() if ci else pytest.raises(CondaToSNonInteractiveError):
@@ -176,8 +176,8 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"ToS implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                f"Terms of Service implicitly accepted for {tos_channel}",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else []
@@ -199,13 +199,13 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"ToS implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                f"Terms of Service implicitly accepted for {tos_channel}",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else [
                 f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS accepted",
+                "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted",
             ]
         ),
     ]
@@ -221,7 +221,7 @@ def test_render_interactive(
         "Gathering channels...",
         "Reviewing channels...",
         *(["CI detected..."] if ci else []),
-        "1 channel ToS accepted",
+        "1 channel Terms of Service accepted",
     ]
 
     monkeypatch.setattr(sys, "stdin", StringIO("reject\n"))
@@ -240,13 +240,13 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"ToS implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                f"Terms of Service implicitly accepted for {tos_channel}",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else [
                 f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                "[(a)ccept/(r)eject/(v)iew]: 1 channel ToS rejected",
+                "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service rejected",
             ]
         ),
     ]
@@ -265,10 +265,10 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                "1 channel ToS accepted",
+                "1 channel Terms of Service accepted",
             ]
             if ci
-            else ["1 channel ToS rejected"]
+            else ["1 channel Terms of Service rejected"]
         ),
     ]
 
@@ -287,15 +287,15 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"ToS implicitly accepted for {tos_channel}",
-                "1 channel ToS accepted",
+                f"Terms of Service implicitly accepted for {tos_channel}",
+                "1 channel Terms of Service accepted",
             ]
             if ci
             else [
                 f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
                 *f"[(a)ccept/(r)eject/(v)iew]: {tos_metadata.text}".splitlines(),
                 f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                "[(a)ccept/(r)eject]: 1 channel ToS accepted",
+                "[(a)ccept/(r)eject]: 1 channel Terms of Service accepted",
             ]
         ),
     ]

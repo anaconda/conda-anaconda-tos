@@ -20,12 +20,12 @@ NULL_CHAR: Final = "[dim]-"
 
 
 def timestamp_mapping(timestamp: datetime) -> str:
-    """Map the UTC ToS timestamp to a localized human-readable string."""
+    """Map the UTC metadata timestamp to a localized human-readable string."""
     return timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 def accepted_mapping(metadata: RemoteToSMetadata | LocalToSMetadata) -> str:
-    """Map the ToS acceptance status to a human-readable string."""
+    """Map the metadata acceptance status to a human-readable string."""
     if isinstance(metadata, RemoteToSMetadata):
         return NULL_CHAR
 
@@ -43,13 +43,13 @@ def accepted_mapping(metadata: RemoteToSMetadata | LocalToSMetadata) -> str:
 
 
 def location_mapping(path: Path | None) -> str:
-    """Map the ToS path to a human-readable string."""
+    """Map the metadata path to a human-readable string."""
     if not path:
         return NULL_CHAR
     return str(path.parent.parent)
 
 
 def version_mapping(version: datetime, remote: RemoteToSMetadata | None) -> str:
-    """Map the ToS version to a human-readable string."""
+    """Map the metadata version to a human-readable string."""
     version_str = timestamp_mapping(version)
     return f"[bold yellow]{version_str} *" if remote else version_str

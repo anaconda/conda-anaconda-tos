@@ -40,10 +40,10 @@ REMOTE_METADATA = RemoteToSMetadata(
 
 
 def test_get_endpoint(tos_channel: Channel, sample_channel: Channel) -> None:
-    # get ToS endpoint for ToS channel
+    # get Terms of Service endpoint for Terms of Service channel
     assert get_endpoint(tos_channel).status_code == 200
 
-    # no ToS endpoint for sample channel
+    # no Terms of Service endpoint for sample channel
     with pytest.raises(CondaToSMissingError):
         get_endpoint(sample_channel)
 
@@ -120,7 +120,7 @@ def test_get_remote_metadata(
     mocker: MockerFixture,
     tmp_path: Path,
 ) -> None:
-    # get metadata of ToS channel
+    # get metadata of Terms of Service channel
     assert get_remote_metadata(tos_channel) == tos_metadata
     assert get_remote_metadata(tos_channel, cache_timeout=100) == tos_metadata
 
