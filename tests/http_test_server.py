@@ -41,7 +41,7 @@ def run_test_server(
     """
 
     class CustomRequestHandler(http.server.SimpleHTTPRequestHandler):
-        def do_GET(self):  # noqa: ANN101, ANN202, N802
+        def do_GET(self):  # noqa: ANN202, N802
             if metadata and self.path.startswith(f"/{ENDPOINT}"):
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
@@ -58,13 +58,13 @@ def run_test_server(
         allow_reuse_address = True  # Good for tests
         request_queue_size = 64  # Should be more than the number of test packages
 
-        def server_bind(self):  # noqa: ANN101, ANN202
+        def server_bind(self):  # noqa: ANN202
             # suppress exception when protocol is IPv4
             with contextlib.suppress(Exception):
                 self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
             return super().server_bind()
 
-        def finish_request(self, request, client_address):  # noqa: ANN001, ANN101, ANN202
+        def finish_request(self, request, client_address):  # noqa: ANN001, ANN202
             self.RequestHandlerClass(request, client_address, self, directory=directory)
 
     def start_server(queue):  # noqa: ANN001, ANN202

@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime  # noqa: TCH003 # needed for Pydantic model
-from pathlib import Path  # noqa: TCH003 # needed for Pydantic model
+from datetime import datetime  # noqa: TC003 # needed for Pydantic model
+from pathlib import Path  # noqa: TC003 # needed for Pydantic model
 from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict
