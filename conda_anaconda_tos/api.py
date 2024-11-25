@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""High-level API functions for interacting with a channel's ToS."""
+"""High-level API functions for interacting with a channel's Terms of Service."""
 
 from __future__ import annotations
 
@@ -44,26 +44,27 @@ def get_one_tos(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> LocalPair | RemotePair:
-    """Get the ToS metadata for the given channel."""
+    """Get the Terms of Service metadata for the given channel."""
     # fetch remote metadata
     remote_metadata = remote_exc = None
     try:
         remote_metadata = get_remote_metadata(channel, cache_timeout=cache_timeout)
     except CondaToSMissingError as exc:
-        # CondaToSMissingError: no remote ToS metadata
+        # CondaToSMissingError: no remote metadata
         remote_exc = exc
 
     # fetch local metadata
     try:
         local_pair = get_local_metadata(channel, extend_search_path=[tos_root])
     except CondaToSMissingError as exc:
-        # CondaToSMissingError: no local ToS metadata
+        # CondaToSMissingError: no local metadata
         if remote_exc:
             raise remote_exc from exc
         # no local ToS metadata
         return RemotePair(metadata=remote_metadata)
     else:
-        # return local ToS metadata, include remote ToS metadata if newer
+        # return local metadata,
+        # include remote metadata if newer
         if not remote_metadata or local_pair.metadata >= remote_metadata:
             return local_pair
         return LocalPair(
@@ -78,15 +79,16 @@ def get_stored_tos(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> Iterator[tuple[Channel, LocalPair]]:
-    """Yield all ToS metadatas."""
+    """Yield metadata of all stored Terms of Service."""
     for channel, local_pair in get_local_metadatas(extend_search_path=[tos_root]):
         try:
             remote_metadata = get_remote_metadata(channel, cache_timeout=cache_timeout)
         except CondaToSMissingError:
-            # CondaToSMissingError: no remote ToS metadata
+            # CondaToSMissingError: no remote metadata
             continue
 
-        # yield local ToS metadata, include remote ToS metadata if newer
+        # yield local metadata,
+        # include remote metadata if newer
         if local_pair.metadata >= remote_metadata:
             yield channel, local_pair
         else:
@@ -106,7 +108,7 @@ def accept_tos(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> LocalPair:
-    """Accept the ToS metadata for the given channel."""
+    """Accept the Terms of Service for the given channel."""
     pair = get_one_tos(
         channel,
         tos_root=tos_root,
@@ -122,7 +124,7 @@ def reject_tos(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> LocalPair:
-    """Reject the ToS metadata for the given channel."""
+    """Reject the Terms of Service for the given channel."""
     pair = get_one_tos(
         channel,
         tos_root=tos_root,
@@ -137,7 +139,7 @@ def get_all_tos(
     tos_root: str | os.PathLike | Path,
     cache_timeout: int | float | None,
 ) -> Iterator[tuple[Channel, LocalPair | RemotePair | None]]:
-    """List all channels and whether their ToS has been accepted."""
+    """List all channels and whether their Terms of Service have been accepted."""
     # list all active channels
     seen: set[Channel] = set()
     for channel in get_channels(*channels):
@@ -150,7 +152,7 @@ def get_all_tos(
             yield channel, None
         seen.add(channel)
 
-    # list all other ToS that have been accepted/rejected
+    # list all other channels whose Terms of Service have been accepted/rejected
     for channel, metadata_pair in get_stored_tos(
         tos_root=tos_root,
         cache_timeout=cache_timeout,
@@ -161,7 +163,7 @@ def get_all_tos(
 
 
 def clean_cache() -> Iterator[Path]:
-    """Clean all ToS cache files."""
+    """Clean all metadata cache files."""
     for path in get_cache_paths():
         try:
             path.unlink()
@@ -175,7 +177,7 @@ def clean_cache() -> Iterator[Path]:
 
 
 def clean_tos(tos_root: str | os.PathLike[str] | Path) -> Iterator[Path]:
-    """Clean all ToS directories."""
+    """Clean all metadata directories."""
     for path in get_all_channel_paths(extend_search_path=[tos_root]):
         try:
             path.unlink()

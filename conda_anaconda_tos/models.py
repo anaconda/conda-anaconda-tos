@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Models to encapsulate ToS metadata."""
+"""Models to encapsulate Terms of Service metadata."""
 
 from __future__ import annotations
 
@@ -28,11 +28,11 @@ class _ToSMetadata(BaseModel):
 
 
 class RemoteToSMetadata(_ToSMetadata):
-    """Conda ToS metadata schema for the remote endpoint."""
+    """Metadata schema for the remote endpoint."""
 
 
 class LocalToSMetadata(_ToSMetadata):
-    """Conda ToS metadata schema with acceptance fields."""
+    """Metadata schema with acceptance fields."""
 
     base_url: str
     tos_accepted: bool
@@ -48,9 +48,9 @@ class _MetadataPathPair(BaseModel):
     remote: Optional[RemoteToSMetadata] = None  # noqa: UP007
 
     def __lt__(self: Self, other: _MetadataPathPair) -> bool:
-        """Compare the ToS metadata version.
+        """Compare the metadata version.
 
-        Critical for sorting a list of ToS metadata path pairs.
+        Critical for sorting a list of metadata path pairs.
         """
         if not isinstance(other, _MetadataPathPair):
             return NotImplemented
@@ -58,7 +58,7 @@ class _MetadataPathPair(BaseModel):
 
 
 class RemotePair(_MetadataPathPair):
-    """Tuple of remote ToS metadata and no path."""
+    """Tuple of remote metadata and no path."""
 
     metadata: RemoteToSMetadata
     path: None = None
@@ -66,7 +66,7 @@ class RemotePair(_MetadataPathPair):
 
 
 class LocalPair(_MetadataPathPair):
-    """Tuple of local ToS metadata and path."""
+    """Tuple of local metadata and path."""
 
     metadata: LocalToSMetadata
     path: Path

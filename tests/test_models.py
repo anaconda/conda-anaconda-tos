@@ -25,12 +25,12 @@ TIMESTAMP1: Final = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
 TIMESTAMP2: Final = datetime(2024, 11, 1, tzinfo=timezone.utc)  # "version 2"
 REMOTE_METADATA = RemoteToSMetadata(
     version=TIMESTAMP2,
-    text="ToS",
+    text="Terms of Service",
     support="support.com",
 )
 LOCAL_METADATA = LocalToSMetadata(
     version=TIMESTAMP1,
-    text="ToS",
+    text="Terms of Service",
     support="support.com",
     base_url="url",
     tos_accepted=True,
@@ -47,12 +47,12 @@ def _filter_none_keys(kwargs: dict[str, Any]) -> dict[str, Any]:
     [
         pytest.param(None, None, None, True, id="missing"),
         pytest.param(1, None, None, True, id="only version"),
-        pytest.param(None, "ToS", None, True, id="only text"),
+        pytest.param(None, "Terms of Service", None, True, id="only text"),
         pytest.param(None, None, "support.com", True, id="only text"),
         pytest.param(object(), None, None, True, id="invalid version"),
         pytest.param(None, object(), None, True, id="invalid text"),
         pytest.param(None, None, object(), True, id="invalid text"),
-        pytest.param(1, "ToS", "support.com", False, id="complete"),
+        pytest.param(1, "Terms of Service", "support.com", False, id="complete"),
     ],
 )
 def test_RemoteToSMetadata(  # noqa: N802
@@ -94,7 +94,7 @@ def test_LocalToSMetadata(  # noqa: N802
 ) -> None:
     kwargs = {
         "version": 1,  # tested in test_RemoteToSMetadata
-        "text": "ToS",  # tested in test_RemoteToSMetadata
+        "text": "Terms of Service",  # tested in test_RemoteToSMetadata
         "support": "support.com",  # tested in test_RemoteToSMetadata
         "base_url": base_url,
         "tos_accepted": tos_accepted,

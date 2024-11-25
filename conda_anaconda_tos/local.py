@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-"""Low-level local (acceptance & rejection) ToS metadata management."""
+"""Low-level local (acceptance & rejection) Terms of Service metadata management."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def write_metadata(
     # kwargs extends/overrides metadata fields
     **kwargs: Any,  # noqa: ANN401
 ) -> LocalPair:
-    """Write the ToS metadata to file."""
+    """Write the metadata to file."""
     # argument validation/coercion
     channel = Channel(channel)
     if not channel.base_url:
@@ -60,7 +60,7 @@ def write_metadata(
 
 
 def read_metadata(path: str | os.PathLike[str] | Path) -> LocalPair | None:
-    """Load the ToS metadata from file."""
+    """Load the metadata from file."""
     try:
         return LocalPair(
             metadata=LocalToSMetadata.model_validate_json(get_path(path).read_text()),
@@ -80,8 +80,8 @@ def get_local_metadata(
     *,
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> LocalPair:
-    """Get the latest ToS metadata for the given channel."""
-    # find all ToS metadata files for the given channel
+    """Get the latest metadata for the given channel."""
+    # find all metadata files for the given channel
     metadata_pairs = [
         metadata_pair
         for path in get_channel_paths(channel, extend_search_path=extend_search_path)
@@ -90,7 +90,7 @@ def get_local_metadata(
 
     # return if no metadata found
     if not metadata_pairs:
-        raise CondaToSMissingError(f"No ToS metadata found for {channel}")
+        raise CondaToSMissingError(f"No Terms of Service metadata found for {channel}")
 
     # reverse to order from lowest to highest priority
     metadata_pairs.reverse()
@@ -103,7 +103,7 @@ def get_local_metadatas(
     *,
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[tuple[Channel, LocalPair]]:
-    """Yield all ToS metadata."""
+    """Yield all metadata."""
     # group metadata by channel
     grouped_metadatas: dict[Channel, list[LocalPair]] = {}
     for path in get_all_channel_paths(extend_search_path=extend_search_path):

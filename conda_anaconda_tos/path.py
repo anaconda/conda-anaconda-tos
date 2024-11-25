@@ -22,19 +22,19 @@ if TYPE_CHECKING:
     from datetime import datetime
     from typing import Final
 
-#: Site ToS directory. This is the highest priority location.
+#: Site metadata directory. This is the highest priority location.
 SITE_TOS_ROOT: Final = "C:/ProgramData/conda/tos" if on_win else "/etc/conda/tos"
 
-#: System ToS directory. Located in the conda installation.
+#: System metadata directory. Located in the conda installation.
 SYSTEM_TOS_ROOT: Final = "$CONDA_ROOT/conda-meta/tos"
 
-#: User ToS directory. Located in the user home directory.
+#: User metadata directory. Located in the user home directory.
 USER_TOS_ROOT: Final = "~/.conda/tos"
 
-#: Environment ToS directory. Located in the current conda environment.
+#: Environment metadata directory. Located in the current conda environment.
 ENV_TOS_ROOT: Final = "$CONDA_PREFIX/conda-meta/tos"
 
-#: Search path for ToS directories.
+#: Search path for metadata directories.
 SEARCH_PATH: Final = tuple(
     filter(
         None,
@@ -52,10 +52,10 @@ SEARCH_PATH: Final = tuple(
     ),
 )
 
-#: ToS file glob pattern.
+#: Metadata file glob pattern.
 TOS_GLOB: Final = "*.json"
 
-#: OS and user specific ToS cache directory.
+#: OS and user specific metadata cache directory.
 CACHE_DIR: Final = Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
 
 
@@ -87,7 +87,7 @@ def get_path(path: str | os.PathLike[str] | Path) -> Path:
 def get_search_path(
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
-    """Get all root ToS directories ordered from highest to lowest priority."""
+    """Get all root metadata paths ordered from highest to lowest priority."""
     seen: set[Path] = set()
     for tos_root in (*SEARCH_PATH, *(extend_search_path or ())):
         if (path := get_path(tos_root)).is_dir() and path not in seen:
@@ -99,7 +99,7 @@ def get_tos_dir(
     tos_root: str | os.PathLike[str] | Path,
     channel: str | Channel,
 ) -> Path:
-    """Get the ToS directory for the given channel."""
+    """Get the metadata directory for the given channel."""
     return get_path(tos_root) / hash_channel(channel)
 
 
@@ -108,14 +108,14 @@ def get_metadata_path(
     channel: str | Channel,
     version: datetime,
 ) -> Path:
-    """Get the ToS file path for the given channel and version."""
+    """Get the metadata file path for the given channel and version."""
     return get_tos_dir(tos_root, channel) / f"{version.timestamp()}.json"
 
 
 def get_all_channel_paths(
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
-    """Get all local ToS file paths."""
+    """Get all local metadata file paths."""
     for path in get_search_path(extend_search_path):
         yield from get_path(path).glob(f"*/{TOS_GLOB}")
 
@@ -125,16 +125,16 @@ def get_channel_paths(
     *,
     extend_search_path: Iterable[str | os.PathLike[str] | Path] | None = None,
 ) -> Iterator[Path]:
-    """Get all local ToS file paths for the given channel."""
+    """Get all local metadata file paths for the given channel."""
     for path in get_search_path(extend_search_path):
         yield from get_tos_dir(path, channel).glob(TOS_GLOB)
 
 
 def get_cache_path(channel: str | Channel) -> Path:
-    """Get the ToS cache file path for the given channel."""
+    """Get the metadata cache file path for the given channel."""
     return CACHE_DIR / f"{hash_channel(channel)}.cache"
 
 
 def get_cache_paths() -> Iterator[Path]:
-    """Get all local ToS cache file paths."""
+    """Get all local metadata cache file paths."""
     return CACHE_DIR.glob("*.cache")

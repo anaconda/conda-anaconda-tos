@@ -77,9 +77,9 @@ def test_subcommand_tos_view(
 
     out, err, code = conda_cli("tos", "view")
     assert out.splitlines() == [
-        f"viewing ToS for {tos_channel}:",
+        f"viewing Terms of Service for {tos_channel}:",
         *tos_metadata.text.splitlines(),
-        f"no ToS for {sample_channel}",
+        f"no Terms of Service for {sample_channel}",
     ]
     # assert not err  # server log is output to stderr
     assert not code
@@ -94,8 +94,8 @@ def test_subcommand_tos_accept(
 
     out, err, code = conda_cli("tos", "accept", f"--tos-root={tmp_path}")
     assert out.splitlines() == [
-        f"accepted ToS for {tos_channel}",
-        f"ToS not found for {sample_channel}",
+        f"accepted Terms of Service for {tos_channel}",
+        f"Terms of Service not found for {sample_channel}",
     ]
     # assert not err  # server log is output to stderr
     assert not code
@@ -110,8 +110,8 @@ def test_subcommand_tos_reject(
 
     out, err, code = conda_cli("tos", "reject", f"--tos-root={tmp_path}")
     assert out.splitlines() == [
-        f"rejected ToS for {tos_channel}",
-        f"ToS not found for {sample_channel}",
+        f"rejected Terms of Service for {tos_channel}",
+        f"Terms of Service not found for {sample_channel}",
     ]
     # assert not err  # server log is output to stderr
     assert not code

@@ -20,23 +20,27 @@ class CondaToSError(CondaError):
 
 
 class CondaToSMissingError(CondaToSError):
-    """Error class for when the ToS is missing for a channel."""
+    """Error class for when the metadata is missing for a channel."""
 
     def __init__(self: Self, channel: str | Channel) -> None:
         """Format error message with channel base URL."""
-        super().__init__(f"No ToS for {Channel(channel).base_url or channel}.")
+        super().__init__(
+            f"No Terms of Service for {Channel(channel).base_url or channel}."
+        )
 
 
 class CondaToSInvalidError(CondaToSMissingError):
-    """Error class for when the ToS is invalid for a channel."""
+    """Error class for when the metadata is invalid for a channel."""
 
     def __init__(self: Self, channel: str | Channel) -> None:
         """Format error message with channel base URL."""
-        super().__init__(f"Invalid ToS for {Channel(channel).base_url or channel}.")
+        super().__init__(
+            f"Invalid Terms of Service for {Channel(channel).base_url or channel}."
+        )
 
 
 class CondaToSPermissionError(PermissionError, CondaToSError):
-    """Error class for when the ToS metadata file cannot be written."""
+    """Error class for when the metadata file cannot be written."""
 
     def __init__(
         self: Self,
@@ -52,18 +56,18 @@ class CondaToSPermissionError(PermissionError, CondaToSError):
 
 
 class CondaToSRejectedError(CondaToSError):
-    """Error class for when the ToS is rejected for a channel."""
+    """Error class for when the Terms of Service are rejected for a channel."""
 
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
         channels_str = ", ".join(
             str(Channel(channel).base_url or channel) for channel in channels
         )
-        super().__init__(f"ToS rejected for {channels_str}.")
+        super().__init__(f"Terms of Service rejected for {channels_str}.")
 
 
 class CondaToSNonInteractiveError(CondaToSError):
-    """Error class when ToS is not actionable in non-interactive mode."""
+    """Error class when Terms of Service are not actionable in non-interactive mode."""
 
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
@@ -71,5 +75,6 @@ class CondaToSNonInteractiveError(CondaToSError):
             str(Channel(channel).base_url or channel) for channel in channels
         )
         super().__init__(
-            f"ToS not actionable for {channels_str} in non-interactive mode."
+            f"Terms of Service not actionable for {channels_str} in "
+            f"non-interactive mode."
         )

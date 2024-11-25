@@ -92,7 +92,7 @@ class MutableToSMetadata(RemoteToSMetadata):
 def generate_metadata() -> RemoteToSMetadata:
     return MutableToSMetadata(
         version=datetime.now(tz=timezone.utc),
-        text=f"ToS Text\n\n{uuid4().hex}",
+        text=f"Terms of Service Text\n\n{uuid4().hex}",
         support="support.com",
     )
 
@@ -141,8 +141,9 @@ if __name__ == "__main__":
         ) as url:
             print(f"Serving HTTP at {url}...")
             while not input(
-                f"Current ToS version: {timestamp_mapping(metadata.version)}\n"
-                f"Press Enter to increment ToS version, Ctrl-C to exit."
+                f"Current Terms of Service version: "
+                f"{timestamp_mapping(metadata.version)}\n"
+                f"Press Enter to increment Terms of Service version, Ctrl-C to exit."
             ):
                 metadata.version = datetime.now(tz=timezone.utc)
     else:
