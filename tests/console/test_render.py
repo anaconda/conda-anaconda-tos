@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from contextlib import nullcontext
-from datetime import datetime, timezone
+from datetime import timedelta
 from io import StringIO
 from typing import TYPE_CHECKING
 
@@ -143,6 +143,7 @@ def test_render_interactive(
     tmp_path: Path,
     tos_metadata: RemoteToSMetadata,
     ci: bool,
+    terminal_width: int,  # noqa: ARG001
 ) -> None:
     monkeypatch.setattr(render, "CI", ci)
 
@@ -204,8 +205,10 @@ def test_render_interactive(
             ]
             if ci
             else [
-                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted",
+                (
+                    f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
+                    "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted"
+                )
             ]
         ),
     ]
@@ -245,8 +248,10 @@ def test_render_interactive(
             ]
             if ci
             else [
-                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service rejected",
+                (
+                    f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
+                    "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service rejected"
+                )
             ]
         ),
     ]
@@ -292,10 +297,45 @@ def test_render_interactive(
             ]
             if ci
             else [
-                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                *f"[(a)ccept/(r)eject/(v)iew]: {tos_metadata.text}".splitlines(),
-                f"Accept the Terms of Service (ToS) for this channel ({tos_channel})? ",
-                "[(a)ccept/(r)eject]: 1 channel Terms of Service accepted",
+                *(
+                    f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
+                    f"[(a)ccept/(r)eject/(v)iew]: {tos_metadata.text}"
+                ).splitlines(),
+                (
+                    f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
+                    "[(a)ccept/(r)eject]: 1 channel Terms of Service accepted"
+                ),
+            ]
+        ),
+    ]
+
+    tos_metadata.version += timedelta(days=1)
+    monkeypatch.setattr(sys, "stdin", StringIO("accept\n"))
+    render_interactive(
+        tos_channel,
+        tos_root=tmp_path / "viewed",
+        cache_timeout=None,
+        auto_accept_tos=False,
+        always_yes=False,
+    )
+    out, err = capsys.readouterr()
+    assert out.splitlines() == [
+        "Gathering channels...",
+        "Reviewing channels...",
+        *(
+            [
+                "CI detected...",
+                f"Terms of Service implicitly accepted for {tos_channel}",
+                "1 channel Terms of Service accepted",
+            ]
+            if ci
+            else [
+                f"The Terms of Service for {tos_channel} was previously accepted. "
+                "An updated Terms of Service is now available.",
+                (
+                    f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
+                    "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted"
+                ),
             ]
         ),
     ]
@@ -345,7 +385,7 @@ def test_render_list(
         assert "path" in tos
     # assert not err  # server log is output to stderr
 
-    tos_metadata.version = datetime.now(tz=timezone.utc)
+    tos_metadata.version += timedelta(days=1)
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=False)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out

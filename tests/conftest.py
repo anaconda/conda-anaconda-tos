@@ -101,6 +101,6 @@ def terminal_width(mocker: MockerFixture, request: FixtureRequest) -> int:
     If the default width is not sufficient, use an `indirect=True` parameterization with
     the desired width.
     """
-    width = getattr(request, "param", 200)
+    width = getattr(request, "param", 500)
     mocker.patch("os.get_terminal_size", return_value=os.terminal_size((width, 200)))
     return width
