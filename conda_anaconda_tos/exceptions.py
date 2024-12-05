@@ -64,7 +64,7 @@ class CondaToSRejectedError(CondaToSError):
             f"Remove channels with rejected Terms of Service before proceeding:\n"
             f"    ‣ conda config --remove channels CHANNEL\n"
             f"\n"
-            f"To accept the Terms of Service for a given channel run the following:\n"
+            f"To accept the Terms of Service for a given channel, run the following:\n"
             f"    ‣ conda tos accept --override-channels --channel CHANNEL"
         )
 
@@ -75,11 +75,15 @@ class CondaToSNonInteractiveError(CondaToSError):
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
         super().__init__(
-            f"Terms of Service not actionable for the following channels:\n"
+            f"Terms of Service not accepted for the following channels:\n"
             f"{_bullet(map(_url, channels))}\n"
             f"\n"
-            f"To accept the Terms of Service for a given channel run the following:\n"
-            f"    ‣ conda tos accept --override-channels --channel CHANNEL"
+            f"To accept the Terms of Service for a given channel, run the following:\n"
+            f"    ‣ conda tos accept --override-channels --channel CHANNEL\n"
+            f"\n"
+            f"Alternatively, remove channels with rejected Terms of Services before "
+            f"proceeding:\n"
+            f"    ‣ conda config --remove channels CHANNEL"
         )
 
 
