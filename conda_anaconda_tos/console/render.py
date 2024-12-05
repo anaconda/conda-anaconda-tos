@@ -27,7 +27,6 @@ from ..exceptions import (
     CondaToSNonInteractiveError,
     CondaToSRejectedError,
 )
-from ..models import RemoteToSMetadata
 from ..path import CACHE_DIR, SEARCH_PATH
 from .mappers import NULL_CHAR, accepted_mapping, location_mapping, version_mapping
 from .prompt import FuzzyPrompt
@@ -38,6 +37,8 @@ if TYPE_CHECKING:
     from typing import Any, Callable, Final
 
     from conda.models.channel import Channel
+
+    from ..models import LocalPair, RemotePair
 
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
@@ -221,12 +222,22 @@ def render_reject(
 
 def _prompt_acceptance(
     channel: Channel,
-    metadata: RemoteToSMetadata,
+    pair: RemotePair | LocalPair,
     console: Console,
     choices: Iterable[str] = ("(a)ccept", "(r)eject", "(v)iew"),
 ) -> bool:
+    prologue = ""
+    if pair.remote:
+        state = "[bold red]rejected[/]"
+        if pair.metadata.tos_accepted:
+            state = "[bold green]accepted[/]"
+        prologue = (
+            f"The Terms of Service for {channel} was previously {state}. "
+            f"An updated Terms of Service is now available.\n"
+        )
+
     response = FuzzyPrompt.ask(
-        f"Accept the Terms of Service (ToS) for this channel ({channel})?",
+        f"{prologue}Do you accept the Terms of Service (ToS) for {channel}?",
         choices=choices,
         console=console,
     )
@@ -235,34 +246,38 @@ def _prompt_acceptance(
     elif response == "reject":
         return False
     else:
-        console.print(metadata.text)
-        return _prompt_acceptance(channel, metadata, console, ("(a)ccept", "(r)eject"))
+        console.print((pair.remote or pair.metadata).text)
+        return _prompt_acceptance(channel, pair, console, ("(a)ccept", "(r)eject"))
 
 
 def _gather_tos(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
-) -> tuple[dict[str, dict], list[Channel], list[tuple[Channel, RemoteToSMetadata]]]:
+) -> tuple[
+    dict[str, dict],
+    list[Channel],
+    list[tuple[Channel, RemotePair | LocalPair]],
+]:
     accepted = {}
     rejected = []
-    channel_metadatas = []
+    channel_pairs = []
     for channel in get_channels(*channels):
         try:
             pair = get_one_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
-            metadata = pair.remote or pair.metadata
         except CondaToSMissingError:
             # CondaToSMissingError: no metadata found
             continue
 
-        if isinstance(metadata, RemoteToSMetadata):
+        if pair.remote or getattr(pair.metadata, "tos_accepted", None) is None:
+            # Terms of Service has been updated or
             # Terms of Service haven't been accepted or rejected yet
-            channel_metadatas.append((channel, metadata))
-        elif metadata.tos_accepted:
-            accepted[channel.base_url] = metadata.model_dump(mode="json")
+            channel_pairs.append((channel, pair))
+        elif pair.metadata.tos_accepted:
+            accepted[channel.base_url] = pair.metadata.model_dump(mode="json")
         else:
             rejected.append(channel)
-    return accepted, rejected, channel_metadatas
+    return accepted, rejected, channel_pairs
 
 
 @printable
@@ -279,7 +294,7 @@ def render_interactive(  # noqa: C901
 ) -> int:
     """Prompt user to accept or reject Terms of Service for channels."""
     printer("[bold blue]Gathering channels...")
-    accepted, rejected, channel_metadatas = _gather_tos(
+    accepted, rejected, channel_pairs = _gather_tos(
         *channels,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
@@ -293,7 +308,7 @@ def render_interactive(  # noqa: C901
         printer("[bold yellow]CI detected...")
 
     non_interactive = []
-    for channel, metadata in channel_metadatas:
+    for channel, pair in channel_pairs:
         if auto_accept_tos:
             # auto_accept_tos overrides any other setting
             printer(f"[bold yellow]ToS auto accepted for {channel}")
@@ -313,7 +328,7 @@ def render_interactive(  # noqa: C901
         elif json or always_yes:
             # --json and --yes doesn't support interactive prompts
             non_interactive.append(channel)
-        elif _prompt_acceptance(channel, metadata, console):
+        elif _prompt_acceptance(channel, pair, console):
             # user manually accepted the Terms of Service
             accepted[channel.base_url] = accept_tos(
                 channel,
