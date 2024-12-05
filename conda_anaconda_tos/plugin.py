@@ -346,6 +346,7 @@ def conda_pre_commands() -> Iterator[CondaPreCommand]:
             "env_update",
             "install",
             "remove",
+            "rename",
             "search",
             "update",
         },
