@@ -11,6 +11,7 @@ from conda.models.channel import Channel
 
 if TYPE_CHECKING:
     import os
+    from collections.abc import Iterable
     from pathlib import Path
     from typing import Self
 
@@ -24,9 +25,7 @@ class CondaToSMissingError(CondaToSError):
 
     def __init__(self: Self, channel: str | Channel) -> None:
         """Format error message with channel base URL."""
-        super().__init__(
-            f"No Terms of Service for {Channel(channel).base_url or channel}."
-        )
+        super().__init__(f"No Terms of Service for {_url(channel)}.")
 
 
 class CondaToSInvalidError(CondaToSMissingError):
@@ -34,9 +33,7 @@ class CondaToSInvalidError(CondaToSMissingError):
 
     def __init__(self: Self, channel: str | Channel) -> None:
         """Format error message with channel base URL."""
-        super().__init__(
-            f"Invalid Terms of Service for {Channel(channel).base_url or channel}."
-        )
+        super().__init__(f"Invalid Terms of Service for {_url(channel)}.")
 
 
 class CondaToSPermissionError(PermissionError, CondaToSError):
@@ -48,10 +45,10 @@ class CondaToSPermissionError(PermissionError, CondaToSError):
         channel: str | Channel | None = None,
     ) -> None:
         """Format error message with channel base URL and path."""
-        addendum = f" for {Channel(channel).base_url or channel}" if channel else ""
+        addendum = f" for {_url(channel)}" if channel else ""
         super().__init__(
             f"Unable to read/write path ({path}){addendum}. "
-            "Please check permissions."
+            f"Please check permissions."
         )
 
 
@@ -60,10 +57,19 @@ class CondaToSRejectedError(CondaToSError):
 
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
-        channels_str = ", ".join(
-            str(Channel(channel).base_url or channel) for channel in channels
+        super().__init__(
+            f"Terms of Service has been rejected for the following channels. "
+            f"Please remove or accept them before proceeding:\n"
+            f"{_bullet(map(_url, channels))}\n"
+            f"\n"
+            f"To remove channels with rejected Terms of Service, run the following and "
+            f"replace `CHANNEL` with the channel name/URL:\n"
+            f"    ‣ conda config --remove channels CHANNEL\n"
+            f"\n"
+            f"To accept a channel's Terms of Service, run the following and "
+            f"replace `CHANNEL` with the channel name/URL:\n"
+            f"    ‣ conda tos accept --override-channels --channel CHANNEL"
         )
-        super().__init__(f"Terms of Service rejected for {channels_str}.")
 
 
 class CondaToSNonInteractiveError(CondaToSError):
@@ -71,10 +77,24 @@ class CondaToSNonInteractiveError(CondaToSError):
 
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
-        channels_str = ", ".join(
-            str(Channel(channel).base_url or channel) for channel in channels
-        )
         super().__init__(
-            f"Terms of Service not actionable for {channels_str} in "
-            f"non-interactive mode."
+            f"Terms of Service have not been accepted for the following channels. "
+            f"Please accept or remove them before proceeding:\n"
+            f"{_bullet(map(_url, channels))}\n"
+            f"\n"
+            f"To accept a channel's Terms of Service, run the following and "
+            f"replace `CHANNEL` with the channel name/URL:\n"
+            f"    ‣ conda tos accept --override-channels --channel CHANNEL\n"
+            f"\n"
+            f"To remove channels with rejected Terms of Service, run the following and "
+            f"replace `CHANNEL` with the channel name/URL:\n"
+            f"    ‣ conda config --remove channels CHANNEL"
         )
+
+
+def _url(channel: str | Channel) -> str:
+    return str(Channel(channel).base_url or channel)
+
+
+def _bullet(args: Iterable[str], *, prefix: str = "    • ") -> str:
+    return prefix + f"\n{prefix}".join(args)
