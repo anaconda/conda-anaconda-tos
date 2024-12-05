@@ -58,8 +58,8 @@ class CondaToSRejectedError(CondaToSError):
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
         super().__init__(
-            f"Terms of Service has been rejected for the following channels, "
-            f"please remove or accept them before proceeding:\n"
+            f"Terms of Service has been rejected for the following channels. "
+            f"Please remove or accept them before proceeding:\n"
             f"{_bullet(map(_url, channels))}\n"
             f"\n"
             f"To remove channels with rejected Terms of Service, run the following and "
@@ -78,8 +78,8 @@ class CondaToSNonInteractiveError(CondaToSError):
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
         super().__init__(
-            f"Terms of Service have not been accepted for the following channels, "
-            f"please accept or remove them before proceeding:\n"
+            f"Terms of Service have not been accepted for the following channels. "
+            f"Please accept or remove them before proceeding:\n"
             f"{_bullet(map(_url, channels))}\n"
             f"\n"
             f"To accept a channel's Terms of Service, run the following and "
