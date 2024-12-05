@@ -11,10 +11,12 @@ source:
 
 build:
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
   number: 0
 
 requirements:
+  build:
+    - git  # for source/git_url above
   host:
     - python >=3.9
     - pip
@@ -32,16 +34,20 @@ test:
     - conda
   imports:
     - conda_anaconda_tos
+    - conda_anaconda_tos.plugin
+    - conda_anaconda_tos.api
   commands:
     - pip check
     - conda tos --version
 
 about:
   home: https://github.com/anaconda/{{ name }}
-  summary: Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS).
+  summary: Anaconda Terms of Service conda plugin
+  description: Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS).
   license: BSD-3-Clause
   license_file: LICENSE
 
 extra:
   recipe-maintainers:
     - kenodegard
+    - jezdez
