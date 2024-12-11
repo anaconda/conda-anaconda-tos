@@ -14,6 +14,7 @@ from rich.table import Table
 
 from ..api import (
     CI,
+    JUPYTER,
     accept_tos,
     clean_cache,
     clean_tos,
@@ -306,6 +307,8 @@ def render_interactive(  # noqa: C901
         raise CondaToSRejectedError(*rejected)
     elif CI:
         printer("[bold yellow]CI detected...")
+    elif JUPYTER:
+        printer("[bold yellow]Jupyter detected...")
 
     non_interactive = []
     for channel, pair in channel_pairs:
@@ -325,8 +328,8 @@ def render_interactive(  # noqa: C901
                 tos_root=tos_root,
                 cache_timeout=cache_timeout,
             ).metadata
-        elif json or always_yes:
-            # --json and --yes doesn't support interactive prompts
+        elif json or always_yes or JUPYTER:
+            # --json, --yes, and Jupyter doesn't support interactive prompts
             non_interactive.append(channel)
         elif _prompt_acceptance(channel, pair, console):
             # user manually accepted the Terms of Service
