@@ -24,7 +24,7 @@ repos:
       # auto inject license blurb
       - id: insert-license
         files: \.py$
-        args: [--license-filepath, .github/disclaimer.txt, --no-extra-eol, --use-current-year]
+        args: [--license-filepath, .github/disclaimer.txt, --no-extra-eol]
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.19.1
     hooks:
