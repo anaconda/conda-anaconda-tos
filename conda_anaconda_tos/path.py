@@ -117,7 +117,7 @@ def get_all_channel_paths(
 ) -> Iterator[Path]:
     """Get all local metadata file paths."""
     for path in get_search_path(extend_search_path):
-        yield from get_path(path).glob(f"*/{TOS_GLOB}")
+        yield from sorted(get_path(path).glob(f"*/{TOS_GLOB}"))
 
 
 def get_channel_paths(
@@ -127,7 +127,7 @@ def get_channel_paths(
 ) -> Iterator[Path]:
     """Get all local metadata file paths for the given channel."""
     for path in get_search_path(extend_search_path):
-        yield from get_tos_dir(path, channel).glob(TOS_GLOB)
+        yield from sorted(get_tos_dir(path, channel).glob(TOS_GLOB))
 
 
 def get_cache_path(channel: str | Channel) -> Path:
@@ -137,4 +137,4 @@ def get_cache_path(channel: str | Channel) -> Path:
 
 def get_cache_paths() -> Iterator[Path]:
     """Get all local metadata cache file paths."""
-    return CACHE_DIR.glob("*.cache")
+    yield from sorted(CACHE_DIR.glob("*.cache"))
