@@ -213,6 +213,7 @@ def configure_parser(parser: ArgumentParser) -> None:
     _add_location(interactive_parser)
     _add_cache(interactive_parser)
     _add_json(interactive_parser)
+    add_parser_verbose(interactive_parser)
 
     # conda tos info
     info_parser = subparsers.add_parser(
