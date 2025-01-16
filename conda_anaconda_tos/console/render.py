@@ -76,7 +76,7 @@ def render_list(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = False,
-    verbose: bool,
+    verbose: bool = False,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
     json_printer: Callable[..., None],
@@ -287,6 +287,7 @@ def render_interactive(  # noqa: C901
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = False,
+    verbose: bool = False,
     auto_accept_tos: bool,
     always_yes: bool,
     console: Console | None = None,
@@ -294,14 +295,16 @@ def render_interactive(  # noqa: C901
     json_printer: Callable[..., None],
 ) -> int:
     """Prompt user to accept or reject Terms of Service for channels."""
-    printer("[bold blue]Gathering channels...")
+    if verbose:
+        printer("[bold blue]Gathering channels...")
     accepted, rejected, channel_pairs = _gather_tos(
         *channels,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
     )
 
-    printer("[bold yellow]Reviewing channels...")
+    if verbose:
+        printer("[bold yellow]Reviewing channels...")
     if rejected:
         printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
@@ -348,7 +351,9 @@ def render_interactive(  # noqa: C901
     elif rejected:
         printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
-    printer(f"[bold green]{len(accepted)} channel Terms of Service accepted")
+
+    if verbose or accepted:
+        printer(f"[bold green]{len(accepted)} channel Terms of Service accepted")
 
     if json:
         json_printer(data=accepted)
