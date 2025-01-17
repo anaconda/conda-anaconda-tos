@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
+    from http_test_server import MetadataType
     from pytest import FixtureRequest, MonkeyPatch, TempPathFactory
     from pytest_mock import MockerFixture
 
@@ -55,6 +56,25 @@ def sample_channel() -> Iterator[Channel]:
     """Serve the sample channel as-is without a `tos.json` endpoint."""
     with serve_channel(SAMPLE_CHANNEL_DIR, None) as url:
         yield Channel(url)
+
+
+@pytest.fixture
+def mutable_server() -> Iterator[tuple[Channel, list[MetadataType]]]:
+    metadatas: list[MetadataType] = []
+    with serve_channel(SAMPLE_CHANNEL_DIR, iter(metadatas)) as url:
+        yield Channel(url), metadatas
+
+
+@pytest.fixture
+def mutable_channel(mutable_server: tuple[Channel, list[MetadataType]]) -> Channel:
+    return mutable_server[0]
+
+
+@pytest.fixture
+def mutable_metadatas(
+    mutable_server: tuple[Channel, list[MetadataType]],
+) -> list[MetadataType]:
+    return mutable_server[1]
 
 
 @pytest.fixture
