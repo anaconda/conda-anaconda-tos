@@ -11,6 +11,7 @@ import queue
 import socket
 import threading
 from datetime import datetime, timezone
+from itertools import repeat
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -24,7 +25,9 @@ from conda_anaconda_tos.remote import ENDPOINT
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterator
-    from typing import Self
+    from typing import Any, Self
+
+    MetadataType = RemoteToSMetadata | str | None
 
 DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
@@ -32,7 +35,7 @@ SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
 
 def run_test_server(
     directory: str | os.PathLike | Path,
-    metadata: RemoteToSMetadata | str | None,
+    metadata: MetadataType | Iterator[MetadataType],
     port: int = 0,
 ) -> http.server.ThreadingHTTPServer:
     """
@@ -40,9 +43,16 @@ def run_test_server(
     shutdown etc.
     """
 
+    # convert single metadata to an infinite iterator
+    metadatas: Iterator[MetadataType]
+    if isinstance(metadata, (RemoteToSMetadata, str)) or metadata is None:
+        metadatas = repeat(metadata)
+    else:
+        metadatas = metadata
+
     class CustomRequestHandler(http.server.SimpleHTTPRequestHandler):
-        def do_GET(self):  # noqa: ANN202, N802
-            if metadata and self.path.startswith(f"/{ENDPOINT}"):
+        def do_GET(self: Self) -> None:  # noqa: N802
+            if (metadata := next(metadatas)) and self.path.startswith(f"/{ENDPOINT}"):
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
@@ -58,16 +68,20 @@ def run_test_server(
         allow_reuse_address = True  # Good for tests
         request_queue_size = 64  # Should be more than the number of test packages
 
-        def server_bind(self):  # noqa: ANN202
+        def server_bind(self: Self) -> None:
             # suppress exception when protocol is IPv4
             with contextlib.suppress(Exception):
                 self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
-            return super().server_bind()
+            super().server_bind()
 
-        def finish_request(self, request, client_address):  # noqa: ANN001, ANN202
-            self.RequestHandlerClass(request, client_address, self, directory=directory)
+        def finish_request(
+            self: Self,
+            request: socket.socket | tuple[bytes, socket.socket],
+            client_address: Any,  # noqa: ANN401
+        ) -> None:
+            self.RequestHandlerClass(request, client_address, self, directory=directory)  # type: ignore [call-arg]
 
-    def start_server(queue):  # noqa: ANN001, ANN202
+    def start_server(queue: queue.Queue[http.server.ThreadingHTTPServer]) -> None:
         with CustomHTTPServer(("127.0.0.1", port), CustomRequestHandler) as http:
             queue.put(http)
             http.serve_forever()
@@ -100,7 +114,7 @@ def generate_metadata() -> RemoteToSMetadata:
 @contextlib.contextmanager
 def serve_channel(
     path: Path,
-    metadata: RemoteToSMetadata | str | None,
+    metadata: MetadataType | Iterator[MetadataType],
     port: int = 0,
 ) -> Iterator[str]:
     http = run_test_server(path, metadata, port)
@@ -112,7 +126,7 @@ def serve_channel(
     http.shutdown()
 
 
-if __name__ == "__main__":
+def main() -> None:
     # demo server for testing purposes
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=0, help="Port to serve on.")
@@ -132,26 +146,45 @@ if __name__ == "__main__":
         action="store_true",
         help="Serve the sample channel with an invalid schema `tos.json` endpoint.",
     )
+    parser.add_argument(
+        "--missing-start",
+        action="store_true",
+        help="Initially serve without a `tos.json` endpoint.",
+    )
     args = parser.parse_args()
 
-    metadata: RemoteToSMetadata | str | None
-    if args.tos:
-        with serve_channel(
-            SAMPLE_CHANNEL_DIR, metadata := generate_metadata(), args.port
-        ) as url:
-            print(f"Serving HTTP at {url}...")
-            while not input(
-                f"Current Terms of Service version: "
-                f"{timestamp_mapping(metadata.version)}\n"
-                f"Press Enter to increment Terms of Service version, Ctrl-C to exit."
-            ):
-                metadata.version = datetime.now(tz=timezone.utc)
-    else:
-        metadata = None
-        if args.invalid_json:
-            metadata = "?"  # not JSON
-        elif args.invalid_schema:
-            metadata = "{'version': null}"  # missing keys and invalid value
-        with serve_channel(SAMPLE_CHANNEL_DIR, metadata, args.port) as url:
-            print(f"Serving HTTP at {url}...")
-            input("Press Enter or Ctrl-C to exit.")
+    metadata: MetadataType
+
+    def serve_metadata() -> Iterator[MetadataType]:
+        nonlocal metadata
+        while True:
+            yield metadata
+
+    metadata_iterator = iter(
+        [
+            *([None] if args.missing_start else []),
+            *(["?"] if args.invalid_json else []),
+            *(["{'version': null}"] if args.invalid_schema else []),
+            *([generate_metadata()] if args.tos else []),
+        ]
+    )
+    with serve_channel(SAMPLE_CHANNEL_DIR, serve_metadata(), args.port) as url:
+        print(f"Serving HTTP at {url}...")
+        while True:
+            try:
+                metadata = next(metadata_iterator)
+            except StopIteration:
+                # StopIteration: metadata iterator exhausted, reuse previous metadata
+                if isinstance(metadata, RemoteToSMetadata):
+                    metadata.version = datetime.now(tz=timezone.utc)
+            version = "n/a"
+            if isinstance(metadata, RemoteToSMetadata):
+                version = timestamp_mapping(metadata.version)
+            input(
+                f"Current Terms of Service version: {version}\n"
+                f"Press Enter to increment Terms of Service version, Ctrl-C to exit.\n"
+            )
+
+
+if __name__ == "__main__":
+    main()
