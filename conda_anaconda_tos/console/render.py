@@ -55,13 +55,23 @@ def printable(func: Callable[..., int]) -> Callable[..., int]:
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> int:  # noqa: ANN401
         console = kwargs.pop("console", Console())
-        if kwargs.get("json"):
+
+        # json=False -> standard output, default
+        # json=True -> JSON output
+        # json=None -> no output
+        json = kwargs.pop("json", False)
+        if json is None:
+            printer = json_printer = lambda *_, **__: None
+            json = True  # force non-interactive
+        elif json:
             printer, json_printer = lambda *_, **__: None, console.print_json
         else:
             printer, json_printer = console.print, console.print_json
+
         return func(
             *args,
             **kwargs,
+            json=json,
             console=console,
             printer=printer,
             json_printer=json_printer,

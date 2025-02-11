@@ -329,7 +329,7 @@ def _pre_command_check_tos(_command: str) -> None:
         *context.channels,
         tos_root=DEFAULT_TOS_ROOT,
         cache_timeout=DEFAULT_CACHE_TIMEOUT,
-        json=context.json,
+        json=None,
         verbose=context.verbose,
         auto_accept_tos=context.plugins.auto_accept_tos,
         always_yes=context.always_yes,
