@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import pytest
+from conda.gateways.connection.session import CondaSession, get_session
 from conda.models.channel import Channel
 from http_test_server import SAMPLE_CHANNEL_DIR, generate_metadata, serve_channel
 
@@ -133,3 +135,20 @@ def unset_CI(monkeypatch: MonkeyPatch) -> None:  # noqa: N802
     monkeypatch.setattr(api, "CI", False)
     monkeypatch.setattr(render, "CI", False)
     monkeypatch.setattr(plugin, "CI", False)
+
+
+@pytest.fixture(autouse=True)
+def clear_conda_session_cache() -> Iterator[None]:
+    """
+    We use this to clean up the class/function cache on various things in the
+    ``conda.gateways.connection.session`` module.
+    """
+    with suppress(AttributeError):
+        del CondaSession._thread_local.sessions
+    get_session.cache_clear()
+
+    yield
+
+    with suppress(AttributeError):
+        del CondaSession._thread_local.sessions
+    get_session.cache_clear()
