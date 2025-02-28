@@ -152,3 +152,12 @@ def clear_conda_session_cache() -> Iterator[None]:
     with suppress(AttributeError):
         del CondaSession._thread_local.sessions
     get_session.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def unset_always_yes(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "conda.base.context.Context.always_yes",
+        new_callable=mocker.PropertyMock,
+        return_value=False,
+    )
