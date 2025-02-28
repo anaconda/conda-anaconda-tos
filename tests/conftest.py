@@ -10,7 +10,8 @@ import pytest
 from conda.models.channel import Channel
 from http_test_server import SAMPLE_CHANNEL_DIR, generate_metadata, serve_channel
 
-from conda_anaconda_tos import path
+from conda_anaconda_tos import api, path, plugin
+from conda_anaconda_tos.console import render
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -124,3 +125,11 @@ def terminal_width(mocker: MockerFixture, request: FixtureRequest) -> int:
     width = getattr(request, "param", 500)
     mocker.patch("os.get_terminal_size", return_value=os.terminal_size((width, 200)))
     return width
+
+
+@pytest.fixture(autouse=True)
+def unset_CI(monkeypatch: MonkeyPatch) -> None:  # noqa: N802
+    # TODO: refactor CI constant for better test mocking
+    monkeypatch.setattr(api, "CI", False)
+    monkeypatch.setattr(render, "CI", False)
+    monkeypatch.setattr(plugin, "CI", False)
