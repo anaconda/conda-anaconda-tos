@@ -121,14 +121,18 @@ def write_cached_endpoint(
     return path
 
 
-def get_remote_metadata(
+def get_remote_metadata(  # noqa: C901
     channel: str | Channel,
     *,
     cache_timeout: int | float | None = None,
 ) -> RemoteToSMetadata:
     """Get the metadata metadata for the given channel."""
     # argument validation/coercion
-    cache = get_cached_endpoint(channel, cache_timeout=cache_timeout)
+    cache = get_cached_endpoint(
+        channel,
+        # when in offline mode cache_timeout is ignored
+        cache_timeout=float("inf") if context.offline else cache_timeout,
+    )
 
     # return cached metadata
     if cache:
@@ -156,6 +160,12 @@ def get_remote_metadata(
         # CondaToSMissingError: no Terms of Service for this channel
         # create an empty cache to prevent repeated requests
         write_cached_endpoint(channel, None)
+        raise
+    except RuntimeError as exc:
+        # RuntimeError: potentially raised by CondaSession due to --offline
+        if "offline mode" in exc.args[0]:
+            write_cached_endpoint(channel, None)
+            raise CondaToSMissingError(channel) from exc
         raise
     except (AttributeError, TypeError, JSONDecodeError, ValidationError) as exc:
         # AttributeError: response has no JSON
