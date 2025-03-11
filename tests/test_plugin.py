@@ -14,6 +14,7 @@ from conda.gateways.connection.session import get_session
 
 from conda_anaconda_tos import plugin
 from conda_anaconda_tos.api import accept_tos, reject_tos
+from conda_anaconda_tos.console import render
 from conda_anaconda_tos.plugin import (
     _get_tos_acceptance_header,
     conda_request_headers,
@@ -156,6 +157,8 @@ def test_subcommand_tos_interactive(
     sample_channel: Channel,
     mock_search_path: tuple[Path, Path],
 ) -> None:
+    monkeypatch.setattr(render, "IS_INTERACTIVE", True)
+
     system_tos_root, user_tos_root = mock_search_path
 
     monkeypatch.setattr(sys, "stdin", StringIO("accept\n"))
