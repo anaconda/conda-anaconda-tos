@@ -8,6 +8,7 @@ import functools
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from conda.common.io import IS_INTERACTIVE
 from conda.exceptions import ArgumentError
 from rich.console import Console
 from rich.table import Table
@@ -341,7 +342,7 @@ def render_interactive(  # noqa: C901
                 tos_root=tos_root,
                 cache_timeout=cache_timeout,
             ).metadata
-        elif json or always_yes or JUPYTER:
+        elif json or always_yes or JUPYTER or not IS_INTERACTIVE:
             # --json, --yes, and Jupyter doesn't support interactive prompts
             non_interactive.append(channel)
         elif _prompt_acceptance(channel, pair, console):
