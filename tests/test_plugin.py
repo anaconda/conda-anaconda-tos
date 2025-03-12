@@ -169,6 +169,23 @@ def test_subcommand_tos_interactive(
     assert not code
 
 
+def test_subcommand_tos_interactive_offline(
+    monkeypatch: MonkeyPatch,
+    conda_cli: CondaCLIFixture,
+    mock_search_path: tuple[Path, Path],
+) -> None:
+    system_tos_root, user_tos_root = mock_search_path
+
+    monkeypatch.setenv("CONDA_OFFLINE", "true")
+    reset_context()
+    assert context.offline
+
+    out, err, code = conda_cli("tos", "interactive", f"--tos-root={user_tos_root}")
+    assert not out
+    # assert not err  # server log is output to stderr
+    assert not code
+
+
 def _cache_clear() -> None:
     _get_tos_acceptance_header.cache_clear()
     context.plugin_manager.get_cached_request_headers.cache_clear()
