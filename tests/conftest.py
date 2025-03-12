@@ -4,13 +4,16 @@
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import pytest
+from conda.gateways.connection.session import CondaSession, get_session
 from conda.models.channel import Channel
 from http_test_server import SAMPLE_CHANNEL_DIR, generate_metadata, serve_channel
 
-from conda_anaconda_tos import path
+from conda_anaconda_tos import api, path, plugin
+from conda_anaconda_tos.console import render
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -124,3 +127,37 @@ def terminal_width(mocker: MockerFixture, request: FixtureRequest) -> int:
     width = getattr(request, "param", 500)
     mocker.patch("os.get_terminal_size", return_value=os.terminal_size((width, 200)))
     return width
+
+
+@pytest.fixture(autouse=True)
+def unset_CI(monkeypatch: MonkeyPatch) -> None:  # noqa: N802
+    # TODO: refactor CI constant for better test mocking
+    monkeypatch.setattr(api, "CI", False)
+    monkeypatch.setattr(render, "CI", False)
+    monkeypatch.setattr(plugin, "CI", False)
+
+
+@pytest.fixture(autouse=True)
+def clear_conda_session_cache() -> Iterator[None]:
+    """
+    We use this to clean up the class/function cache on various things in the
+    ``conda.gateways.connection.session`` module.
+    """
+    with suppress(AttributeError):
+        del CondaSession._thread_local.sessions
+    get_session.cache_clear()
+
+    yield
+
+    with suppress(AttributeError):
+        del CondaSession._thread_local.sessions
+    get_session.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def unset_always_yes(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "conda.base.context.Context.always_yes",
+        new_callable=mocker.PropertyMock,
+        return_value=False,
+    )
