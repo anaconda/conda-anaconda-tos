@@ -135,6 +135,7 @@ def test_render_reject(
 
 
 @pytest.mark.parametrize("ci", [True, False])
+@pytest.mark.parametrize("verbose", [True, False])
 def test_render_interactive(
     monkeypatch: MonkeyPatch,
     capsys: CaptureFixture,
@@ -143,6 +144,7 @@ def test_render_interactive(
     tmp_path: Path,
     tos_metadata: RemoteToSMetadata,
     ci: bool,
+    verbose: bool,
     terminal_width: int,  # noqa: ARG001
 ) -> None:
     monkeypatch.setattr(render, "CI", ci)
@@ -153,13 +155,14 @@ def test_render_interactive(
         cache_timeout=None,
         auto_accept_tos=False,
         always_yes=False,
+        verbose=verbose,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(["CI detected..."] if ci else []),
-        "0 channel Terms of Service accepted",
+        *(["0 channel Terms of Service accepted"] if verbose else []),
     ]
 
     with nullcontext() if ci else pytest.raises(CondaToSNonInteractiveError):
@@ -169,11 +172,12 @@ def test_render_interactive(
             cache_timeout=None,
             auto_accept_tos=False,
             always_yes=True,
+            verbose=verbose,
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(
             [
                 "CI detected...",
@@ -192,11 +196,12 @@ def test_render_interactive(
         cache_timeout=None,
         auto_accept_tos=False,
         always_yes=False,
+        verbose=verbose,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(
             [
                 "CI detected...",
@@ -218,11 +223,12 @@ def test_render_interactive(
         cache_timeout=None,
         auto_accept_tos=False,
         always_yes=False,
+        verbose=verbose,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(["CI detected..."] if ci else []),
         "1 channel Terms of Service accepted",
     ]
@@ -235,11 +241,12 @@ def test_render_interactive(
             cache_timeout=None,
             auto_accept_tos=False,
             always_yes=False,
+            verbose=verbose,
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(
             [
                 "CI detected...",
@@ -262,11 +269,12 @@ def test_render_interactive(
             cache_timeout=None,
             auto_accept_tos=False,
             always_yes=False,
+            verbose=verbose,
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(
             [
                 "CI detected...",
@@ -284,11 +292,12 @@ def test_render_interactive(
         cache_timeout=None,
         auto_accept_tos=False,
         always_yes=False,
+        verbose=verbose,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(
             [
                 "CI detected...",
@@ -317,11 +326,12 @@ def test_render_interactive(
         cache_timeout=None,
         auto_accept_tos=False,
         always_yes=False,
+        verbose=verbose,
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        "Gathering channels...",
-        "Reviewing channels...",
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
         *(
             [
                 "CI detected...",
@@ -363,22 +373,20 @@ def test_render_list(
     capsys: CaptureFixture,
     terminal_width: int,  # noqa: ARG001
 ) -> None:
-    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=False)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
     # assert not err  # server log is output to stderr
 
     accept_tos(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=False)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
     # assert not err  # server log is output to stderr
 
-    render_list(
-        tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=True, json=True
-    )
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
     out, err = capsys.readouterr()
     list_json = json.loads(out)
     for tos in list_json.values():
@@ -386,7 +394,7 @@ def test_render_list(
     # assert not err  # server log is output to stderr
 
     tos_metadata.version += timedelta(days=1)
-    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, verbose=False)
+    render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED in out

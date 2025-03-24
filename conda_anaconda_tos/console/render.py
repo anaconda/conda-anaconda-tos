@@ -14,6 +14,7 @@ from rich.table import Table
 
 from ..api import (
     CI,
+    JUPYTER,
     accept_tos,
     clean_cache,
     clean_tos,
@@ -40,6 +41,11 @@ if TYPE_CHECKING:
 
     from ..models import LocalPair, RemotePair
 
+    AcceptedType = dict[str, dict]
+    RejectedType = list[Channel]
+    NonInteractiveType = list[Channel]
+    ChannelPairsType = list[tuple[Channel, RemotePair | LocalPair]]
+
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
@@ -54,13 +60,23 @@ def printable(func: Callable[..., int]) -> Callable[..., int]:
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> int:  # noqa: ANN401
         console = kwargs.pop("console", Console())
-        if kwargs.get("json"):
+
+        # json=False -> standard output, default
+        # json=True -> JSON output
+        # json=None -> no output
+        json = kwargs.pop("json", False)
+        if json is None:
+            printer = json_printer = lambda *_, **__: None
+            json = True  # force non-interactive
+        elif json:
             printer, json_printer = lambda *_, **__: None, console.print_json
         else:
             printer, json_printer = console.print, console.print_json
+
         return func(
             *args,
             **kwargs,
+            json=json,
             console=console,
             printer=printer,
             json_printer=json_printer,
@@ -75,7 +91,7 @@ def render_list(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = False,
-    verbose: bool,
+    verbose: bool = False,
     console: Console | None = None,  # noqa: ARG001
     printer: Callable[..., None],
     json_printer: Callable[..., None],
@@ -255,9 +271,9 @@ def _gather_tos(
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
 ) -> tuple[
-    dict[str, dict],
-    list[Channel],
-    list[tuple[Channel, RemotePair | LocalPair]],
+    AcceptedType,
+    RejectedType,
+    ChannelPairsType,
 ]:
     accepted = {}
     rejected = []
@@ -280,12 +296,87 @@ def _gather_tos(
     return accepted, rejected, channel_pairs
 
 
+def _is_tos_accepted(
+    *,
+    channel: Channel,
+    pair: RemotePair | LocalPair,
+    auto_accept_tos: bool,
+    always_yes: bool,
+    json_mode: bool,
+    console: Console,
+    printer: Callable[..., None],
+) -> bool:
+    """Determine if the Terms of Service is accepted for a channel."""
+    # Auto-accept has highest priority
+    if auto_accept_tos:
+        printer(f"[bold yellow]ToS auto accepted for {channel}")
+        return True
+
+    # CI environment auto-accepts with warning
+    if CI:
+        printer(f"[bold yellow]Terms of Service implicitly accepted for {channel}")
+        return True
+
+    # Non-interactive environments exits before prompt
+    if json_mode or always_yes or JUPYTER:
+        raise CondaToSNonInteractiveError
+
+    # Interactive prompt
+    return _prompt_acceptance(channel, pair, console)
+
+
+def _process_channel_pairs(
+    *,
+    channel_pairs: ChannelPairsType,
+    tos_root: str | os.PathLike[str] | Path,
+    cache_timeout: int | float | None,
+    auto_accept_tos: bool,
+    always_yes: bool,
+    json_mode: bool,
+    console: Console,
+    printer: Callable[..., None],
+    # optional arguments, if provided they are updated in place
+    accepted: AcceptedType | None = None,
+    rejected: RejectedType | None = None,
+    non_interactive: NonInteractiveType | None = None,
+) -> tuple[AcceptedType, RejectedType, NonInteractiveType]:
+    """Iterate over channel pairs and process the Terms of Service."""
+    accepted = {} if accepted is None else accepted
+    rejected = [] if rejected is None else rejected
+    non_interactive = [] if non_interactive is None else non_interactive
+
+    for channel, pair in channel_pairs:
+        try:
+            if _is_tos_accepted(
+                channel=channel,
+                pair=pair,
+                auto_accept_tos=auto_accept_tos,
+                always_yes=always_yes,
+                json_mode=json_mode,
+                console=console,
+                printer=printer,
+            ):
+                accepted[channel.base_url] = accept_tos(
+                    channel,
+                    tos_root=tos_root,
+                    cache_timeout=cache_timeout,
+                ).metadata
+            else:
+                reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+                rejected.append(channel)
+        except CondaToSNonInteractiveError:
+            non_interactive.append(channel)
+
+    return accepted, rejected, non_interactive
+
+
 @printable
-def render_interactive(  # noqa: C901
+def render_interactive(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
     json: bool = False,
+    verbose: bool = False,
     auto_accept_tos: bool,
     always_yes: bool,
     console: Console | None = None,
@@ -293,59 +384,49 @@ def render_interactive(  # noqa: C901
     json_printer: Callable[..., None],
 ) -> int:
     """Prompt user to accept or reject Terms of Service for channels."""
-    printer("[bold blue]Gathering channels...")
+    if verbose:
+        printer("[bold blue]Gathering channels...")
+
     accepted, rejected, channel_pairs = _gather_tos(
         *channels,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
     )
 
-    printer("[bold yellow]Reviewing channels...")
+    if verbose:
+        printer("[bold yellow]Reviewing channels...")
+
+    # exit early if some channels are already rejected
     if rejected:
         printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
-    elif CI:
-        printer("[bold yellow]CI detected...")
 
-    non_interactive = []
-    for channel, pair in channel_pairs:
-        if auto_accept_tos:
-            # auto_accept_tos overrides any other setting
-            printer(f"[bold yellow]ToS auto accepted for {channel}")
-            accepted[channel.base_url] = accept_tos(
-                channel,
-                tos_root=tos_root,
-                cache_timeout=cache_timeout,
-            ).metadata
-        elif CI:
-            # CI is the same as auto_accept_tos but with a warning
-            printer(f"[bold yellow]Terms of Service implicitly accepted for {channel}")
-            accepted[channel.base_url] = accept_tos(
-                channel,
-                tos_root=tos_root,
-                cache_timeout=cache_timeout,
-            ).metadata
-        elif json or always_yes:
-            # --json and --yes doesn't support interactive prompts
-            non_interactive.append(channel)
-        elif _prompt_acceptance(channel, pair, console):
-            # user manually accepted the Terms of Service
-            accepted[channel.base_url] = accept_tos(
-                channel,
-                tos_root=tos_root,
-                cache_timeout=cache_timeout,
-            ).metadata
-        else:
-            # user manually rejected the Terms of Service
-            reject_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
-            rejected.append(channel)
+    if CI:
+        printer("[bold yellow]CI detected...")
+    elif JUPYTER:
+        printer("[bold yellow]Jupyter detected...")
+
+    accepted, rejected, non_interactive = _process_channel_pairs(
+        accepted=accepted,
+        rejected=rejected,
+        channel_pairs=channel_pairs,
+        tos_root=tos_root,
+        cache_timeout=cache_timeout,
+        auto_accept_tos=auto_accept_tos,
+        always_yes=always_yes,
+        json_mode=json,
+        console=console,
+        printer=printer,
+    )
 
     if non_interactive:
         raise CondaToSNonInteractiveError(*non_interactive)
     elif rejected:
         printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
-    printer(f"[bold green]{len(accepted)} channel Terms of Service accepted")
+
+    if verbose or accepted:
+        printer(f"[bold green]{len(accepted)} channel Terms of Service accepted")
 
     if json:
         json_printer(data=accepted)

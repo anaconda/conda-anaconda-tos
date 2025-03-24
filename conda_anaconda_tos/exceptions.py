@@ -47,8 +47,7 @@ class CondaToSPermissionError(PermissionError, CondaToSError):
         """Format error message with channel base URL and path."""
         addendum = f" for {_url(channel)}" if channel else ""
         super().__init__(
-            f"Unable to read/write path ({path}){addendum}. "
-            f"Please check permissions."
+            f"Unable to read/write path ({path}){addendum}. Please check permissions."
         )
 
 

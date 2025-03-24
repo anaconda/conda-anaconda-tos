@@ -24,6 +24,9 @@ if TYPE_CHECKING:
 #: Whether the current environment is a CI environment
 CI: Final = os.getenv("CI", "").lower() == "true"
 
+#: Whether the current environment is a Jupyter environment
+JUPYTER: Final = os.getenv("JPY_SESSION_NAME") and os.getenv("JPY_PARENT_PID")
+
 
 def get_channels(*channels: str | Channel) -> Iterable[Channel]:
     """Yield all unique channels from the given channels."""

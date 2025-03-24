@@ -24,14 +24,14 @@ repos:
       # auto inject license blurb
       - id: insert-license
         files: \.py$
-        args: [--license-filepath, .github/disclaimer.txt, --no-extra-eol, --use-current-year]
+        args: [--license-filepath, .github/disclaimer.txt, --no-extra-eol]
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.19.1
     hooks:
       # auto format Python codes within docstrings
       - id: blacken-docs
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.11.0
     hooks:
       # lint & attempt to correct failures (e.g. pyupgrade)
       - id: ruff
@@ -54,13 +54,13 @@ repos:
             recipe/meta.yaml
           )
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.30.0
+    rev: 0.31.3
     hooks:
       # verify github syntaxes
       - id: check-github-workflows
       - id: check-renovate
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+    rev: v1.15.0
     hooks:
       - id: mypy
         additional_dependencies: [types-requests]

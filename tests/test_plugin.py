@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import json
 import sys
 from io import StringIO
 from typing import TYPE_CHECKING
 
 import pytest
-from conda.base.context import context
+from conda.base.context import context, reset_context
 from conda.common.url import urlparse
 from conda.gateways.connection.session import get_session
 
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from conda.models.channel import Channel
     from conda.testing.fixtures import CondaCLIFixture
     from pytest import MonkeyPatch
+    from pytest_mock import MockerFixture
 
     from conda_anaconda_tos.models import RemoteToSMetadata
 
@@ -164,6 +166,23 @@ def test_subcommand_tos_interactive(
     assert not code
 
 
+def test_subcommand_tos_interactive_offline(
+    monkeypatch: MonkeyPatch,
+    conda_cli: CondaCLIFixture,
+    mock_search_path: tuple[Path, Path],
+) -> None:
+    system_tos_root, user_tos_root = mock_search_path
+
+    monkeypatch.setenv("CONDA_OFFLINE", "true")
+    reset_context()
+    assert context.offline
+
+    out, err, code = conda_cli("tos", "interactive", f"--tos-root={user_tos_root}")
+    assert not out
+    # assert not err  # server log is output to stderr
+    assert not code
+
+
 def _cache_clear() -> None:
     _get_tos_acceptance_header.cache_clear()
     context.plugin_manager.get_cached_request_headers.cache_clear()
@@ -213,3 +232,39 @@ def test_request_headers(
     else:
         value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=rejected="
         assert request.headers["Anaconda-ToS-Accept"].startswith(value)
+
+
+def test_conda_search(
+    conda_cli: CondaCLIFixture,
+    tmp_path: Path,
+    mocker: MockerFixture,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """JSON output with TOS plugin should be identical to without."""
+    # accept TOS
+    _, _, code = conda_cli("tos", "accept", f"--tos-root={tmp_path}")
+    assert not code
+    mocker.patch("conda_anaconda_tos.path.get_search_path", return_value=(tmp_path,))
+
+    # search for package with TOS plugin enabled
+    out, _, code = conda_cli("search", "small-executable", "--json")
+    assert not code
+
+    try:
+        plugin_enabled = json.loads(out)
+    except json.JSONDecodeError:
+        pytest.fail(f"Invalid JSON: {out}")
+
+    # search for package with TOS plugin disabled
+    monkeypatch.setenv("CONDA_NO_PLUINS", "true")
+    reset_context()
+    assert not context.no_plugins
+    out, _, code = conda_cli("search", "small-executable", "--json")
+    assert not code
+
+    try:
+        plugin_disabled = json.loads(out)
+    except json.JSONDecodeError:
+        pytest.fail(f"Invalid JSON: {out}")
+
+    assert plugin_enabled == plugin_disabled

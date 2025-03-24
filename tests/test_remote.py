@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import pytest
 from conda.common.compat import on_win
+from http_test_server import generate_metadata
 
 from conda_anaconda_tos.exceptions import (
     CondaToSInvalidError,
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from conda.models.channel import Channel
+    from http_test_server import MetadataType
     from pytest_mock import MockerFixture
 
 TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
@@ -53,6 +55,26 @@ def test_get_endpoint(tos_channel: Channel, sample_channel: Channel) -> None:
 
     with pytest.raises(CondaToSMissingError):
         get_endpoint(uuid4().hex)
+
+
+def test_get_endpoint_mutable_server(
+    mutable_channel: Channel, mutable_metadatas: list[MetadataType]
+) -> None:
+    # first no endpoint
+    mutable_metadatas.append(None)
+    with pytest.raises(CondaToSMissingError):
+        get_endpoint(mutable_channel)
+
+    # second valid endpoint
+    mutable_metadatas.append(metadata := generate_metadata())
+    response = get_endpoint(mutable_channel)
+    assert response.status_code == 200
+    assert RemoteToSMetadata(**response.json()) == metadata
+
+    # finally no endpoint again
+    mutable_metadatas.append(None)
+    with pytest.raises(CondaToSMissingError):
+        get_endpoint(mutable_channel)
 
 
 def test_get_cached_endpoint(sample_channel: Channel) -> None:
@@ -168,3 +190,33 @@ def test_get_remote_metadata(
     cache.write_text("{}")
     with pytest.raises(CondaToSInvalidError):
         get_remote_metadata(tos_channel)
+
+
+def test_get_remote_metadata_mutable_server(
+    mutable_channel: Channel,
+    mutable_metadatas: list[MetadataType],
+) -> None:
+    # first no endpoint
+    mutable_metadatas.append(None)
+    with pytest.raises(CondaToSMissingError):
+        get_remote_metadata(mutable_channel)
+
+    # second non-JSON endpoint
+    mutable_metadatas.append("?")
+    with pytest.raises(CondaToSInvalidError):
+        get_remote_metadata(mutable_channel)
+
+    # third invalid schema endpoint
+    mutable_metadatas.append("{'version': null}")
+    with pytest.raises(CondaToSInvalidError):
+        get_remote_metadata(mutable_channel)
+
+    # fourth valid endpoint
+    metadata = generate_metadata()
+    mutable_metadatas.append(metadata)
+    assert get_remote_metadata(mutable_channel) == metadata
+
+    # finally no endpoint again
+    mutable_metadatas.append(None)
+    with pytest.raises(CondaToSMissingError):
+        get_remote_metadata(mutable_channel)
