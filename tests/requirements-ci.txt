@@ -7,4 +7,4 @@ pytest-cov ==4.1.0
 # renovate: datasource=conda depName=main/pytest-mock
 pytest-mock ==3.10.0
 # renovate: datasource=conda depName=main/pytest-xdist
-pytest-xdist ==3.5.0
+pytest-xdist ==3.6.1
