@@ -14,10 +14,10 @@
       "customType": "regex",
       "description": "Upgrade conda dependencies",
       "fileMatch": [
-        "(^|/)requirements(.*).txt$"
+        "(^|/)requirements(.*)\\.txt$"
       ],
       "matchStrings": [
-        "# renovate: datasource=conda depName=(?<depName>.*?)\\s+-\\s*[\\w-]+\\s*==?\\s*\"?(?<currentValue>.*)\"?"
+        "# renovate: datasource=conda depName=(?<depName>.*?)\\s+[\\w-]+\\s*==?\\s*\"?(?<currentValue>.*)\"?"
       ],
       "datasourceTemplate": "conda"
     }
