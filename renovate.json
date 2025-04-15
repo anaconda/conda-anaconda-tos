@@ -11,6 +11,7 @@
   },
   "customManagers": [
     {
+      "customType": "regex",
       "description": "Upgrade conda dependencies",
       "fileMatch": [
         "(^|/)requirements(.*).txt$"
