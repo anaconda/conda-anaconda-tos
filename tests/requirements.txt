@@ -3,4 +3,4 @@ conda >=24.11
 pydantic ==2.8.2
 python >=3.9
 # renovate: datasource=conda depName=main/rich
-rich ==13.7.1
+rich ==13.9.4
