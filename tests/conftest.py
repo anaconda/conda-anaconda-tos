@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import os
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
@@ -118,14 +117,14 @@ def mock_channels(
 
 
 @pytest.fixture
-def terminal_width(mocker: MockerFixture, request: FixtureRequest) -> int:
+def terminal_width(monkeypatch: MonkeyPatch, request: FixtureRequest) -> int:
     """Mock the terminal width for console output.
 
     If the default width is not sufficient, use an `indirect=True` parameterization with
     the desired width.
     """
     width = getattr(request, "param", 500)
-    mocker.patch("os.get_terminal_size", return_value=os.terminal_size((width, 200)))
+    monkeypatch.setenv("COLUMNS", str(width))
     return width
 
 
