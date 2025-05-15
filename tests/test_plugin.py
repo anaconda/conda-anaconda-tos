@@ -50,10 +50,10 @@ def test_settings_hook() -> None:
 
 
 def test_request_headers_hook() -> None:
-    host, path = "conda.anaconda.org", "/pkgs/main/tos.json"
+    host, path = "conda.anaconda.org", "/pkgs/main/terms.json"
     assert not list(conda_request_headers(host, path))
 
-    host, path = "repo.anaconda.com", "/pkgs/main/tos.json"
+    host, path = "repo.anaconda.com", "/pkgs/main/terms.json"
     assert not list(conda_request_headers(host, path))
 
     host, path = "repo.anaconda.com", "/pkgs/main/repodata.json"
@@ -203,7 +203,7 @@ def test_request_headers(
     monkeypatch.setattr(plugin, "HOSTS", {urlparse(tos_channel.base_url).netloc})
     system_tos_root, user_tos_root = mock_search_path
 
-    url = f"{tos_channel}/tos.json"
+    url = f"{tos_channel}/terms.json"
 
     _cache_clear()
     request = get_session(url).get(url).request

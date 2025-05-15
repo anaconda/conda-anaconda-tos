@@ -134,22 +134,22 @@ def main() -> None:
     action_mutex.add_argument(
         "--tos",
         action="store_true",
-        help="Serve the sample channel with a `tos.json` endpoint.",
+        help="Serve the sample channel with a `terms.json` endpoint.",
     )
     action_mutex.add_argument(
         "--invalid-json",
         action="store_true",
-        help="Serve the sample channel with an invalid JSON `tos.json` endpoint.",
+        help="Serve the sample channel with an invalid JSON `terms.json` endpoint.",
     )
     action_mutex.add_argument(
         "--invalid-schema",
         action="store_true",
-        help="Serve the sample channel with an invalid schema `tos.json` endpoint.",
+        help="Serve the sample channel with an invalid schema `terms.json` endpoint.",
     )
     parser.add_argument(
         "--missing-start",
         action="store_true",
-        help="Initially serve without a `tos.json` endpoint.",
+        help="Initially serve without a `terms.json` endpoint.",
     )
     args = parser.parse_args()
 

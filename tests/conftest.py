@@ -32,7 +32,7 @@ pytest_plugins = (
 
 @pytest.fixture(scope="session")
 def tos_server() -> Iterator[tuple[Channel, RemoteToSMetadata]]:
-    """Serve the sample channel but with a `tos.json` endpoint.
+    """Serve the sample channel but with a `terms.json` endpoint.
 
     Also returning a mutable RemoteToSMetadata so tests can modify the endpoint to mock
     Terms of Service updates.
@@ -55,7 +55,7 @@ def tos_metadata(tos_server: tuple[Channel, RemoteToSMetadata]) -> RemoteToSMeta
 
 @pytest.fixture(scope="session")
 def sample_channel() -> Iterator[Channel]:
-    """Serve the sample channel as-is without a `tos.json` endpoint."""
+    """Serve the sample channel as-is without a `terms.json` endpoint."""
     with serve_channel(SAMPLE_CHANNEL_DIR, None) as url:
         yield Channel(url)
 
