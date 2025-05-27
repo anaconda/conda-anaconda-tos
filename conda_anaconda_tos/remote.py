@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
     from requests import Response
 
-ENDPOINT: Final = "tos.json"
+ENDPOINT: Final = "terms.json"
 
 
 def get_endpoint(channel: str | Channel) -> Response:
