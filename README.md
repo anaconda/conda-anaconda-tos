@@ -23,7 +23,7 @@ conda install --name=base conda-anaconda-tos
 ```
 
 > [!NOTE]
-> With the plugin installed into a non-`base` environment use `$CONDA_PREFIX/bin/conda` instead of `conda` for the usage instructions below.
+> With the plugin installed into a non-`base` environment, use `$CONDA_PREFIX/bin/conda` instead of `conda` for the usage instructions below.
 
 ## Usage
 
