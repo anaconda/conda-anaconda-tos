@@ -64,13 +64,14 @@ To accept a channel's Terms of Service, run the following and replace `CHANNEL` 
 To remove channels with rejected Terms of Service, run the following and replace `CHANNEL` with the channel name/URL:
     ‣ conda config --remove channels CHANNEL
 ```
-## Configuration
 
-Configure ToS behavior in your `.condarc` file:
+### Auto Acceptance
+
+Configure ToS auto acceptance in your `.condarc` file
 
 ```yaml
 plugins:
-  auto_accept_tos: false
+  auto_accept_tos: true
 ```
 
 Or use the command-line flag (conda >= 25.5.0):
@@ -85,7 +86,7 @@ Or set the environment variable:
 export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
 ```
 
-### Environment Variables
+### Automated Deployments and CI/CD Pipelines
 
 For automated deployments and CI/CD pipelines, the plugin automatically detects CI and Jupyter environments to adjust its behavior accordingly:
 
