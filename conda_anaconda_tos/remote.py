@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import datetime
 from json import JSONDecodeError
 from typing import TYPE_CHECKING
@@ -44,13 +45,17 @@ def get_endpoint(channel: str | Channel) -> Response:
     session = get_session(channel.base_url)
     url = join_url(channel.base_url, ENDPOINT)
 
-    saved_token_setting = context.add_anaconda_token
-    try:
+    # Handle conda token setting with forward compatibility
+    saved_token_setting = None
+    with suppress(AttributeError):
+        saved_token_setting = context.add_anaconda_token
         # do not inject conda/binstar token into URL for two reasons:
         # 1. Metadata endpoint shouldn't be a protected endpoint
         # 2. CondaHttpAuth.add_binstar_token adds subdir to the URL
         #    which the metadata endpoint doesn't have
         context.add_anaconda_token = False
+
+    try:
         response = session.get(
             url,
             headers={"Content-Type": "application/json"},
@@ -64,7 +69,10 @@ def get_endpoint(channel: str | Channel) -> Response:
         # RequestException: failed to get metadata endpoint
         raise CondaToSMissingError(channel) from exc
     finally:
-        context.add_anaconda_token = saved_token_setting
+        # Restore original token setting if we modified it
+        with suppress(AttributeError):
+            if saved_token_setting is not None:
+                context.add_anaconda_token = saved_token_setting
     return response
 
 
