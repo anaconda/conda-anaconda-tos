@@ -91,13 +91,92 @@ export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
 For automated deployments and CI/CD pipelines, the plugin automatically detects CI and Jupyter environments to adjust its behavior accordingly:
 
 ```bash
-# CI environment detection (automatically detected)
+# CI environment detection (automatically detected in many CI systems)
 export CI=true
 
 # Jupyter environment (automatically detected)
 export JPY_SESSION_NAME=session
 export JPY_PARENT_PID=1234
 ```
+
+#### Using with Docker in CI/CD Systems
+
+When using Anaconda's Docker images in continuous integration systems, the `CI` environment variable might not be automatically passed to the container, which can lead to unexpected ToS prompts during your CI/CD workflows.
+
+##### GitHub Actions Behavior
+
+In GitHub Actions, the `CI` environment variable is handled differently depending on how you use containers:
+
+- **Automatically available**: When using the `container:` directive at the job level, GitHub Actions automatically injects the `CI=true` environment variable:
+
+  ```yaml
+  jobs:
+    build:
+      runs-on: ubuntu-latest
+      container:
+        image: continuumio/anaconda3
+      steps:
+        - run: echo "CI is $CI"    # prints "CI is true"
+        - run: conda install some-package  # ToS will be auto-accepted
+  ```
+
+- **Not automatically available**: When running Docker commands within steps, you need to explicitly pass the `CI` environment variable:
+
+  ```yaml
+  jobs:
+    build:
+      runs-on: ubuntu-latest
+      steps:
+        - run: docker run continuumio/anaconda3 echo "CI is $CI"  # CI will be empty
+  ```
+
+For cases where the `CI` environment variable isn't automatically available, there are two ways to handle ToS acceptance:
+
+1. **Pass the CI environment variable to Docker**:
+
+   ```bash
+   # Using Docker CLI
+   docker run -e CI=true continuumio/anaconda3 conda install some-package
+   ```
+
+   In GitHub Actions workflow:
+
+   ```yaml
+   jobs:
+     build:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v3
+         - name: Run in Docker
+           run: |
+             docker run -e CI=true continuumio/anaconda3 conda install some-package
+   ```
+
+2. **Explicitly accept ToS in your Docker command**:
+
+   ```bash
+   # Using Docker CLI
+   docker run continuumio/anaconda3 bash -c "conda tos accept && conda install some-package"
+   ```
+
+   In GitHub Actions workflow with Docker container action:
+
+   ```yaml
+   jobs:
+     build:
+       runs-on: ubuntu-latest
+       container:
+         image: continuumio/anaconda3
+       steps:
+         - uses: actions/checkout@v3
+         - name: Accept ToS and install packages
+           run: |
+             conda tos accept
+             conda install some-package
+   ```
+
+> [!NOTE]
+> Service containers and composite actions in GitHub Actions also inherit the runner's environment, including the `CI` variable. However, manually invoked Docker commands within steps do not automatically inherit these variables.
 
 ## How It Works
 
@@ -245,7 +324,7 @@ Yes, run `conda tos view --channel=CHANNEL_URL` to see the full text of the Term
 
 ### How do I accept ToS for multiple channels at once?
 
-Use `conda tos accept --all` to accept Terms of Service for all channels that require it.
+Use `conda tos accept` to accept Terms of Service for all channels that require it.
 
 ### Is my personal information shared when I accept the ToS?
 
