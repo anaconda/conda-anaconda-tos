@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: conda-anaconda-tos Documentation
+    url: https://github.com/anaconda/conda-anaconda-tos#readme
+    about: Check the README for usage information and documentation
