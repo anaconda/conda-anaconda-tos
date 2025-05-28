@@ -1,73 +1,220 @@
 # conda-anaconda-tos
 
-Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS).
+[![Conda Version](https://img.shields.io/conda/vn/main/conda-anaconda-tos.svg)](https://anaconda.org/main/conda-anaconda-tos)
+[![License](https://img.shields.io/github/license/anaconda/conda-anaconda-tos.svg)](LICENSE)
+
+A conda plugin for handling Terms of Service (ToS) acceptance in commercial software repositories, providing auditable consent management and GDPR compliance.
+
+## What is conda-anaconda-tos?
+
+The `conda-anaconda-tos` plugin enables conda to automatically detect and manage Terms of Service acceptance when accessing commercial repositories. It provides auditable records of user consent, handles ToS updates transparently, and ensures compliance with legal requirements for commercial software distribution.
+
+This plugin solves the critical need for verifiable Anaconda ToS acceptance in enterprise environments while maintaining a smooth user experience for conda package installation.
 
 ## Installation
 
-### Into `base` environment
+### Into `base` Environment (Recommended)
+
+The plugin must be installed in the base environment to function properly with all conda operations:
 
 ```bash
-$ conda install --name=base distribution-plugins/label/dev::conda-anaconda-tos
-```
-
-
-### Into a new environment (for development & testing)
-
-```bash
-$ git clone https://github.com/anaconda/conda-anaconda-tos.git
-$ cd conda-anaconda-tos
-$ conda create --name=conda-tos --file=tests/requirements.txt
-$ conda activate conda-tos
-(conda-tos) $ pip install -e .
+# From Anaconda's "main" channel
+conda install --name=base conda-anaconda-tos
 ```
 
 > [!NOTE]
-> With the plugin installed into a non-`base` environment use `$CONDA_PREFIX/bin/conda` in stead of `conda` for the usage instructions below.
+> With the plugin installed into a non-`base` environment use `$CONDA_PREFIX/bin/conda` instead of `conda` for the usage instructions below.
 
 ## Usage
 
+### Basic Commands
+
 ```bash
-$ conda tos --help
+conda tos --help
 
 # see the status of all Terms of Service
-$ conda tos
+conda tos
 
 # conda command intercepted with Terms of Service checks
-$ conda create --name=scratch
+conda create --name=scratch
 
 # clear cache & acceptance/rejection files
-$ conda tos clean --all
+conda tos clean --all
 
 # other commands for managing Terms of Service
-$ conda tos view
-$ conda tos accept
-$ conda tos reject
-$ conda tos interactive
+conda tos view    # Display full Terms of Service text
+conda tos accept  # Accept Terms of Service
+conda tos reject  # Reject Terms of Service
+conda tos interactive  # Interactive ToS management
 ```
 
-To test with a local server use `tests/http_test_server.py` (see below) and use the `--channel` option.
+### Interactive ToS Acceptance
+
+When accessing a commercial repository for the first time or after ToS updates, you'll see an interactive prompt:
+
+```text
+Terms of Service Summary:
+[Summary text displayed here]
+
+For full Terms of Service, run: conda tos view
+
+By accepting these terms, you agree to the data collection practices described.
+Your rights under GDPR include access, correction, and deletion of your data.
+
+Do you accept the Terms of Service? (a)ccept/(r)eject/(v)iew:
+```
+
+### Automated Acceptance
+
+For non-interactive environments like CI/CD pipelines:
+
+```bash
+# During installation
+conda install package-name --accept-tos
+```
+
+> [!NOTE]
+> You can also configure global acceptance in your `.condarc` file. See the [Configuration](#configuration) section below.
+
+## Configuration
+
+Configure ToS behavior in your `.condarc` file:
+
+```yaml
+plugins:
+  auto_accept_tos: false
+```
+
+Or use the command-line flag (conda >= 25.5.0):
+
+```bash
+conda config --set auto_accept_tos yes
+```
+
+### Environment Variables
+
+For automated deployments and CI/CD pipelines:
+
+```bash
+# Automatically accept Terms of Service
+export CONDA_AUTO_ACCEPT_TOS=yes
+
+# CI environment detection (automatically detected)
+export CI=true
+
+# Jupyter environment (automatically detected)
+export JPY_SESSION_NAME=session
+export JPY_PARENT_PID=1234
+```
+
+The plugin automatically detects CI and Jupyter environments to adjust its behavior accordingly.
+
+## How It Works
+
+The plugin operates transparently during normal conda operations:
+
+1. **Detection**: Automatically detects ToS requirements when accessing commercial repositories
+2. **Version Tracking**: Monitors ToS versions and prompts for re-acceptance when terms change
+3. **Local Storage**: Maintains secure local records of acceptance with timestamps
+4. **Minimal Impact**: Checks for updates during explicit conda commands with configurable cache timeout
+5. **Compliance**: Provides GDPR-compliant consent management with data minimization
+6. **HTTP Headers**: Uses the `Anaconda-ToS-Accept` header to transmit acceptance tokens to repositories
+7. **Environment Detection**: Automatically adjusts behavior in CI and Jupyter environments
+
+## Privacy and Compliance
+
+This plugin implements privacy-by-design principles:
+
+- **Data Minimization**: Collects only necessary acceptance proof
+- **User Rights**: Supports GDPR rights including consent withdrawal
+- **Audit Trail**: Provides verifiable logs for compliance requirements
+- **Anonymous Tokens**: Uses tokens rather than personal identifiers
+
+For privacy inquiries or to exercise your data rights, contact the repository administrator.
+
+## Troubleshooting
+
+### ToS Prompt Appears Repeatedly
+
+This typically occurs when:
+
+- The ToS has been updated
+- Local acceptance records are corrupted
+- Plugin is not installed in base environment
+
+Solution:
+
+```bash
+conda install --name base --force-reinstall conda-anaconda-tos
+```
+
+## Testing
+
+### Development Environment Setup
+
+For development and testing, set up a dedicated environment:
+
+```bash
+git clone https://github.com/anaconda/conda-anaconda-tos.git
+cd conda-anaconda-tos
+conda create --name=cat-dev --file=tests/requirements.txt
+conda activate cat-dev
+(cat-dev) pip install -e .
+```
+
+### Running Tests
+
+```bash
+# Activate the development environment
+conda activate cat-dev
+
+# Install test dependencies
+(cat-dev) conda install --file=tests/requirements-ci.txt
+
+# Run tests with coverage
+(cat-dev) pytest --cov=conda_anaconda_tos
+```
+
+### Testing Canary Builds
+
+To test the latest development version ("canary"):
+
+```bash
+conda install --name=base distribution-plugins/label/dev::conda-anaconda-tos
+```
+
+### Testing with Local Server
+
+To test with a local server use `tests/http_test_server.py` and the `--channel` option:
 
 > [!NOTE]
 > The port is random and just an example.
 
 ```bash
-(conda-tos) $ $CONDA_PREFIX/bin/conda tos --channel=http://127.0.0.1:53095/
+# Run conda tos with a custom channel
+(cat-dev) $CONDA_PREFIX/bin/conda tos --channel=http://127.0.0.1:53095/
 ```
 
-### A sample channel without Terms of Service
+#### A Sample Channel without Terms of Service
 
 ```bash
-$ conda activate conda-tos
-(conda-tos) $ python tests/http_test_server.py
+# Activate the development environment
+conda activate cat-dev
+
+# Run the test server without ToS
+(cat-dev) python tests/http_test_server.py
 Serving HTTP at http://127.0.0.1:54115...
 Press Enter or Ctrl-C to exit.
 ```
 
-### A sample channel with Terms of Service
+#### A Sample Channel with Terms of Service
 
 ```bash
-$ conda activate conda-tos
-(conda-tos) $ python tests/http_test_server.py --tos
+# Activate the development environment
+conda activate cat-dev
+
+# Run the test server with ToS enabled
+(cat-dev) python tests/http_test_server.py --tos
 Serving HTTP at http://127.0.0.1:54115...
 Current ToS version: 2024-11-22 10:54:57 CST
 Press Enter to increment ToS version, Ctrl-C to exit.
@@ -76,10 +223,22 @@ Press Enter to increment ToS version, Ctrl-C to exit.
 > [!NOTE]
 > The sample channel with a ToS offers the option to increment the ToS version to mock a ToS version update.
 
-## Testing
+## Contributing
 
-```bash
-$ conda activate conda-tos
-(conda-tos) $ conda install --file=tests/requirements-ci.txt
-(conda-tos) $ pytest --cov=conda_anaconda_tos
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+- File bug reports and feature requests
+- Open pull requests to resolve issues
+- Review open pull requests
+- Report any typos or improvements for documentation
+- Engage in discussions and add new ideas
+
+## License
+
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
+
+## Related Projects
+
+- [conda](https://github.com/conda/conda) - The package management system
+- [conda-plugin-template](https://github.com/conda/conda-plugin-template) - Template for creating conda plugins
+- [conda-incubator/plugins](https://github.com/conda-incubator/conda-plugins) - Collection of conda plugins
