@@ -55,7 +55,8 @@ When accessing a commercial repository for the first time or after ToS updates, 
 ```text
 Terms of Service have not been accepted for the following channels. Please accept or remove them before proceeding:
 • https://repo.anaconda.com/pkgs/main
-• https://conda.anaconda.org/conda-forge
+• https://repo.anaconda.com/pkgs/msys2
+• https://repo.anaconda.com/pkgs/r
 
 To accept a channel's Terms of Service, run the following and replace `CHANNEL` with the channel name/URL:
     ‣ conda tos accept --override-channels --channel CHANNEL
@@ -222,6 +223,48 @@ Press Enter to increment ToS version, Ctrl-C to exit.
 
 > [!NOTE]
 > The sample channel with a ToS offers the option to increment the ToS version to mock a ToS version update.
+
+## Frequently Asked Questions
+
+### Why do I need this plugin?
+
+This plugin is required to access commercial repositories that have Terms of Service requirements. Without it, you won't be able to install packages from these repositories, as conda will block access until the ToS is accepted.
+
+### Where are the acceptance records stored?
+
+Acceptance records are stored locally in your conda configuration directory, typically at `~/.conda/tos/` on Unix-like systems or `%USERPROFILE%\.conda\tos\` on Windows. These records include timestamps and version information for auditing purposes.
+
+### How do I know if my ToS acceptance is still valid?
+
+Run `conda tos` to see the status of all Terms of Service. This will show which channels have accepted ToS and when they were last accepted.
+
+### Can I use this plugin in automated CI/CD pipelines?
+
+Yes, the plugin is designed to work in non-interactive environments. Use the `--accept-tos` flag with conda commands, set the `CONDA_AUTO_ACCEPT_TOS=yes` environment variable, or configure `auto_accept_tos: true` in your `.condarc` file.
+
+### What happens if I reject the Terms of Service?
+
+If you reject the ToS, you won't be able to access the repository. The plugin will prevent conda from downloading packages from that repository until you accept the ToS or remove the repository from your channels.
+
+### How often will I need to accept the Terms of Service?
+
+You only need to accept the ToS once per version. If the repository updates its ToS, you'll be prompted to accept the new version the next time you try to access it.
+
+### Can I view the full Terms of Service text?
+
+Yes, run `conda tos view --channel=CHANNEL_URL` to see the full text of the Terms of Service for a specific channel.
+
+### How do I accept ToS for multiple channels at once?
+
+Use `conda tos accept --all` to accept Terms of Service for all channels that require it.
+
+### Is my personal information shared when I accept the ToS?
+
+No, the plugin uses anonymous tokens rather than personal identifiers. Only the acceptance record with timestamp is stored locally and transmitted to the repository.
+
+### How do I troubleshoot ToS-related issues?
+
+If you encounter issues, first try `conda tos clean --all` to clear the cache and acceptance records, then reinstall the plugin with `conda install --name base --force-reinstall conda-anaconda-tos`.
 
 ## Contributing
 
