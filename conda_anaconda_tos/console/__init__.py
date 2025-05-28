@@ -3,6 +3,7 @@
 """Render functions for console output."""
 
 from .render import (  # noqa: F401
+    noop_printer,
     render_accept,
     render_clean,
     render_info,
