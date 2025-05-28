@@ -53,15 +53,15 @@ conda tos interactive  # Interactive ToS management
 When accessing a commercial repository for the first time or after ToS updates, you'll see an interactive prompt:
 
 ```text
-Terms of Service Summary:
-[Summary text displayed here]
+Terms of Service have not been accepted for the following channels. Please accept or remove them before proceeding:
+• https://repo.anaconda.com/pkgs/main
+• https://conda.anaconda.org/conda-forge
 
-For full Terms of Service, run: conda tos view
+To accept a channel's Terms of Service, run the following and replace `CHANNEL` with the channel name/URL:
+    ‣ conda tos accept --override-channels --channel CHANNEL
 
-By accepting these terms, you agree to the data collection practices described.
-Your rights under GDPR include access, correction, and deletion of your data.
-
-Do you accept the Terms of Service? (a)ccept/(r)eject/(v)iew:
+To remove channels with rejected Terms of Service, run the following and replace `CHANNEL` with the channel name/URL:
+    ‣ conda config --remove channels CHANNEL
 ```
 
 ### Automated Acceptance
