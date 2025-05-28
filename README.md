@@ -254,7 +254,7 @@ conda install --name=base distribution-plugins/label/dev::conda-anaconda-tos
 
 ### Testing with Local Server
 
-To test with a local server use `tests/http_test_server.py` and the `--channel` option:
+To test with a local server, use `tests/http_test_server.py` and the `--channel` option:
 
 > [!NOTE]
 > The port is random and just an example.
