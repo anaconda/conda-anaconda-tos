@@ -51,16 +51,9 @@ conda tos interactive  # Interactive ToS management
 When accessing a commercial repository for the first time or after ToS updates, you'll see an interactive prompt:
 
 ```text
-Terms of Service have not been accepted for the following channels. Please accept or remove them before proceeding:
-• https://repo.anaconda.com/pkgs/main
-• https://repo.anaconda.com/pkgs/msys2
-• https://repo.anaconda.com/pkgs/r
-
-To accept a channel's Terms of Service, run the following and replace `CHANNEL` with the channel name/URL:
-    ‣ conda tos accept --override-channels --channel CHANNEL
-
-To remove channels with rejected Terms of Service, run the following and replace `CHANNEL` with the channel name/URL:
-    ‣ conda config --remove channels CHANNEL
+Do you accept the Terms of Service (ToS) for https://repo.anaconda.com/pkgs/main? [(a)ccept/(r)eject/(v)iew]:
+Do you accept the Terms of Service (ToS) for https://repo.anaconda.com/pkgs/msys2? [(a)ccept/(r)eject/(v)iew]:
+Do you accept the Terms of Service (ToS) for https://repo.anaconda.com/pkgs/r? [(a)ccept/(r)eject/(v)iew]:
 ```
 
 ### Auto Acceptance
