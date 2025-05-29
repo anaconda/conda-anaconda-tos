@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from conda.models.channel import Channel
     from conda.testing.fixtures import CondaCLIFixture
     from pytest import MonkeyPatch
-    from pytest_mock import MockerFixture
 
     from conda_anaconda_tos.models import RemoteToSMetadata
 
@@ -237,17 +236,45 @@ def test_request_headers(
         assert request.headers["Anaconda-ToS-Accept"].startswith(value)
 
 
-def test_conda_search(
+def test_conda_search_interactive(
     conda_cli: CondaCLIFixture,
     tmp_path: Path,
-    mocker: MockerFixture,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Conda commands should trigger the interactive TOS prompts."""
+    monkeypatch.setattr(render, "IS_INTERACTIVE", True)
+    monkeypatch.setattr(plugin, "DEFAULT_TOS_ROOT", tmp_path)
+
+    # interactive accept
+    monkeypatch.setattr(sys, "stdin", StringIO("accept\n"))
+    out, _, code = conda_cli("search", "small-executable")
+    assert not code
+
+    # search for package with TOS plugin enabled
+    out, _, code = conda_cli("search", "*")
+    assert not code
+    assert "small-executable" in out
+
+    # search for package with TOS plugin disabled
+    monkeypatch.setenv("CONDA_NO_PLUINS", "true")
+    reset_context()
+    assert not context.no_plugins
+    out, _, code = conda_cli("search", "small-executable")
+    assert not code
+    assert "small-executable"
+
+
+def test_conda_search_json(
+    conda_cli: CondaCLIFixture,
+    tmp_path: Path,
     monkeypatch: MonkeyPatch,
 ) -> None:
     """JSON output with TOS plugin should be identical to without."""
+    monkeypatch.setattr(plugin, "DEFAULT_TOS_ROOT", tmp_path)
+
     # accept TOS
     _, _, code = conda_cli("tos", "accept", f"--tos-root={tmp_path}")
     assert not code
-    mocker.patch("conda_anaconda_tos.path.get_search_path", return_value=(tmp_path,))
 
     # search for package with TOS plugin enabled
     out, _, code = conda_cli("search", "small-executable", "--json")

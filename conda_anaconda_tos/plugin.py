@@ -25,6 +25,7 @@ from rich.console import Console
 from . import APP_NAME, APP_VERSION
 from .api import CI, get_channels
 from .console import (
+    noop_printer,
     render_accept,
     render_clean,
     render_info,
@@ -329,10 +330,11 @@ def _pre_command_check_tos(_command: str) -> None:
         *context.channels,
         tos_root=DEFAULT_TOS_ROOT,
         cache_timeout=DEFAULT_CACHE_TIMEOUT,
-        json=None,
+        json=context.json,
         verbose=context.verbose,
         auto_accept_tos=context.plugins.auto_accept_tos,
         always_yes=context.always_yes,
+        json_printer=noop_printer,  # no JSON output even if --json
     )
 
 
