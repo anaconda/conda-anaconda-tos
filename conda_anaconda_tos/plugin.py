@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.cli.helpers import add_parser_prefix, add_parser_verbose
-from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.common.constants import NULL
 from conda.plugins import (
@@ -251,7 +250,19 @@ def configure_parser(parser: ArgumentParser) -> None:
 
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
-    validate_prefix_exists(context.target_prefix)
+    try:
+        # FUTURE: update once we only support conda 25.5+
+        from conda.core.prefix_data import PrefixData
+
+        PrefixData(context.target_prefix).assert_exists()
+    except AttributeError:
+        # AttributeError: PrefixData.assert_exists isn't defined
+        from pathlib import Path
+
+        from conda.exceptions import EnvironmentLocationNotFound
+
+        if not (prefix := Path(context.target_prefix).exists()):
+            raise EnvironmentLocationNotFound(prefix) from None
 
     console = Console()
     action: Callable
