@@ -13,8 +13,6 @@ This plugin solves the critical need for verifiable Anaconda ToS acceptance in e
 
 ## Installation
 
-### Into `base` Environment (Recommended)
-
 The plugin must be installed in the base environment to function properly with all conda operations:
 
 ```bash
