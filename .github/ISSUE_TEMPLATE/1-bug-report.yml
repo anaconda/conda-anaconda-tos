@@ -1,0 +1,128 @@
+name: Bug Report
+description: Create a report to help us improve conda-anaconda-tos
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Run command '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened instead of the expected behavior.
+    validations:
+      required: true
+
+  - type: input
+    id: tos-version
+    attributes:
+      label: conda-anaconda-tos version
+      description: What version of conda-anaconda-tos are you running?
+      placeholder: e.g., 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: conda-version
+    attributes:
+      label: conda version
+      description: What version of conda are you running?
+      placeholder: e.g., 23.10.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Windows
+        - macOS
+        - Linux (Ubuntu/Debian)
+        - Linux (RHEL/CentOS/Fedora)
+        - Linux (Other)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      description: What version of Python are you using?
+      placeholder: e.g., 3.10.12
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-method
+    attributes:
+      label: Installation Method
+      description: How did you install conda-anaconda-tos?
+      options:
+        - conda install
+        - pip install
+        - pip install -e . (development)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration
+      description: If applicable, add your conda configuration
+      placeholder: Paste the output of `conda config --show` here
+      render: shell
+
+  - type: textarea
+    id: error-logs
+    attributes:
+      label: Error Logs
+      description: If applicable, add error logs or terminal output
+      placeholder: Paste any relevant error messages or logs here
+      render: shell
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here, such as what you've tried so far or theories about the cause.
+
+  - type: textarea
+    id: possible-solution
+    attributes:
+      label: Possible Solution
+      description: If you have suggestions on a fix for the bug, please describe it here.
