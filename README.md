@@ -263,7 +263,7 @@ Press Enter to increment ToS version, Ctrl-C to exit.
 
 ### Why do I need this plugin?
 
-This plugin is required to access commercial repositories that have Terms of Service requirements. Without it, you won't be able to install packages from these repositories, as conda will block access until the ToS is accepted.
+This plugin is a helpful tool for managing Terms of Service requirements for commercial repositories. It provides a streamlined way to be informed about and manage ToS acceptance for channels, but is not strictly required for accessing these repositories.
 
 ### Where are the acceptance records stored?
 
