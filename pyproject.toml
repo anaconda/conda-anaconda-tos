@@ -68,6 +68,12 @@ addopts = [
   "--tb=native",
   "-vv",
 ]
+filterwarnings = [
+  # elevate all deprecation warnings to errors
+  "error::PendingDeprecationWarning",
+  "error::DeprecationWarning",
+  "error::FutureWarning",
+]
 testpaths = ["tests"]
 
 [tool.ruff]

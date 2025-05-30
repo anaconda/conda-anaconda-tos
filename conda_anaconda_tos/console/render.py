@@ -51,6 +51,10 @@ if TYPE_CHECKING:
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
 
+def noop_printer(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+    """Use this no-op printer when nothing should be printed to the screen."""
+
+
 def printable(func: Callable[..., int]) -> Callable[..., int]:
     """Pass console and printer functions to the decorated function.
 
@@ -61,19 +65,9 @@ def printable(func: Callable[..., int]) -> Callable[..., int]:
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> int:  # noqa: ANN401
         console = kwargs.pop("console", Console())
-
-        # json=False -> standard output, default
-        # json=True -> JSON output
-        # json=None -> no output
         json = kwargs.pop("json", False)
-        if json is None:
-            printer = json_printer = lambda *_, **__: None
-            json = True  # force non-interactive
-        elif json:
-            printer, json_printer = lambda *_, **__: None, console.print_json
-        else:
-            printer, json_printer = console.print, console.print_json
-
+        printer = kwargs.pop("printer", noop_printer if json else console.print)
+        json_printer = kwargs.pop("json_printer", console.print_json)
         return func(
             *args,
             **kwargs,

@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.cli.helpers import add_parser_prefix, add_parser_verbose
-from conda.cli.install import validate_prefix_exists
 from conda.common.configuration import PrimitiveParameter
 from conda.common.constants import NULL
 from conda.plugins import (
@@ -25,6 +24,7 @@ from rich.console import Console
 from . import APP_NAME, APP_VERSION
 from .api import CI, get_channels
 from .console import (
+    noop_printer,
     render_accept,
     render_clean,
     render_info,
@@ -250,7 +250,19 @@ def configure_parser(parser: ArgumentParser) -> None:
 
 def execute(args: Namespace) -> int:
     """Execute the `tos` subcommand."""
-    validate_prefix_exists(context.target_prefix)
+    try:
+        # FUTURE: update once we only support conda 25.5+
+        from conda.core.prefix_data import PrefixData
+
+        PrefixData(context.target_prefix).assert_exists()
+    except AttributeError:
+        # AttributeError: PrefixData.assert_exists isn't defined
+        from pathlib import Path
+
+        from conda.exceptions import EnvironmentLocationNotFound
+
+        if not (prefix := Path(context.target_prefix).exists()):
+            raise EnvironmentLocationNotFound(prefix) from None
 
     console = Console()
     action: Callable
@@ -329,10 +341,11 @@ def _pre_command_check_tos(_command: str) -> None:
         *context.channels,
         tos_root=DEFAULT_TOS_ROOT,
         cache_timeout=DEFAULT_CACHE_TIMEOUT,
-        json=None,
+        json=context.json,
         verbose=context.verbose,
         auto_accept_tos=context.plugins.auto_accept_tos,
         always_yes=context.always_yes,
+        json_printer=noop_printer,  # no JSON output even if --json
     )
 
 

@@ -153,7 +153,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    metadata: MetadataType
+    metadata: MetadataType | None = None
 
     def serve_metadata() -> Iterator[MetadataType]:
         nonlocal metadata
