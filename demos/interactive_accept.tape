@@ -55,7 +55,7 @@
 #   Hide                            Hide the subsequent commands from the output
 #   Show                            Show the subsequent commands in the output
 
-Output demo.gif
+Output interactive_accept.gif
 
 Require conda
 
@@ -71,62 +71,21 @@ Type "conda tos clean --all ; clear" Enter Wait
 Show
 
 # Recording
-
-### Info
-Type "conda --version" Enter Wait
-Sleep 2s
-Type "conda tos --version" Enter Wait
-Sleep 5s
-
-Hide
-Type "clear" Enter Wait
-Show
-
-### No TOS Accepted
 Type "conda tos" Enter Wait
-Sleep 10s
+Sleep 2s
 
-Hide
-Type "clear" Enter Wait
-Show
-
-### Interactive TOS Prompt
 Type "conda search small-executable --info" Enter Wait /\?/
 Sleep 2s
+Type "view" Enter Wait /\?/
+Sleep 2s
 Type "accept" Enter Wait
-Sleep 5s
+Sleep 2s
 Type "conda tos" Enter Wait
+Sleep 10s
+
+Type "conda create --dry-run small-executable" Enter Wait
 Sleep 10s
 
 Hide
 Type "clear" Enter Wait
 Show
-
-### Reject TOS
-Type "conda tos reject" Enter Wait
-Sleep 2s
-Type "conda tos" Enter Wait
-Sleep 2s
-Type "conda create --dry-run" Enter Wait
-Sleep 10s
-
-Hide
-Type "clear" Enter Wait
-Show
-
-### Accept TOS
-Type "conda tos accept" Enter Wait
-Sleep 2s
-Type "conda tos" Enter Wait
-Sleep 2s
-Type "conda create --dry-run" Enter Wait
-Sleep 10s
-
-Hide
-Type "clear" Enter Wait
-Show
-
-
-### Clear Cache and Acceptance
-Type "conda tos clean --all" Enter Wait
-Sleep 10s
