@@ -267,7 +267,17 @@ This plugin is a helpful tool for managing Terms of Service requirements for com
 
 ### Where are the acceptance records stored?
 
-Acceptance records are stored locally in your conda configuration directory, typically at `~/.conda/tos/` on Unix-like systems or `%USERPROFILE%\.conda\tos\` on Windows. These records include timestamps and version information for auditing purposes.
+Acceptance records are stored locally, and the location depends on the options you choose when accepting the ToS. When using `conda tos accept`, you can specify one of these storage options:
+
+| Option              | Description                  | Unix/Linux Path                | Windows Path                    |
+|---------------------|------------------------------|--------------------------------|---------------------------------|
+| `--user` (default)  | User directory               | `~/.conda/tos`                 | `%USERPROFILE%\.conda\tos\`     |
+| `--system`          | Conda installation directory | `$CONDA_ROOT/conda-meta/tos`   | `%CONDA_ROOT%\conda-meta\tos`   |
+| `--site`            | System-wide location         | `/etc/conda/tos`               | `C:/ProgramData/conda/tos`      |
+| `--env`             | Current conda environment    | `$CONDA_PREFIX/conda-meta/tos` | `%CONDA_PREFIX%\conda-meta\tos` |
+| `--tos-root PATH`   | Custom location              | User-specified path            | User-specified path             |
+
+When checking for ToS acceptance, the plugin searches all these locations (and a few more) in a specific order, so acceptance in any location will be recognized. The records include timestamps and version information for auditing purposes.
 
 ### How do I know if my ToS acceptance is still valid?
 
