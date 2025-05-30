@@ -275,7 +275,7 @@ Run `conda tos` to see the status of all Terms of Service. This will show which 
 
 ### Can I use this plugin in automated CI/CD pipelines?
 
-Yes, the plugin is designed to work in non-interactive environments. Use the `--accept-tos` flag with conda commands, set the `CONDA_AUTO_ACCEPT_TOS=yes` environment variable, or configure `auto_accept_tos: true` in your `.condarc` file.
+Yes, the plugin is designed to work in non-interactive environments. The plugin will automatically try to detect CI/CD environments (see [Automated Deployments and CI/CD Pipelines](#automated-deployments-and-cicd-pipelines) section for details). You can also explicitly set the `CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes` environment variable or configure `auto_accept_tos: true` in your `.condarc` file.
 
 ### What happens if I reject the Terms of Service?
 
