@@ -107,7 +107,7 @@ In GitHub Actions, the `CI` environment variable is not sufficiently detected au
 
 We're recommending to pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker or explicitly accept the ToS by running `conda tos accept`:
 
-1. **Pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker**:
+- **Pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker**:
 
    ```bash
    # Using Docker CLI
@@ -127,7 +127,7 @@ We're recommending to pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment varia
              docker run -e CONDA_PLUGINS_AUTO_ACCEPT_TOS=true continuumio/anaconda3 conda install some-package
    ```
 
-2. **Explicitly accept ToS in your Docker command**:
+- **Explicitly accept ToS in your Docker command**:
 
    ```bash
    # Using Docker CLI
