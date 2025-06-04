@@ -27,7 +27,9 @@ conda install --name=base conda-anaconda-tos
 
 ### Basic Commands
 
-![Demo](demos/conda_tos.gif)
+| Basic Commands |
+|----------------|
+| ![Basic Commands Demo](demos/conda_tos.gif) |
 
 ```bash
 conda tos --help
@@ -58,8 +60,9 @@ Do you accept the Terms of Service (ToS) for https://repo.anaconda.com/pkgs/msys
 Do you accept the Terms of Service (ToS) for https://repo.anaconda.com/pkgs/r? [(a)ccept/(r)eject/(v)iew]:
 ```
 
-![Interactive Accept Demo](demos/interactive_accept.gif)
-![Interactive Reject Demo](demos/interactive_reject.gif)
+| Interactive Accept | Interactive Reject |
+|--------------------|--------------------|
+| ![Interactive Accept Demo](demos/interactive_accept.gif) | ![Interactive Reject Demo](demos/interactive_reject.gif) |
 
 ### Auto Acceptance
 
