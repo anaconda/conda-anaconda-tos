@@ -105,7 +105,7 @@ When using Anaconda's Docker images in continuous integration systems, the `CI` 
 
 In GitHub Actions, the `CI` environment variable is not sufficiently detected automatically.
 
-We're recommending to pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker or explicitly accept the ToS by running `conda tos accept`:
+We recommend passing the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker or explicitly accepting the ToS by running `conda tos accept`:
 
 - **Pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker**:
 
