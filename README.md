@@ -265,11 +265,15 @@ Press Enter to increment ToS version, Ctrl-C to exit.
 
 ## Frequently Asked Questions
 
-### Why do I need this plugin?
+<details>
+<summary><h3>Why do I need this plugin?</h3></summary>
 
 This plugin is a helpful tool for managing Terms of Service requirements for commercial repositories. It provides a streamlined way to be informed about and manage ToS acceptance for channels, but is not strictly required for accessing these repositories.
 
-### Where are the acceptance records stored?
+</details>
+
+<details>
+<summary><h3>Where are the acceptance records stored?</h3></summary>
 
 Acceptance records are stored locally, and the location depends on the options you choose when accepting the ToS. When using `conda tos accept`, you can specify one of these storage options:
 
@@ -283,37 +287,63 @@ Acceptance records are stored locally, and the location depends on the options y
 
 When checking for ToS acceptance, the plugin searches all these locations (and a few more) in a specific order, so acceptance in any location will be recognized. The records include timestamps and version information for auditing purposes.
 
-### How do I know if my ToS acceptance is still valid?
+</details>
+
+<details>
+<summary><h3>How do I know if my ToS acceptance is still valid?</h3></summary>
 
 Run `conda tos` to see the status of all Terms of Service. This will show which channels have accepted ToS and when they were last accepted.
 
-### Can I use this plugin in automated CI/CD pipelines?
+</details>
 
-Yes, the plugin is designed to work in non-interactive environments. The plugin will automatically try to detect CI/CD environments (see [Automated Deployments and CI/CD Pipelines](#automated-deployments-and-cicd-pipelines) section for details). You can also explicitly set the `CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes` environment variable or configure `auto_accept_tos: true` in your `.condarc` file.
+<details>
+<summary><h3>Can I use this plugin in automated CI/CD pipelines?</h3></summary>
 
-### What happens if I reject the Terms of Service?
+Yes, the plugin is designed to work in non-interactive environments. The plugin will automatically try to detect CI/CD environments (see [CI/CD Environments](#cicd-environments) section for details). You can also explicitly set the `CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes` environment variable or configure `auto_accept_tos: true` in your `.condarc` file.
+
+</details>
+
+<details>
+<summary><h3>What happens if I reject the Terms of Service?</h3></summary>
 
 If you reject the ToS, you won't be able to access the repository. The plugin will prevent conda from downloading packages from that repository until you accept the ToS or remove the repository from your channels.
 
-### How often will I need to accept the Terms of Service?
+</details>
+
+<details>
+<summary><h3>How often will I need to accept the Terms of Service?</h3></summary>
 
 You only need to accept the ToS once per version. If the repository updates its ToS, you'll be prompted to accept the new version the next time you try to access it.
 
-### Can I view the full Terms of Service text?
+</details>
+
+<details>
+<summary><h3>Can I view the full Terms of Service text?</h3></summary>
 
 Yes, run `conda tos view --channel=CHANNEL_URL` to see the full text of the Terms of Service for a specific channel.
 
-### How do I accept ToS for multiple channels at once?
+</details>
+
+<details>
+<summary><h3>How do I accept ToS for multiple channels at once?</h3></summary>
 
 Use `conda tos accept` to accept Terms of Service for all channels that require it.
 
-### Is my personal information shared when I accept the ToS?
+</details>
+
+<details>
+<summary><h3>Is my personal information shared when I accept the ToS?</h3></summary>
 
 No, the plugin uses anonymous tokens rather than personal identifiers. Only the acceptance record with timestamp is stored locally and transmitted to the repository.
 
-### How do I troubleshoot ToS-related issues?
+</details>
+
+<details>
+<summary><h3>How do I troubleshoot ToS-related issues?</h3></summary>
 
 If you encounter issues, first try `conda tos clean --all` to clear the cache and acceptance records, then reinstall the plugin with `conda install --name base --force-reinstall conda-anaconda-tos`.
+
+</details>
 
 ## Contributing
 
