@@ -159,7 +159,7 @@ The plugin operates transparently during normal conda operations:
 4. **Minimal Impact**: Checks for updates during explicit conda commands with configurable cache timeout
 5. **Compliance**: Provides GDPR-compliant consent management with data minimization
 6. **HTTP Headers**: Uses the `Anaconda-ToS-Accept` header to transmit acceptance tokens to repositories
-7. **Environment Detection**: Automatically adjusts behavior in CI and Jupyter environments
+7. **Environment Detection**: Automatically adjusts behavior in CI/CD and Jupyter environments
 
 ## Privacy and Compliance
 
