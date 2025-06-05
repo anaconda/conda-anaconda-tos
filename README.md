@@ -103,14 +103,19 @@ We recommend passing the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to
 
    ```bash
    # Using Docker CLI
-   docker run -e CONDA_PLUGINS_AUTO_ACCEPT_TOS=true continuumio/anaconda3 conda install some-package
+   docker run \
+     -e CONDA_PLUGINS_AUTO_ACCEPT_TOS=true \
+     continuumio/anaconda3 \
+     bash -c "conda install some-package"
    ```
 
 - **Explicitly accept ToS in your Docker command:**
 
    ```bash
    # Using Docker CLI
-   docker run continuumio/anaconda3 bash -c "conda tos accept && conda install some-package"
+   docker run \
+     continuumio/anaconda3 \
+     bash -c "conda tos accept && conda install some-package"
    ```
 
 #### Docker Containers in GitHub Actions
