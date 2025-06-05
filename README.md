@@ -123,11 +123,14 @@ Similarly when using Docker containers in GitHub Actions, the `CI` environment v
    jobs:
      build:
        runs-on: ubuntu-latest
+       container:
+         image: continuumio/anaconda3
+       env:
+         CONDA_PLUGINS_AUTO_ACCEPT_TOS: true
        steps:
          - uses: actions/checkout@v3
-         - name: Run in Docker
-           run: |
-             docker run -e CONDA_PLUGINS_AUTO_ACCEPT_TOS=true continuumio/anaconda3 conda install some-package
+         - name: Install Packages
+           run: conda install ...
    ```
 
 - **Explicitly accept ToS in your Docker command:**
@@ -140,10 +143,10 @@ Similarly when using Docker containers in GitHub Actions, the `CI` environment v
          image: continuumio/anaconda3
        steps:
          - uses: actions/checkout@v3
-         - name: Accept ToS and install packages
-           run: |
-             conda tos accept
-             conda install some-package
+         - name: Accept ToS
+           run: conda tos accept
+         - name: Install Packages
+           run: conda install ...
    ```
 
 > [!NOTE]
