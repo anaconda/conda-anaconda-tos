@@ -93,24 +93,31 @@ In Jupyter notebook environments, interactive prompts are disabled. Users must e
 
 In CI/CD environments (detected via `CI=true`), the plugin will automatically accept Terms of Service and print a warning message. This ensures automated builds don't get blocked waiting for user input.
 
-### Using with Docker in CI/CD Systems
+### Docker in CI/CD Environments
 
 When using Anaconda's Docker images in continuous integration systems, the `CI` environment variable might not be automatically passed to the container, which can lead to unexpected ToS prompts during your CI/CD workflows.
 
-### GitHub Actions Behavior
-
-In GitHub Actions, the `CI` environment variable is not sufficiently detected automatically.
-
 We recommend passing the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker or explicitly accepting the ToS by running `conda tos accept`:
 
-- **Pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker**:
+- **Pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker:**
 
    ```bash
    # Using Docker CLI
    docker run -e CONDA_PLUGINS_AUTO_ACCEPT_TOS=true continuumio/anaconda3 conda install some-package
    ```
 
-   In GitHub Actions workflow:
+- **Explicitly accept ToS in your Docker command:**
+
+   ```bash
+   # Using Docker CLI
+   docker run continuumio/anaconda3 bash -c "conda tos accept && conda install some-package"
+   ```
+
+#### Docker Containers in GitHub Actions
+
+Similarly when using Docker containers in GitHub Actions, the `CI` environment variable will not be automatically passed:
+
+- **Pass the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to Docker:**
 
    ```yaml
    jobs:
@@ -123,14 +130,7 @@ We recommend passing the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable to
              docker run -e CONDA_PLUGINS_AUTO_ACCEPT_TOS=true continuumio/anaconda3 conda install some-package
    ```
 
-- **Explicitly accept ToS in your Docker command**:
-
-   ```bash
-   # Using Docker CLI
-   docker run continuumio/anaconda3 bash -c "conda tos accept && conda install some-package"
-   ```
-
-   In GitHub Actions workflow with Docker container action:
+- **Explicitly accept ToS in your Docker command:**
 
    ```yaml
    jobs:
