@@ -64,7 +64,7 @@ Do you accept the Terms of Service (ToS) for https://repo.anaconda.com/pkgs/r? [
 |--------------------|--------------------|
 | ![Interactive Accept Demo](demos/interactive_accept.gif) | ![Interactive Reject Demo](demos/interactive_reject.gif) |
 
-### Auto Acceptance
+## Auto Acceptance
 
 Configure ToS auto acceptance in your `.condarc` file
 
@@ -85,23 +85,19 @@ Or set the environment variable:
 export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
 ```
 
-### Automated Deployments and CI/CD Pipelines
+## Jupyter Environments
 
-For automated deployments and CI/CD pipelines, the plugin automatically detects CI and Jupyter environments to adjust its behavior accordingly:
+In Jupyter notebook environments, interactive prompts are disabled. Users must explicitly accept or reject Terms of Service by running:
 
-The plugin automatically detects specific environments through these mechanisms:
+## CI/CD Environments
 
-- **CI Environment Detection**: Checks for the presence of the `CI=true` environment variable, which is automatically set in many continuous integration systems.
+In CI/CD environments (detected via `CI=true`), the plugin will automatically accept Terms of Service and print a warning message. This ensures automated builds don't get blocked waiting for user input.
 
-- **Jupyter Environment Detection**: Identifies Jupyter notebook environments by detecting the presence of `JPY_SESSION_NAME` and `JPY_PARENT_PID` environment variables
-
-In case you are using a CI system that doesn't set the `CI` environment variable automatically, you can set it manually or use the `CONDA_PLUGINS_AUTO_ACCEPT_TOS` environment variable (see below).
-
-#### Using with Docker in CI/CD Systems
+### Using with Docker in CI/CD Systems
 
 When using Anaconda's Docker images in continuous integration systems, the `CI` environment variable might not be automatically passed to the container, which can lead to unexpected ToS prompts during your CI/CD workflows.
 
-##### GitHub Actions Behavior
+### GitHub Actions Behavior
 
 In GitHub Actions, the `CI` environment variable is not sufficiently detected automatically.
 
