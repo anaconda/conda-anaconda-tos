@@ -89,6 +89,13 @@ export CONDA_PLUGINS_AUTO_ACCEPT_TOS=yes
 
 In Jupyter notebook environments, interactive prompts are disabled. Users must explicitly accept or reject Terms of Service by running:
 
+```bash
+conda tos <accept|reject>
+```
+
+> [!NOTE]
+> `conda tos` can be run using either the `%` or `!` magic commands within a Jupyter Notebook.
+
 ## CI/CD Environments
 
 In CI/CD environments (detected via `CI=true`), the plugin will automatically accept Terms of Service and print a warning message. This ensures automated builds don't get blocked waiting for user input.
