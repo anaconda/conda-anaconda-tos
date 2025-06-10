@@ -62,6 +62,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        conda-version: ['24.11', latest]
         exclude:
           # Windows: only test lowest and highest Python versions
           - os: windows-latest
@@ -129,6 +130,7 @@ jobs:
           --file tests/requirements.txt
           --file tests/requirements-ci.txt
           python=${{ matrix.python-version }}
+          ${{ matrix.conda-version != 'latest' && format('conda={0}', matrix.conda-version) }}
 
       # TODO: how can we remove this step?
       - name: Install Self
