@@ -130,7 +130,7 @@ jobs:
           --file tests/requirements.txt
           --file tests/requirements-ci.txt
           python=${{ matrix.python-version }}
-          ${{ matrix.conda-version != 'latest' && format('conda={0}', matrix.conda-version) }}
+          ${{ matrix.conda-version == 'latest' && '' ||format('conda={0}', matrix.conda-version) }}
 
       # TODO: how can we remove this step?
       - name: Install Self
