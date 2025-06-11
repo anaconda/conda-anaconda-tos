@@ -62,7 +62,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
-        conda-version: ['24.11', latest]
+        conda-version: ['24.11', '25.1', '25.3', '25.5']
         exclude:
           # Windows: only test lowest and highest Python versions
           - os: windows-latest
