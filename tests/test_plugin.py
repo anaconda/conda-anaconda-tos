@@ -273,6 +273,9 @@ def test_conda_search_interactive(
     out, _, code = conda_cli("search", "small-executable")
     assert not code
 
+    # FUTURE: conda 25.1+, remove special reset_context
+    reset_context()
+
     # search for package with TOS plugin enabled
     out, _, code = conda_cli("search", "*")
     assert not code
