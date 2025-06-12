@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import json
 import sys
+from contextlib import suppress
 from io import StringIO
 from typing import TYPE_CHECKING
 
 import pytest
-from conda.base.context import context, reset_context
+from conda import __version__ as CONDA_VERSION  # noqa: N812
+from conda.base.context import context
 from conda.common.url import urlparse
 from conda.gateways.connection.session import get_session
+from packaging import version
 
 from conda_anaconda_tos import plugin
 from conda_anaconda_tos.api import accept_tos, reject_tos
@@ -30,6 +33,20 @@ if TYPE_CHECKING:
     from pytest import MonkeyPatch
 
     from conda_anaconda_tos.models import RemoteToSMetadata
+
+
+if version.parse(CONDA_VERSION).release < (25, 1):
+
+    def reset_context() -> None:
+        from conda.base.context import reset_context
+
+        reset_context()
+
+        # clear cached property
+        with suppress(AttributeError):
+            del context.plugins
+else:
+    from conda.base.context import reset_context  # type: ignore[no-redef]
 
 
 def test_subcommands_hook() -> None:
@@ -173,6 +190,9 @@ def test_subcommand_tos_interactive_offline(
     conda_cli: CondaCLIFixture,
     mock_search_path: tuple[Path, Path],
 ) -> None:
+    # FUTURE: conda 25.1+, remove special reset_context
+    reset_context()
+
     system_tos_root, user_tos_root = mock_search_path
 
     monkeypatch.setenv("CONDA_OFFLINE", "true")
@@ -242,6 +262,9 @@ def test_conda_search_interactive(
     monkeypatch: MonkeyPatch,
 ) -> None:
     """Conda commands should trigger the interactive TOS prompts."""
+    # FUTURE: conda 25.1+, remove special reset_context
+    reset_context()
+
     monkeypatch.setattr(render, "IS_INTERACTIVE", True)
     monkeypatch.setattr(plugin, "DEFAULT_TOS_ROOT", tmp_path)
 
@@ -249,6 +272,9 @@ def test_conda_search_interactive(
     monkeypatch.setattr(sys, "stdin", StringIO("accept\n"))
     out, _, code = conda_cli("search", "small-executable")
     assert not code
+
+    # FUTURE: conda 25.1+, remove special reset_context
+    reset_context()
 
     # search for package with TOS plugin enabled
     out, _, code = conda_cli("search", "*")
@@ -270,6 +296,9 @@ def test_conda_search_json(
     monkeypatch: MonkeyPatch,
 ) -> None:
     """JSON output with TOS plugin should be identical to without."""
+    # FUTURE: conda 25.1+, remove special reset_context
+    reset_context()
+
     monkeypatch.setattr(plugin, "DEFAULT_TOS_ROOT", tmp_path)
 
     # accept TOS
