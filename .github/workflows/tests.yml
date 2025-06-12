@@ -92,6 +92,9 @@ jobs:
           # conda 24.11 doesn't support Python 3.13
           - python-version: '3.13'
             conda-version: '24.11'
+          # conda 25.1 doesn't support Python 3.13
+          - python-version: '3.13'
+            conda-version: '25.1'
     runs-on: ${{ matrix.os }}
     env:
       ErrorActionPreference: Stop  # powershell exit immediately on error
