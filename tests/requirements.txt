@@ -1,6 +1,6 @@
 conda >=24.11
 # renovate: datasource=conda depName=main/pydantic
-pydantic ==2.10.3
+pydantic ==2.11.7
 python >=3.9
 # renovate: datasource=conda depName=main/rich
 rich ==13.9.4
