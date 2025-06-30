@@ -49,9 +49,11 @@ def _similar_metadata(
     metadata1: LocalToSMetadata | RemoteToSMetadata,
     metadata2: LocalToSMetadata | RemoteToSMetadata,
 ) -> bool:
-    return type(metadata1) is type(metadata2) and all(
+    metadata1_type = type(metadata1)
+    metadata2_type = type(metadata2)
+    return metadata1_type is metadata2_type and all(
         getattr(metadata1, key) == getattr(metadata2, key)
-        for key in set(metadata1.model_fields) - {"acceptance_timestamp"}
+        for key in set(metadata1_type.model_fields) - {"acceptance_timestamp"}
     )
 
 
