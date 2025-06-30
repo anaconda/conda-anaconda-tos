@@ -43,9 +43,9 @@ class _MetadataPathPair(BaseModel):
     model_config = ConfigDict(frozen=True)
     metadata: _ToSMetadata
     # FUTURE: Python 3.10+, switch to `Path | None`
-    path: Optional[Path]  # noqa: UP007
+    path: Optional[Path]  # noqa: UP045
     # FUTURE: Python 3.10+, switch to `_ToSMetadata | None`
-    remote: Optional[RemoteToSMetadata] = None  # noqa: UP007
+    remote: Optional[RemoteToSMetadata] = None  # noqa: UP045
 
     def __lt__(self: Self, other: _MetadataPathPair) -> bool:
         """Compare the metadata version.
