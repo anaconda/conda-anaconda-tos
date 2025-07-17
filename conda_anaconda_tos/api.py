@@ -22,30 +22,34 @@ if TYPE_CHECKING:
     from typing import Final
 
 
-#: Standard CI environment variables
-CI_VARS: Final = (
+#: Boolean CI environment variables (checked with boolify)
+CI_BOOLEAN_VARS: Final = (
     "APPVEYOR",  # AppVeyor CI
-    "BAMBOO_BUILDKEY",  # Atlassian Bamboo
     "BITRISE_IO",  # Bitrise
     "BUDDY",  # Buddy CI/CD
     "BUILDKITE",  # Buildkite
     "CI",  # Generic CI indicator (many platforms)
     "CIRCLECI",  # CircleCI
     "CIRRUS_CI",  # Cirrus CI
-    "CODEBUILD_BUILD_ID",  # AWS CodeBuild
     "CONCOURSE_CI",  # Concourse CI
     "DRONE",  # Drone CI
     "GITHUB_ACTIONS",  # GitHub Actions
     "GITLAB_CI",  # GitLab CI/CD
-    "HEROKU_TEST_RUN_ID",  # Heroku CI
-    "JENKINS_URL",  # Jenkins
     "SAIL_CI",  # Sail CI
     "SEMAPHORE",  # Semaphore CI
-    "TEAMCITY_VERSION",  # JetBrains TeamCity
     "TF_BUILD",  # Azure DevOps (Team Foundation)
     "TRAVIS",  # Travis CI
     "WERCKER",  # Wercker (deprecated)
     "WOODPECKER_CI",  # Woodpecker CI
+)
+
+#: Presence-based CI environment variables (checked for existence)
+CI_PRESENCE_VARS: Final = (
+    "BAMBOO_BUILDKEY",  # Atlassian Bamboo
+    "CODEBUILD_BUILD_ID",  # AWS CodeBuild
+    "HEROKU_TEST_RUN_ID",  # Heroku CI
+    "JENKINS_URL",  # Jenkins
+    "TEAMCITY_VERSION",  # JetBrains TeamCity
 )
 
 #: Container indicators for cgroup detection
@@ -80,9 +84,14 @@ PARTIAL_CI_VARS: Final = (
 
 def _is_ci() -> bool:
     """Determine if running in a CI environment."""
-    # Check standard CI environment variables
-    for var in CI_VARS:
+    # Check boolean CI environment variables
+    for var in CI_BOOLEAN_VARS:
         if boolify(os.getenv(var)):
+            return True
+
+    # Check presence-based CI environment variables
+    for var in CI_PRESENCE_VARS:
+        if os.getenv(var):
             return True
 
     # Container + partial CI indicators (solves GitHub issue #232)
