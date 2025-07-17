@@ -11,7 +11,14 @@ from conda.auxlib.type_coercion import BOOLISH_FALSE, BOOLISH_TRUE
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from conda_anaconda_tos.api import _is_ci, get_channels, get_one_tos, get_stored_tos
+from conda_anaconda_tos.api import (
+    CI_BOOLEAN_VARS,
+    CI_PRESENCE_VARS,
+    _is_ci,
+    get_channels,
+    get_one_tos,
+    get_stored_tos,
+)
 from conda_anaconda_tos.exceptions import CondaToSMissingError
 from conda_anaconda_tos.models import (
     LocalPair,
@@ -179,40 +186,25 @@ def test_get_stored_tos(
 def test_ci_detection_with_various_values(monkeypatch: MonkeyPatch) -> None:
     """Test CI detection with various truthy environment variable values."""
     # Clear all CI-related environment variables first
-    env_vars_to_clear = [
-        "CI",
-        "TF_BUILD",
-        "TEAMCITY_VERSION",
-        "BAMBOO_BUILDKEY",
-        "CODEBUILD_BUILD_ID",
-    ]
-    for var in env_vars_to_clear:
+    for var in (*CI_BOOLEAN_VARS, *CI_PRESENCE_VARS):
         monkeypatch.delenv(var, raising=False)
 
     # truthy values
-    for envvar in ("CI", "TF_BUILD"):
+    for envvar in CI_BOOLEAN_VARS:
         for truthy_value in (*BOOLISH_TRUE, "1"):
             monkeypatch.setenv(envvar, truthy_value)
-            assert _is_ci(), (
-                f"CI should be detected as True for {envvar}={truthy_value}"
-            )
+            assert _is_ci(), f"CI should be detected for {envvar}={truthy_value}"
         monkeypatch.delenv(envvar)
 
-    # flasy values
-    for envvar in ("CI", "TF_BUILD"):
+    # falsy values
+    for envvar in CI_BOOLEAN_VARS:
         for falsy_value in (*BOOLISH_FALSE, "0"):
             monkeypatch.setenv(envvar, falsy_value)
-            assert not _is_ci(), (
-                f"CI should be detected as False for {envvar}={falsy_value}"
-            )
+            assert not _is_ci(), f"CI should not be detected for {envvar}={falsy_value}"
         monkeypatch.delenv(envvar)
 
     # defined values
-    for envvar, value in (
-        ("TEAMCITY_VERSION", "2025.03.3"),
-        ("BAMBOO_BUILDKEY", "DEMO-MAIN-JOB"),
-        ("CODEBUILD_BUILD_ID", "demo:b1e666..."),
-    ):
-        monkeypatch.setenv(envvar, value)
-        assert _is_ci(), f"CI should be detected as True for {envvar}={value}"
+    for envvar in CI_PRESENCE_VARS:
+        monkeypatch.setenv(envvar, "value")
+        assert _is_ci(), f"CI should be detected for {envvar}=value"
         monkeypatch.delenv(envvar)

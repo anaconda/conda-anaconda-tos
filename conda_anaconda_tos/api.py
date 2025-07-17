@@ -22,20 +22,52 @@ if TYPE_CHECKING:
     from typing import Final
 
 
+#: Boolean CI environment variables (checked with boolify)
+CI_BOOLEAN_VARS: Final = (
+    "APPVEYOR",  # AppVeyor CI
+    "BITRISE_IO",  # Bitrise
+    "BUDDY",  # Buddy CI/CD
+    "BUILDKITE",  # Buildkite
+    "CI",  # Generic CI indicator (many platforms)
+    "CIRCLECI",  # CircleCI
+    "CIRRUS_CI",  # Cirrus CI
+    "CONCOURSE_CI",  # Concourse CI
+    "DRONE",  # Drone CI
+    "GITHUB_ACTIONS",  # GitHub Actions
+    "GITLAB_CI",  # GitLab CI/CD
+    "SAIL_CI",  # Sail CI
+    "SEMAPHORE",  # Semaphore CI
+    "TF_BUILD",  # Azure DevOps (Team Foundation)
+    "TRAVIS",  # Travis CI
+    "WERCKER",  # Wercker (deprecated)
+    "WOODPECKER_CI",  # Woodpecker CI
+)
+
+#: Presence-based CI environment variables (checked for existence)
+CI_PRESENCE_VARS: Final = (
+    "BAMBOO_BUILDKEY",  # Atlassian Bamboo
+    "CODEBUILD_BUILD_ID",  # AWS CodeBuild
+    "HEROKU_TEST_RUN_ID",  # Heroku CI
+    "JENKINS_URL",  # Jenkins
+    "TEAMCITY_VERSION",  # JetBrains TeamCity
+)
+
+
 def _is_ci() -> bool:
-    """Whether the current environment is a CI environment."""
-    return (
-        # GitHub Actions, GitLab CI, CircleCI, Travis CI, AppVeyor, Jenkins, etc.
-        boolify(os.getenv("CI"))  # CI=true
-        # Azure DevOps/Azure Pipelines
-        or boolify(os.getenv("TF_BUILD"))  # TF_BUILD=true
-        # TeamCity
-        or bool(os.getenv("TEAMCITY_VERSION"))  # TEAMCITY_VERSION=2025.03.3
-        # Bamboo
-        or bool(os.getenv("BAMBOO_BUILDKEY"))  # BAMBOO_BUILDKEY=DEMO-MAIN-JOB
-        # AWS CodeBuild
-        or bool(os.getenv("CODEBUILD_BUILD_ID"))  # CODEBUILD_BUILD_ID=demo:b1e666...
-    )
+    """Determine if running in a CI environment."""
+    # Check all boolean CI variables for explicit false values first
+    # If any CI variable is explicitly set to false, respect that
+    for var_value in map(os.getenv, CI_BOOLEAN_VARS):
+        if var_value and not boolify(var_value):
+            return False
+
+    # Check boolean CI environment variables for true values
+    for var_value in map(os.getenv, CI_BOOLEAN_VARS):
+        if boolify(var_value):
+            return True
+
+    # Check presence-based CI environment variables
+    return any(os.getenv(var) for var in CI_PRESENCE_VARS)
 
 
 #: Whether the current environment is a CI environment
