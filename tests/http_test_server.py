@@ -25,9 +25,9 @@ from conda_anaconda_tos.remote import ENDPOINT
 if TYPE_CHECKING:
     import os
     from collections.abc import Iterator
-    from typing import Any, Self
+    from typing import Any, Self, TypeAlias
 
-    MetadataType = RemoteToSMetadata | str | None
+    MetadataType: TypeAlias = RemoteToSMetadata | str | None
 
 DATA_DIR = Path(__file__).parent / "data"
 SAMPLE_CHANNEL_DIR = DATA_DIR / "sample_channel"
@@ -118,7 +118,7 @@ def serve_channel(
     port: int = 0,
 ) -> Iterator[str]:
     http = run_test_server(path, metadata, port)
-    host, port = http.server_address
+    host, port = http.server_address  # type: ignore[misc]
     if isinstance(host, bytes):
         host = host.decode()
     host = f"[{host}]" if ":" in host else host
