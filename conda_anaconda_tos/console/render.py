@@ -51,14 +51,12 @@ if TYPE_CHECKING:
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
 TOS_AUTO_ACCEPTED_TEMPLATE: Final = (
-    "[bold yellow]By accessing {channel} "
-    "with auto acceptance enabled (auto_accept_tos=True) "
+    "By accessing {channel} with auto acceptance enabled (auto_accept_tos=True) "
     "for this repository you acknowledge and agree to the Terms of Service:\n"
     "{tos_text}"
 )
 TOS_CI_ACCEPTED_TEMPLATE: Final = (
-    "[bold yellow]By accessing {channel} "
-    "via CI "
+    "By accessing {channel} via CI "
     "for this repository you acknowledge and agree to the Terms of Service:\n"
     "{tos_text}"
 )
@@ -321,7 +319,8 @@ def _is_tos_accepted(
             TOS_AUTO_ACCEPTED_TEMPLATE.format(
                 channel=channel,
                 tos_text=pair.metadata.text,
-            )
+            ),
+            style="bold yellow",
         )
         return True
 
@@ -331,7 +330,8 @@ def _is_tos_accepted(
             TOS_CI_ACCEPTED_TEMPLATE.format(
                 channel=channel,
                 tos_text=pair.metadata.text,
-            )
+            ),
+            style="bold yellow",
         )
         return True
 
