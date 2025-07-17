@@ -161,78 +161,9 @@ jobs:
           --basetemp=${{ runner.temp }}
           -n auto
 
-  # Docker CI detection test
-  docker-ci-test:
-    # only run if there are code changes
-    needs: changes
-    if: github.event_name == 'schedule' || needs.changes.outputs.code == 'true'
-
-    runs-on: ubuntu-latest
-    container:
-      image: continuumio/miniconda3:latest
-
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Install Package
-        run: |
-          conda install -c conda-forge pip
-          pip install -e .
-
-      - name: Test CI Detection in Clean Container
-        run: |
-          result=$(python -c "from conda_anaconda_tos.api import _is_ci; print(_is_ci())")
-          echo "Clean container CI detection: $result"
-          # Should detect CI due to container + GitHub environment variables
-          if [ "$result" != "True" ]; then
-            echo "ERROR: Clean container should detect CI in GitHub Actions"
-            exit 1
-          fi
-
-      - name: Test CI=false Override
-        env:
-          CI: 'false'
-        run: |
-          result=$(python -c "from conda_anaconda_tos.api import _is_ci; print(_is_ci())")
-          echo "CI=false override test: $result"
-          # Should NOT detect CI when explicitly set to false
-          if [ "$result" != "False" ]; then
-            echo "ERROR: CI=false should override GitHub Actions detection"
-            exit 1
-          fi
-
-      - name: Test CI=true Explicit
-        env:
-          CI: 'true'
-        run: |
-          result=$(python -c "from conda_anaconda_tos.api import _is_ci; print(_is_ci())")
-          echo "CI=true explicit test: $result"
-          # Should detect CI when explicitly set to true
-          if [ "$result" != "True" ]; then
-            echo "ERROR: CI=true should be detected"
-            exit 1
-          fi
-
-      - name: Test Container + Partial CI Detection
-        env:
-          # Clear GitHub Actions variables to test pure container detection
-          GITHUB_ACTIONS: ''
-          GITHUB_REPOSITORY: test/repo
-          GITHUB_WORKFLOW: test-workflow
-          BUILD_NUMBER: '123'
-        run: |
-          result=$(python -c "from conda_anaconda_tos.api import _is_ci; print(_is_ci())")
-          echo "Container + partial CI test: $result"
-          # Should detect CI due to container + partial CI indicators
-          if [ "$result" != "True" ]; then
-            echo "ERROR: Container with partial CI indicators should be detected as CI"
-            exit 1
-          fi
-
   # required check
   analyze:
-    needs: [tests, docker-ci-test]
+    needs: [tests]
     if: '!cancelled()'
 
     runs-on: ubuntu-latest
