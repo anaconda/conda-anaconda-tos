@@ -22,19 +22,24 @@ if TYPE_CHECKING:
     from typing import Final
 
 
+def _is_ci() -> bool:
+    """Whether the current environment is a CI environment."""
+    return (
+        # GitHub Actions, GitLab CI, CircleCI, Travis CI, AppVeyor, Jenkins, etc.
+        boolify(os.getenv("CI"))  # CI=true
+        # Azure DevOps/Azure Pipelines
+        or boolify(os.getenv("TF_BUILD"))  # TF_BUILD=true
+        # TeamCity
+        or bool(os.getenv("TEAMCITY_VERSION"))  # TEAMCITY_VERSION=2025.03.3
+        # Bamboo
+        or bool(os.getenv("BAMBOO_BUILDKEY"))  # BAMBOO_BUILDKEY=DEMO-MAIN-JOB
+        # AWS CodeBuild
+        or bool(os.getenv("CODEBUILD_BUILD_ID"))  # CODEBUILD_BUILD_ID=demo:b1e666...
+    )
+
+
 #: Whether the current environment is a CI environment
-CI: Final = (
-    # GitHub Actions, GitLab CI, CircleCI, Travis CI, AppVeyor, Jenkins, etc.
-    boolify(os.getenv("CI"))  # CI=true
-    # Azure DevOps/Azure Pipelines
-    or boolify(os.getenv("TF_BUILD"))  # TF_BUILD=true
-    # TeamCity
-    or bool(os.getenv("TEAMCITY_VERSION"))  # TEAMCITY_VERSION=2025.03.3
-    # Bamboo
-    or bool(os.getenv("BAMBOO_BUILDKEY"))  # BAMBOO_BUILDKEY=DEMO-MAIN-JOB
-    # AWS CodeBuild
-    or bool(os.getenv("CODEBUILD_BUILD_ID"))  # CODEBUILD_BUILD_ID=demo:b1e666...
-)
+CI: Final = _is_ci()
 
 #: Whether the current environment is a Jupyter environment
 JUPYTER: Final = os.getenv("JPY_SESSION_NAME") and os.getenv("JPY_PARENT_PID")

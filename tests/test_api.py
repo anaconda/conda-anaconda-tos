@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
+from conda.auxlib.type_coercion import BOOLISH_FALSE, BOOLISH_TRUE
 from conda.base.context import context
 from conda.models.channel import Channel
 
-from conda_anaconda_tos.api import get_channels, get_one_tos, get_stored_tos
+from conda_anaconda_tos.api import _is_ci, get_channels, get_one_tos, get_stored_tos
 from conda_anaconda_tos.exceptions import CondaToSMissingError
 from conda_anaconda_tos.models import (
     LocalPair,
@@ -22,6 +23,7 @@ from conda_anaconda_tos.models import (
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from pytest import MonkeyPatch
     from pytest_mock import MockerFixture
 
 
@@ -174,56 +176,12 @@ def test_get_stored_tos(
     assert metadata_pairs == [(sample_channel, old_metadata_pair)]
 
 
-@pytest.mark.parametrize(
-    "value,expected",
-    [
-        # Truthy values (case-insensitive)
-        ("true", True),
-        ("TRUE", True),
-        ("True", True),
-        ("1", True),
-        ("yes", True),
-        ("YES", True),
-        ("Yes", True),
-        ("on", True),
-        ("ON", True),
-        ("On", True),
-        ("y", True),
-        ("Y", True),
-        # Truthy values with whitespace
-        (" true ", True),
-        (" 1 ", True),
-        (" yes ", True),
-        # Falsy values
-        ("false", False),
-        ("0", False),
-        ("no", False),
-        ("off", False),
-        ("n", False),
-        ("", False),
-        ("random", False),
-        ("2", False),
-        ("maybe", False),
-        # None/empty cases
-        (None, False),
-    ],
-)
-def test_is_truthy(value: str | None, expected: bool) -> None:
-    """Test the _is_truthy function with various input values."""
-    from conda_anaconda_tos.api import _is_truthy
-
-    assert _is_truthy(value) == expected
-
-
-def test_ci_detection_with_various_values(monkeypatch) -> None:
+def test_ci_detection_with_various_values(monkeypatch: MonkeyPatch) -> None:
     """Test CI detection with various truthy environment variable values."""
-    from conda_anaconda_tos import api
-
     # Clear all CI-related environment variables first
     env_vars_to_clear = [
         "CI",
         "TF_BUILD",
-        "APPVEYOR",
         "TEAMCITY_VERSION",
         "BAMBOO_BUILDKEY",
         "CODEBUILD_BUILD_ID",
@@ -231,27 +189,30 @@ def test_ci_detection_with_various_values(monkeypatch) -> None:
     for var in env_vars_to_clear:
         monkeypatch.delenv(var, raising=False)
 
-    # Test various truthy values for CI variable
-    for truthy_value in ["true", "TRUE", "1", "yes", "YES", "on", "y"]:
-        monkeypatch.setenv("CI", truthy_value)
-        # Force re-evaluation of the CI constant
-        monkeypatch.setattr(api, "CI", api._is_truthy(api.os.getenv("CI")))
-        assert api.CI, f"CI should be detected as True for value: {truthy_value}"
-        monkeypatch.delenv("CI")
+    # truthy values
+    for envvar in ("CI", "TF_BUILD"):
+        for truthy_value in (*BOOLISH_TRUE, "1"):
+            monkeypatch.setenv(envvar, truthy_value)
+            assert _is_ci(), (
+                f"CI should be detected as True for {envvar}={truthy_value}"
+            )
+        monkeypatch.delenv(envvar)
 
-    # Test various truthy values for TF_BUILD variable
-    for truthy_value in ["true", "1", "yes"]:
-        monkeypatch.setenv("TF_BUILD", truthy_value)
-        # Manually test the logic since CI is a constant
-        assert api._is_truthy(api.os.getenv("TF_BUILD")), (
-            f"TF_BUILD should be truthy for: {truthy_value}"
-        )
-        monkeypatch.delenv("TF_BUILD")
+    # flasy values
+    for envvar in ("CI", "TF_BUILD"):
+        for falsy_value in (*BOOLISH_FALSE, "0"):
+            monkeypatch.setenv(envvar, falsy_value)
+            assert not _is_ci(), (
+                f"CI should be detected as False for {envvar}={falsy_value}"
+            )
+        monkeypatch.delenv(envvar)
 
-    # Test falsy values
-    for falsy_value in ["false", "0", "no", "off", ""]:
-        monkeypatch.setenv("CI", falsy_value)
-        assert not api._is_truthy(api.os.getenv("CI")), (
-            f"CI should be falsy for: {falsy_value}"
-        )
-        monkeypatch.delenv("CI")
+    # defined values
+    for envvar, value in (
+        ("TEAMCITY_VERSION", "2025.03.3"),
+        ("BAMBOO_BUILDKEY", "DEMO-MAIN-JOB"),
+        ("CODEBUILD_BUILD_ID", "demo:b1e666..."),
+    ):
+        monkeypatch.setenv(envvar, value)
+        assert _is_ci(), f"CI should be detected as True for {envvar}={value}"
+        monkeypatch.delenv(envvar)
