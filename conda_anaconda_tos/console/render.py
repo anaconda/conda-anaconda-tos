@@ -268,7 +268,7 @@ def _prompt_acceptance(
     elif response == "reject":
         return False
     else:
-        console.print((pair.remote or pair.metadata).text)
+        console.print(pair.latest_text)
         return _prompt_acceptance(channel, pair, console, ("(a)ccept", "(r)eject"))
 
 
@@ -318,7 +318,7 @@ def _is_tos_accepted(
         printer(
             TOS_AUTO_ACCEPTED_TEMPLATE.format(
                 channel=channel,
-                tos_text=pair.metadata.text,
+                tos_text=pair.latest_text,
             ),
             style="bold yellow",
         )
@@ -329,7 +329,7 @@ def _is_tos_accepted(
         printer(
             TOS_CI_ACCEPTED_TEMPLATE.format(
                 channel=channel,
-                tos_text=pair.metadata.text,
+                tos_text=pair.latest_text,
             ),
             style="bold yellow",
         )

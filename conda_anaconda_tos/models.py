@@ -56,6 +56,10 @@ class _MetadataPathPair(BaseModel):
             return NotImplemented
         return self.metadata.version < other.metadata.version
 
+    @property
+    def latest_text(self: Self) -> str:
+        raise NotImplementedError
+
 
 class RemotePair(_MetadataPathPair):
     """Tuple of remote metadata and no path."""
@@ -64,9 +68,19 @@ class RemotePair(_MetadataPathPair):
     path: None = None
     remote: None = None
 
+    @property
+    def latest_text(self: Self) -> str:
+        """Get the latest text of the Terms of Service."""
+        return (self.remote or self.metadata).text
+
 
 class LocalPair(_MetadataPathPair):
     """Tuple of local metadata and path."""
 
     metadata: LocalToSMetadata
     path: Path
+
+    @property
+    def latest_text(self: Self) -> str:
+        """Get the latest text of the Terms of Service."""
+        return self.metadata.text
