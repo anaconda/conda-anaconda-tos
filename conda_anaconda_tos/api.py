@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
+from conda.auxlib.type_coercion import boolify
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
@@ -21,25 +22,18 @@ if TYPE_CHECKING:
     from typing import Final
 
 
-def _is_truthy(value: str | None) -> bool:
-    """Check if an environment variable value represents a truthy value.
-
-    Accepts common variations like: true, 1, yes, on, y (case-insensitive)
-    """
-    if not value:
-        return False
-    return value.lower().strip() in {"true", "1", "yes", "on", "y"}
-
-
 #: Whether the current environment is a CI environment
 CI: Final = (
-    _is_truthy(
-        os.getenv("CI")
-    )  # GitHub Actions, GitLab CI, CircleCI, Travis CI, Jenkins, etc.
-    or _is_truthy(os.getenv("TF_BUILD"))  # Azure DevOps/Azure Pipelines
-    or bool(os.getenv("TEAMCITY_VERSION"))  # TeamCity
-    or bool(os.getenv("BAMBOO_BUILDKEY"))  # Bamboo
-    or bool(os.getenv("CODEBUILD_BUILD_ID"))  # AWS CodeBuild
+    # GitHub Actions, GitLab CI, CircleCI, Travis CI, AppVeyor, Jenkins, etc.
+    boolify(os.getenv("CI"))  # CI=true
+    # Azure DevOps/Azure Pipelines
+    or boolify(os.getenv("TF_BUILD"))  # TF_BUILD=true
+    # TeamCity
+    or bool(os.getenv("TEAMCITY_VERSION"))  # TEAMCITY_VERSION=2025.03.3
+    # Bamboo
+    or bool(os.getenv("BAMBOO_BUILDKEY"))  # BAMBOO_BUILDKEY=DEMO-MAIN-JOB
+    # AWS CodeBuild
+    or bool(os.getenv("CODEBUILD_BUILD_ID"))  # CODEBUILD_BUILD_ID=demo:b1e666...
 )
 
 #: Whether the current environment is a Jupyter environment
