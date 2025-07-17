@@ -22,7 +22,14 @@ if TYPE_CHECKING:
 
 
 #: Whether the current environment is a CI environment
-CI: Final = os.getenv("CI", "").lower() == "true"
+CI: Final = (
+    os.getenv("CI", "").lower() == "true"  # GitHub Actions, GitLab CI, CircleCI, Travis CI, Jenkins, etc.
+    or os.getenv("TF_BUILD", "").lower() == "true"  # Azure DevOps/Azure Pipelines
+    or os.getenv("APPVEYOR", "").lower() == "true"  # AppVeyor
+    or bool(os.getenv("TEAMCITY_VERSION"))  # TeamCity
+    or bool(os.getenv("bamboo_buildKey"))  # Bamboo
+    or bool(os.getenv("CODEBUILD_BUILD_ID"))  # AWS CodeBuild
+)
 
 #: Whether the current environment is a Jupyter environment
 JUPYTER: Final = os.getenv("JPY_SESSION_NAME") and os.getenv("JPY_PARENT_PID")
