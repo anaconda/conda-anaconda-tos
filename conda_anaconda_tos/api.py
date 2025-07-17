@@ -37,7 +37,6 @@ CI: Final = (
         os.getenv("CI")
     )  # GitHub Actions, GitLab CI, CircleCI, Travis CI, Jenkins, etc.
     or _is_truthy(os.getenv("TF_BUILD"))  # Azure DevOps/Azure Pipelines
-    or _is_truthy(os.getenv("APPVEYOR"))  # AppVeyor
     or bool(os.getenv("TEAMCITY_VERSION"))  # TeamCity
     or bool(os.getenv("BAMBOO_BUILDKEY"))  # Bamboo
     or bool(os.getenv("CODEBUILD_BUILD_ID"))  # AWS CodeBuild
