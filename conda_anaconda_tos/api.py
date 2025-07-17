@@ -84,9 +84,14 @@ PARTIAL_CI_VARS: Final = (
 
 def _is_ci() -> bool:
     """Determine if running in a CI environment."""
-    # Check boolean CI environment variables
+    # Give CI environment variable precedence - if explicitly set, respect it
+    ci_value = os.getenv("CI")
+    if ci_value is not None:
+        return boolify(ci_value)
+
+    # Check other boolean CI environment variables
     for var in CI_BOOLEAN_VARS:
-        if boolify(os.getenv(var)):
+        if var != "CI" and boolify(os.getenv(var)):
             return True
 
     # Check presence-based CI environment variables
