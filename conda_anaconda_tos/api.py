@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.auxlib.type_coercion import boolify
@@ -18,24 +19,88 @@ from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-    from pathlib import Path
     from typing import Final
 
 
+#: Standard CI environment variables
+CI_VARS: Final = (
+    "APPVEYOR",  # AppVeyor CI
+    "BAMBOO_BUILDKEY",  # Atlassian Bamboo
+    "BITRISE_IO",  # Bitrise
+    "BUDDY",  # Buddy CI/CD
+    "BUILDKITE",  # Buildkite
+    "CI",  # Generic CI indicator (many platforms)
+    "CIRCLECI",  # CircleCI
+    "CIRRUS_CI",  # Cirrus CI
+    "CODEBUILD_BUILD_ID",  # AWS CodeBuild
+    "CONCOURSE_CI",  # Concourse CI
+    "DRONE",  # Drone CI
+    "GITHUB_ACTIONS",  # GitHub Actions
+    "GITLAB_CI",  # GitLab CI/CD
+    "HEROKU_TEST_RUN_ID",  # Heroku CI
+    "JENKINS_URL",  # Jenkins
+    "SAIL_CI",  # Sail CI
+    "SEMAPHORE",  # Semaphore CI
+    "TEAMCITY_VERSION",  # JetBrains TeamCity
+    "TF_BUILD",  # Azure DevOps (Team Foundation)
+    "TRAVIS",  # Travis CI
+    "WERCKER",  # Wercker (deprecated)
+    "WOODPECKER_CI",  # Woodpecker CI
+)
+
+#: Container indicators for cgroup detection
+CONTAINER_INDICATORS: Final = (
+    "containerd",  # containerd runtime
+    "docker",  # Docker containers
+    "kubepods",  # Kubernetes pods
+    "lxc",  # Linux Containers
+    "podman",  # Podman containers
+)
+
+#: Partial CI environment variables (used with container detection)
+PARTIAL_CI_VARS: Final = (
+    "AZURE_HTTP_USER_AGENT",  # Azure DevOps user agent
+    "BUILD_ID",  # Generic build identifier
+    "BUILD_NUMBER",  # Generic build number
+    "BUILD_URL",  # Generic build URL
+    "BUILDKITE_BUILD_ID",  # Buildkite build identifier
+    "CIRCLE_BUILD_NUM",  # CircleCI build number
+    "CIRCLE_PROJECT_REPONAME",  # CircleCI repository name
+    "GITHUB_JOB",  # GitHub Actions job name
+    "GITHUB_REPOSITORY",  # GitHub repository name
+    "GITHUB_WORKFLOW",  # GitHub Actions workflow name
+    "GITLAB_PROJECT_ID",  # GitLab project identifier
+    "GITLAB_USER_ID",  # GitLab user identifier
+    "JOB_NAME",  # Generic job name (Jenkins, etc.)
+    "RUNNER_ARCH",  # GitHub Actions runner architecture
+    "RUNNER_OS",  # GitHub Actions runner OS
+    "WORKSPACE",  # Generic workspace path (Jenkins, etc.)
+)
+
+
 def _is_ci() -> bool:
-    """Whether the current environment is a CI environment."""
-    return (
-        # GitHub Actions, GitLab CI, CircleCI, Travis CI, AppVeyor, Jenkins, etc.
-        boolify(os.getenv("CI"))  # CI=true
-        # Azure DevOps/Azure Pipelines
-        or boolify(os.getenv("TF_BUILD"))  # TF_BUILD=true
-        # TeamCity
-        or bool(os.getenv("TEAMCITY_VERSION"))  # TEAMCITY_VERSION=2025.03.3
-        # Bamboo
-        or bool(os.getenv("BAMBOO_BUILDKEY"))  # BAMBOO_BUILDKEY=DEMO-MAIN-JOB
-        # AWS CodeBuild
-        or bool(os.getenv("CODEBUILD_BUILD_ID"))  # CODEBUILD_BUILD_ID=demo:b1e666...
-    )
+    """Determine if running in a CI environment."""
+    # Check standard CI environment variables
+    for var in CI_VARS:
+        if boolify(os.getenv(var)):
+            return True
+
+    # Container + partial CI indicators (solves GitHub issue #232)
+    container_checks = [
+        Path("/.dockerenv").exists(),
+        os.getpid() == 1,
+        bool(os.environ.get("CONTAINER")),
+    ]
+
+    # Check cgroup for containers
+    try:
+        with Path("/proc/1/cgroup").open() as f:
+            if any(indicator in f.read() for indicator in CONTAINER_INDICATORS):
+                container_checks.append(True)
+    except OSError:
+        pass
+
+    return any(container_checks) and any(os.getenv(var) for var in PARTIAL_CI_VARS)
 
 
 #: Whether the current environment is a CI environment
