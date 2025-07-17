@@ -185,6 +185,8 @@ def test_ci_detection_with_various_values(monkeypatch: MonkeyPatch) -> None:
         "TEAMCITY_VERSION",
         "BAMBOO_BUILDKEY",
         "CODEBUILD_BUILD_ID",
+        "BUILD_ID",
+        "GITHUB_REPOSITORY",
     ]
     for var in env_vars_to_clear:
         monkeypatch.delenv(var, raising=False)
@@ -198,7 +200,7 @@ def test_ci_detection_with_various_values(monkeypatch: MonkeyPatch) -> None:
             )
         monkeypatch.delenv(envvar)
 
-    # flasy values
+    # falsy values
     for envvar in ("CI", "TF_BUILD"):
         for falsy_value in (*BOOLISH_FALSE, "0"):
             monkeypatch.setenv(envvar, falsy_value)
