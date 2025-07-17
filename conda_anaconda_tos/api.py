@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.auxlib.type_coercion import boolify
@@ -19,6 +18,7 @@ from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
+    from pathlib import Path
     from typing import Final
 
 
@@ -52,35 +52,6 @@ CI_PRESENCE_VARS: Final = (
     "TEAMCITY_VERSION",  # JetBrains TeamCity
 )
 
-#: Container indicators for cgroup detection
-CONTAINER_INDICATORS: Final = (
-    "containerd",  # containerd runtime
-    "docker",  # Docker containers
-    "kubepods",  # Kubernetes pods
-    "lxc",  # Linux Containers
-    "podman",  # Podman containers
-)
-
-#: Partial CI environment variables (used with container detection)
-PARTIAL_CI_VARS: Final = (
-    "AZURE_HTTP_USER_AGENT",  # Azure DevOps user agent
-    "BUILD_ID",  # Generic build identifier
-    "BUILD_NUMBER",  # Generic build number
-    "BUILD_URL",  # Generic build URL
-    "BUILDKITE_BUILD_ID",  # Buildkite build identifier
-    "CIRCLE_BUILD_NUM",  # CircleCI build number
-    "CIRCLE_PROJECT_REPONAME",  # CircleCI repository name
-    "GITHUB_JOB",  # GitHub Actions job name
-    "GITHUB_REPOSITORY",  # GitHub repository name
-    "GITHUB_WORKFLOW",  # GitHub Actions workflow name
-    "GITLAB_PROJECT_ID",  # GitLab project identifier
-    "GITLAB_USER_ID",  # GitLab user identifier
-    "JOB_NAME",  # Generic job name (Jenkins, etc.)
-    "RUNNER_ARCH",  # GitHub Actions runner architecture
-    "RUNNER_OS",  # GitHub Actions runner OS
-    "WORKSPACE",  # Generic workspace path (Jenkins, etc.)
-)
-
 
 def _is_ci() -> bool:
     """Determine if running in a CI environment."""
@@ -97,26 +68,7 @@ def _is_ci() -> bool:
             return True
 
     # Check presence-based CI environment variables
-    for var in CI_PRESENCE_VARS:
-        if os.getenv(var):
-            return True
-
-    # Container + partial CI indicators (solves GitHub issue #232)
-    container_checks = [
-        Path("/.dockerenv").exists(),
-        os.getpid() == 1,
-        bool(os.environ.get("CONTAINER")),
-    ]
-
-    # Check cgroup for containers
-    try:
-        with Path("/proc/1/cgroup").open() as f:
-            if any(indicator in f.read() for indicator in CONTAINER_INDICATORS):
-                container_checks.append(True)
-    except OSError:
-        pass
-
-    return any(container_checks) and any(os.getenv(var) for var in PARTIAL_CI_VARS)
+    return any(os.getenv(var) for var in CI_PRESENCE_VARS)
 
 
 #: Whether the current environment is a CI environment
