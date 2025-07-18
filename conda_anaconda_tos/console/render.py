@@ -50,6 +50,17 @@ if TYPE_CHECKING:
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
+TOS_AUTO_ACCEPTED_TEMPLATE: Final = (
+    "By accessing {channel} with auto acceptance enabled (auto_accept_tos=True) "
+    "for this repository you acknowledge and agree to the Terms of Service:\n"
+    "{tos_text}"
+)
+TOS_CI_ACCEPTED_TEMPLATE: Final = (
+    "By accessing {channel} via CI "
+    "for this repository you acknowledge and agree to the Terms of Service:\n"
+    "{tos_text}"
+)
+
 
 def noop_printer(*args: Any, **kwargs: Any) -> None:  # noqa: ANN401
     """Use this no-op printer when nothing should be printed to the screen."""
@@ -257,7 +268,7 @@ def _prompt_acceptance(
     elif response == "reject":
         return False
     else:
-        console.print((pair.remote or pair.metadata).text)
+        console.print(pair.latest_text)
         return _prompt_acceptance(channel, pair, console, ("(a)ccept", "(r)eject"))
 
 
@@ -304,12 +315,24 @@ def _is_tos_accepted(
     """Determine if the Terms of Service is accepted for a channel."""
     # Auto-accept has highest priority
     if auto_accept_tos:
-        printer(f"[bold yellow]ToS auto accepted for {channel}")
+        printer(
+            TOS_AUTO_ACCEPTED_TEMPLATE.format(
+                channel=channel,
+                tos_text=pair.latest_text,
+            ),
+            style="bold yellow",
+        )
         return True
 
     # CI environment auto-accepts with warning
     if CI:
-        printer(f"[bold yellow]Terms of Service implicitly accepted for {channel}")
+        printer(
+            TOS_CI_ACCEPTED_TEMPLATE.format(
+                channel=channel,
+                tos_text=pair.latest_text,
+            ),
+            style="bold yellow",
+        )
         return True
 
     # Non-interactive environments exits before prompt

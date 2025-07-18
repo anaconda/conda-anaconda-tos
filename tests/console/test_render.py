@@ -14,6 +14,7 @@ import pytest
 from conda_anaconda_tos.api import accept_tos
 from conda_anaconda_tos.console import render
 from conda_anaconda_tos.console.render import (
+    TOS_CI_ACCEPTED_TEMPLATE,
     TOS_OUTDATED,
     render_accept,
     render_info,
@@ -182,7 +183,10 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"Terms of Service implicitly accepted for {tos_channel}",
+                *TOS_CI_ACCEPTED_TEMPLATE.format(
+                    channel=tos_channel,
+                    tos_text=tos_metadata.text,
+                ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
             if ci
@@ -206,7 +210,10 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"Terms of Service implicitly accepted for {tos_channel}",
+                *TOS_CI_ACCEPTED_TEMPLATE.format(
+                    channel=tos_channel,
+                    tos_text=tos_metadata.text,
+                ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
             if ci
@@ -251,7 +258,10 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"Terms of Service implicitly accepted for {tos_channel}",
+                *TOS_CI_ACCEPTED_TEMPLATE.format(
+                    channel=tos_channel,
+                    tos_text=tos_metadata.text,
+                ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
             if ci
@@ -302,7 +312,10 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"Terms of Service implicitly accepted for {tos_channel}",
+                *TOS_CI_ACCEPTED_TEMPLATE.format(
+                    channel=tos_channel,
+                    tos_text=tos_metadata.text,
+                ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
             if ci
@@ -336,7 +349,10 @@ def test_render_interactive(
         *(
             [
                 "CI detected...",
-                f"Terms of Service implicitly accepted for {tos_channel}",
+                *TOS_CI_ACCEPTED_TEMPLATE.format(
+                    channel=tos_channel,
+                    tos_text=tos_metadata.text,
+                ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
             if ci
