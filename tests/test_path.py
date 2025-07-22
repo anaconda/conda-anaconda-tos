@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -45,7 +46,9 @@ def test_get_path(tmp_path: Path) -> None:
         assert get_path(SITE_TOS_ROOT) == Path("C:/ProgramData/conda/tos")
     else:
         assert get_path(SITE_TOS_ROOT) == Path("/etc/conda/tos")
-    assert get_path(SYSTEM_TOS_ROOT) == Path(context.conda_prefix, "conda-meta", "tos")
+    assert get_path(SYSTEM_TOS_ROOT) == Path(
+        os.environ["CONDA_ROOT"], "conda-meta", "tos"
+    )
     assert get_path(USER_TOS_ROOT) == Path.home() / ".conda" / "tos"
     assert get_path(ENV_TOS_ROOT) == Path(context.target_prefix, "conda-meta", "tos")
     assert get_path(str(tmp_path)) == tmp_path

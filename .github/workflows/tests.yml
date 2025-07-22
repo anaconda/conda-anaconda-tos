@@ -155,15 +155,86 @@ jobs:
       - name: Run Tests
         # Windows is sensitive to long paths, using `--basetemp=${{ runner.temp }} to
         # keep the test directories shorter
+        # Exclude integration tests from matrix runs
         run: >
           pytest
           --cov=conda_anaconda_tos
           --basetemp=${{ runner.temp }}
           -n auto
+          -m "not integration"
+
+  # integration tests - run only on ubuntu-latest with Python 3.11
+  integration-tests:
+    # only run integration tests if there are code changes
+    needs: changes
+    if: github.event_name == 'schedule' || needs.changes.outputs.code == 'true'
+
+    defaults:
+      run:
+        # https://github.com/conda-incubator/setup-miniconda#use-a-default-shell
+        shell: bash -el {0}  # bash exit immediately on error + login shell
+
+    runs-on: ubuntu-latest
+    env:
+      CONDA_PKGS_DIR: ~/conda_pkgs_dir
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Hash + Timestamp
+        run: echo "HASH=${{ runner.os }}-${{ runner.arch }}-Py3.11-$(date -u "+%Y%m")" >> $GITHUB_ENV
+
+      - name: Cache Conda
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          # use faster GNU tar for all runners
+          enableCrossOsArchive: true
+          path: ${{ env.CONDA_PKGS_DIR }}
+          key: cache-integration-${{ env.HASH }}
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f # v3.2.0
+        with:
+          run-post: false  # skip post cleanup
+          pkgs-dirs: ${{ env.CONDA_PKGS_DIR }}
+          channels: defaults
+
+      - name: Conda Install
+        run: >
+          conda install
+          --yes
+          --file tests/requirements.txt
+          --file tests/requirements-ci.txt
+          python=3.13
+          conda=25.5
+
+      # TODO: how can we remove this step?
+      - name: Install Self
+        run: pip install -e .
+
+      - name: Conda Info
+        # view test env info (not base)
+        run: python -m conda info --verbose
+
+      - name: Conda Config
+        run: conda config --show-sources
+
+      - name: Conda List
+        run: conda list --show-channel-urls
+
+      - name: Run Integration Tests
+        run: >
+          pytest
+          --basetemp=${{ runner.temp }}
+          -v
+          -m "integration"
 
   # required check
   analyze:
-    needs: [tests]
+    needs: [tests, integration-tests]
     if: '!cancelled()'
 
     runs-on: ubuntu-latest
