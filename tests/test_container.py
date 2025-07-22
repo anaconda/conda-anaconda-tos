@@ -3,7 +3,8 @@
 """Container integration tests using pytest-docker-tools."""
 
 import pytest
-from pytest_docker_tools import Container, build, container
+from pytest_docker_tools import build, container
+from pytest_docker_tools.wrappers import Container
 
 from conda_anaconda_tos.api import (
     CONTAINER_INDICATORS,
