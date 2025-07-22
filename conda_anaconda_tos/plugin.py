@@ -145,10 +145,10 @@ def configure_parser(parser: ArgumentParser) -> None:
     # conda tos (default behavior)
     _add_channel(parser)
     add_parser_prefix(parser)
-    _add_location(parser)
     _add_cache(parser)
     _add_json(parser)
     add_parser_verbose(parser)
+    parser.set_defaults(tos_root=DEFAULT_TOS_ROOT)
 
     # conda tos <COMMAND>
     subparsers = parser.add_subparsers(
