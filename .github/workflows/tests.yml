@@ -225,6 +225,9 @@ jobs:
       - name: Conda List
         run: conda list --show-channel-urls
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Run Integration Tests
         run: >
           pytest
