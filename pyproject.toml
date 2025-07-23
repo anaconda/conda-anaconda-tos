@@ -74,6 +74,10 @@ filterwarnings = [
   "error::DeprecationWarning",
   "error::FutureWarning",
 ]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "integration: marks tests as integration tests that require external dependencies",
+]
 testpaths = ["tests"]
 
 [tool.ruff]
