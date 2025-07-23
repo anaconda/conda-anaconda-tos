@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from contextlib import suppress
@@ -18,11 +19,13 @@ from packaging import version
 from conda_anaconda_tos import plugin
 from conda_anaconda_tos.api import accept_tos, reject_tos
 from conda_anaconda_tos.console import render
+from conda_anaconda_tos.path import USER_TOS_ROOT
 from conda_anaconda_tos.plugin import (
     _get_tos_acceptance_header,
     conda_request_headers,
     conda_settings,
     conda_subcommands,
+    configure_parser,
 )
 
 if TYPE_CHECKING:
@@ -327,3 +330,29 @@ def test_conda_search_json(
         pytest.fail(f"Invalid JSON: {out}")
 
     assert plugin_enabled == plugin_disabled
+
+
+def test_location_flags_ordering_fix() -> None:
+    """Test that location flags are only available on subcommands, not main parser.
+
+    This test ensures that GitHub issue #239 is fixed, where
+    'conda tos --site accept' would incorrectly write to user location
+    instead of failing with unrecognized argument.
+    """
+    parser = argparse.ArgumentParser()
+    configure_parser(parser)
+
+    # Test that location flags work correctly on subcommands
+    args = parser.parse_args(["accept", "--user"])
+    assert args.tos_root == USER_TOS_ROOT
+
+    # Test that location flags are NOT available on main parser
+    # (should raise SystemExit)
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--user", "accept"])
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--site", "accept"])
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--system", "accept"])
