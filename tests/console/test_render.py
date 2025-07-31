@@ -416,3 +416,49 @@ def test_render_list(
     assert str(tos_channel) in out
     assert TOS_OUTDATED in out
     # assert not err  # server log is output to stderr
+
+
+def test_conda_tos_non_interactive_error_message_format() -> None:
+    """Test that CondaToSNonInteractiveError provides copy-pasteable commands."""
+    # Test channels mentioned in issue #246
+    channels = [
+        "https://repo.anaconda.com/pkgs/main",
+        "https://repo.anaconda.com/pkgs/r",
+    ]
+
+    # Create the exception
+    exception = CondaToSNonInteractiveError(*channels)
+    message = str(exception)
+
+    # Verify the message contains actual copy-pasteable commands
+    # Check that it contains the actual URLs
+    assert "https://repo.anaconda.com/pkgs/main" in message
+    assert "https://repo.anaconda.com/pkgs/r" in message
+
+    # Check that it contains specific commands instead of placeholders
+    assert (
+        "conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main"
+        in message
+    )
+    assert (
+        "conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r"
+        in message
+    )
+    assert (
+        "conda config --remove channels https://repo.anaconda.com/pkgs/main" in message
+    )
+    assert "conda config --remove channels https://repo.anaconda.com/pkgs/r" in message
+
+    # Check that it doesn't contain the old placeholder text
+    assert "CHANNEL" not in message
+    assert "replace `CHANNEL` with the channel name/URL" not in message
+
+    # Check the structure has the right sections
+    assert (
+        "To accept these channels' Terms of Service, run the following commands:"
+        in message
+    )
+    assert (
+        "To remove channels with rejected Terms of Service, run the following commands:"
+        in message
+    )

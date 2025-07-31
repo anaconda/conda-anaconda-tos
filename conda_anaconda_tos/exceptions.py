@@ -76,18 +76,26 @@ class CondaToSNonInteractiveError(CondaToSError):
 
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
+        channel_urls = [_url(channel) for channel in channels]
+        accept_commands = [
+            f"conda tos accept --override-channels --channel {url}"
+            for url in channel_urls
+        ]
+        remove_commands = [
+            f"conda config --remove channels {url}" for url in channel_urls
+        ]
+
         super().__init__(
             f"Terms of Service have not been accepted for the following channels. "
             f"Please accept or remove them before proceeding:\n"
-            f"{_bullet(map(_url, channels))}\n"
+            f"{_bullet(channel_urls)}\n"
             f"\n"
-            f"To accept a channel's Terms of Service, run the following and "
-            f"replace `CHANNEL` with the channel name/URL:\n"
-            f"    ‣ conda tos accept --override-channels --channel CHANNEL\n"
+            f"To accept these channels' Terms of Service, run the following commands:\n"
+            f"{_bullet(accept_commands, prefix='    ‣ ')}\n"
             f"\n"
-            f"To remove channels with rejected Terms of Service, run the following and "
-            f"replace `CHANNEL` with the channel name/URL:\n"
-            f"    ‣ conda config --remove channels CHANNEL"
+            f"To remove channels with rejected Terms of Service, run the "
+            f"following commands:\n"
+            f"{_bullet(remove_commands, prefix='    ‣ ')}"
         )
 
 
