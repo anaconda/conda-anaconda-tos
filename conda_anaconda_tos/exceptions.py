@@ -70,7 +70,7 @@ class CondaToSRejectedError(CondaToSError):
             f"To accept these channels' Terms of Service, run the following commands:\n"
             f"{_bullet(accept_commands, prefix='    ')}\n"
             f"\n"
-            f"{_get_removal_guidance(channel_urls)}"
+            f"{_get_removal_guidance()}"
         )
 
 
@@ -93,19 +93,20 @@ class CondaToSNonInteractiveError(CondaToSError):
             f"To accept these channels' Terms of Service, run the following commands:\n"
             f"{_bullet(accept_commands, prefix='    ')}\n"
             f"\n"
-            f"{_get_removal_guidance(channel_urls)}"
+            f"{_get_removal_guidance()}"
         )
 
 
 def _url(channel: str | Channel) -> str:
-    return str(Channel(channel).base_url or channel)
+    _channel = channel if isinstance(channel, Channel) else Channel(str(channel))
+    return str(_channel.base_url or channel)
 
 
 def _bullet(args: Iterable[str], *, prefix: str = "    - ") -> str:
     return prefix + f"\n{prefix}".join(args)
 
 
-def _get_removal_guidance(channel_urls: list[str]) -> str:
+def _get_removal_guidance() -> str:
     """Generate removal guidance based on channel types."""
     return (
         "For information on safely removing channels from your conda configuration,\n"
