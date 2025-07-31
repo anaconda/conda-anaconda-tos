@@ -109,6 +109,6 @@ def _get_removal_guidance(channel_urls: list[str]) -> str:
     """Generate removal guidance based on channel types."""
     return (
         "For information on safely removing channels from your conda configuration,\n"
-        "please see the official documentation:\n"
-        "https://www.anaconda.com/docs/tools/working-with-conda/channels"
+        "please see the official documentation:\n\n"
+        "    https://www.anaconda.com/docs/tools/working-with-conda/channels"
     )
