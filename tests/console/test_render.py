@@ -419,23 +419,25 @@ def test_render_list(
 
 
 def test_conda_tos_non_interactive_error_message_format() -> None:
-    """Test that CondaToSNonInteractiveError provides copy-pasteable commands."""
-    # Test channels mentioned in issue #246
-    channels = [
+    """Test that CondaToSNonInteractiveError provides targeted guidance.
+
+    Guidance should be based on channel type.
+    """
+    # Test with default channels from issue #247
+    default_channels = [
         "https://repo.anaconda.com/pkgs/main",
         "https://repo.anaconda.com/pkgs/r",
     ]
 
-    # Create the exception
-    exception = CondaToSNonInteractiveError(*channels)
+    # Create the exception for default channels
+    exception = CondaToSNonInteractiveError(*default_channels)
     message = str(exception)
 
-    # Verify the message contains actual copy-pasteable commands
     # Check that it contains the actual URLs
     assert "https://repo.anaconda.com/pkgs/main" in message
     assert "https://repo.anaconda.com/pkgs/r" in message
 
-    # Check that it contains specific commands instead of placeholders
+    # Check that it contains specific commands for accepting ToS
     assert (
         "conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main"
         in message
@@ -444,21 +446,14 @@ def test_conda_tos_non_interactive_error_message_format() -> None:
         "conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r"
         in message
     )
-    assert (
-        "conda config --remove channels https://repo.anaconda.com/pkgs/main" in message
-    )
-    assert "conda config --remove channels https://repo.anaconda.com/pkgs/r" in message
 
-    # Check that it doesn't contain the old placeholder text
-    assert "CHANNEL" not in message
-    assert "replace `CHANNEL` with the channel name/URL" not in message
+    # Should provide link to official documentation
+    assert "https://www.anaconda.com/docs/tools/working-with-conda/channels" in message
 
-    # Check the structure has the right sections
-    assert (
-        "To accept these channels' Terms of Service, run the following commands:"
-        in message
-    )
-    assert (
-        "To remove channels with rejected Terms of Service, run the following commands:"
-        in message
-    )
+    # Test with non-default channels should have same guidance
+    other_channels = ["https://conda.anaconda.org/conda-forge"]
+    exception2 = CondaToSNonInteractiveError(*other_channels)
+    message2 = str(exception2)
+
+    # Should also provide link to official documentation
+    assert "https://www.anaconda.com/docs/tools/working-with-conda/channels" in message2

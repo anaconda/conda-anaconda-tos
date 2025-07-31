@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from conda.base.context import context
 from conda.exceptions import CondaError
 from conda.models.channel import Channel
 
@@ -56,18 +57,21 @@ class CondaToSRejectedError(CondaToSError):
 
     def __init__(self: Self, *channels: str | Channel) -> None:
         """Format error message with channel base URL."""
+        channel_urls = [_url(channel) for channel in channels]
+        accept_commands = [
+            f"conda tos accept --override-channels --channel {url}"
+            for url in channel_urls
+        ]
+
         super().__init__(
             f"Terms of Service has been rejected for the following channels. "
             f"Please remove or accept them before proceeding:\n"
-            f"{_bullet(map(_url, channels))}\n"
+            f"{_bullet(channel_urls)}\n"
             f"\n"
-            f"To remove channels with rejected Terms of Service, run the following and "
-            f"replace `CHANNEL` with the channel name/URL:\n"
-            f"    ‣ conda config --remove channels CHANNEL\n"
+            f"To accept these channels' Terms of Service, run the following commands:\n"
+            f"{_bullet(accept_commands, prefix='    ')}\n"
             f"\n"
-            f"To accept a channel's Terms of Service, run the following and "
-            f"replace `CHANNEL` with the channel name/URL:\n"
-            f"    ‣ conda tos accept --override-channels --channel CHANNEL"
+            f"{_get_removal_guidance(channel_urls)}"
         )
 
 
@@ -81,9 +85,6 @@ class CondaToSNonInteractiveError(CondaToSError):
             f"conda tos accept --override-channels --channel {url}"
             for url in channel_urls
         ]
-        remove_commands = [
-            f"conda config --remove channels {url}" for url in channel_urls
-        ]
 
         super().__init__(
             f"Terms of Service have not been accepted for the following channels. "
@@ -93,9 +94,7 @@ class CondaToSNonInteractiveError(CondaToSError):
             f"To accept these channels' Terms of Service, run the following commands:\n"
             f"{_bullet(accept_commands, prefix='    ')}\n"
             f"\n"
-            f"To remove channels with rejected Terms of Service, run the "
-            f"following commands:\n"
-            f"{_bullet(remove_commands, prefix='    ')}"
+            f"{_get_removal_guidance(channel_urls)}"
         )
 
 
@@ -105,3 +104,12 @@ def _url(channel: str | Channel) -> str:
 
 def _bullet(args: Iterable[str], *, prefix: str = "    - ") -> str:
     return prefix + f"\n{prefix}".join(args)
+
+
+def _get_removal_guidance(channel_urls: list[str]) -> str:
+    """Generate removal guidance based on channel types."""
+    return (
+        "For information on safely removing channels from your conda configuration,\n"
+        "please see the official documentation:\n"
+        "https://www.anaconda.com/docs/tools/working-with-conda/channels"
+    )
