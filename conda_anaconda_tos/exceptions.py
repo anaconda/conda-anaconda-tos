@@ -91,11 +91,11 @@ class CondaToSNonInteractiveError(CondaToSError):
             f"{_bullet(channel_urls)}\n"
             f"\n"
             f"To accept these channels' Terms of Service, run the following commands:\n"
-            f"{_bullet(accept_commands, prefix='    ‣ ')}\n"
+            f"{_bullet(accept_commands, prefix='    ')}\n"
             f"\n"
             f"To remove channels with rejected Terms of Service, run the "
             f"following commands:\n"
-            f"{_bullet(remove_commands, prefix='    ‣ ')}"
+            f"{_bullet(remove_commands, prefix='    ')}"
         )
 
 
@@ -103,5 +103,5 @@ def _url(channel: str | Channel) -> str:
     return str(Channel(channel).base_url or channel)
 
 
-def _bullet(args: Iterable[str], *, prefix: str = "    • ") -> str:
+def _bullet(args: Iterable[str], *, prefix: str = "    - ") -> str:
     return prefix + f"\n{prefix}".join(args)
