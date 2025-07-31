@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from conda.base.context import context
 from conda.exceptions import CondaError
 from conda.models.channel import Channel
 
