@@ -322,7 +322,7 @@ def test_backup_tos_configs(backup_test_setup: tuple[Path, list[Path]]) -> None:
         metadata = json.load(f)
 
     assert metadata["backup_type"] == "comprehensive"
-    assert metadata["version"] == "2.0"
+    assert metadata["version"] == api.APP_VERSION
     assert metadata["files_count"] == 3
     assert len(metadata["source_locations"]) == 2
     assert len(metadata["temporary_locations"]) == 1
@@ -455,7 +455,7 @@ def test_restore_tos_configs_by_age(
             "timestamp": (
                 datetime.now(tz=timezone.utc) - timedelta(hours=backup_age_hours)
             ).isoformat(),
-            "version": "2.0",
+            "version": api.APP_VERSION,
             "files": [],
         }
         (old_backup_dir / "metadata.json").write_text(json.dumps(metadata))
