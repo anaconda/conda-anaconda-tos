@@ -17,6 +17,7 @@ from conda_anaconda_tos import api
 from conda_anaconda_tos.api import (
     CI_BOOLEAN_VARS,
     CI_PRESENCE_VARS,
+    PARTIAL_CI_VARS,
     _is_ci,
     _restore_with_metadata,
     accept_tos,
@@ -794,7 +795,7 @@ def test_get_all_tos(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_container_detection(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test container detection in _is_ci function."""
+    """Test container detection in _in_ci_container function."""
     # Test case where cgroup file exists and contains container indicators
     mock_cgroup_content = "12:memory:/docker/abc123\n11:cpu:/containerd/xyz789"
 
@@ -813,10 +814,11 @@ def test_container_detection(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(Path, "open", mock_path_open)
 
-    # Set no CI environment variables (use tuple concatenation instead of |)
-    all_ci_vars = CI_BOOLEAN_VARS + CI_PRESENCE_VARS
+    # Clear all CI environment variables
+    all_ci_vars = CI_BOOLEAN_VARS + CI_PRESENCE_VARS + PARTIAL_CI_VARS
     for var in all_ci_vars:
         monkeypatch.delenv(var, raising=False)
 
-    # Should detect container but not CI (returns False since we need both)
-    assert _is_ci() is False
+    # Should detect container but NOT CI (no partial CI vars set)
+    assert api._in_ci_container() is False  # No partial CI vars
+    assert _is_ci() is False  # No CI vars at all
