@@ -244,15 +244,15 @@ def mock_backup_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def mock_vulnerable_check(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Mock vulnerable location check for testing."""
+def mock_temporary_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mock temporary location check for testing."""
 
-    def mock_vulnerable(path: str | Path) -> bool:
-        # Only mark search1 as vulnerable, not search2
+    def mock_temporary(path: str | Path) -> bool:
+        # Only mark search1 as temporary, not search2
         path_str = str(path)
         return path_str.endswith("search1") and "search2" not in path_str
 
-    monkeypatch.setattr(api, "is_vulnerable_location", mock_vulnerable)
+    monkeypatch.setattr(api, "is_temporary_location", mock_temporary)
 
 
 @pytest.fixture
@@ -295,7 +295,7 @@ def test_tos_files(test_search_paths: tuple[Path, Path]) -> list[Path]:
 def backup_test_setup(
     test_tos_files: list[Path],
     mock_backup_dir: Path,
-    mock_vulnerable_check: None,  # noqa: ARG001
+    mock_temporary_check: None,  # noqa: ARG001
 ) -> tuple[Path, list[Path]]:
     """Complete backup test setup combining all necessary fixtures."""
     return mock_backup_dir.parent, test_tos_files
@@ -325,8 +325,8 @@ def test_backup_tos_configs(backup_test_setup: tuple[Path, list[Path]]) -> None:
     assert metadata["version"] == "2.0"
     assert metadata["files_count"] == 3
     assert len(metadata["source_locations"]) == 2
-    assert len(metadata["vulnerable_locations"]) == 1
-    assert len(metadata["safe_locations"]) == 1
+    assert len(metadata["temporary_locations"]) == 1
+    assert len(metadata["persistent_locations"]) == 1
     assert len(metadata["files"]) == 3
 
     # Verify backup files exist
@@ -531,7 +531,7 @@ def test_restore_with_metadata_function(
             {
                 "path": str(backup_file),
                 "source_location": str(target_dir),
-                "is_vulnerable": False,
+                "is_temporary": False,
             }
         ],
     }

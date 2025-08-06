@@ -21,7 +21,7 @@ class BackupFileInfo:
 
     file_path: Path
     source_location: str
-    is_vulnerable: bool
+    is_temporary: bool
 
 
 class _ToSMetadata(BaseModel):

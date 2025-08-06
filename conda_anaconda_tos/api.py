@@ -26,7 +26,7 @@ from .path import (
     get_location_hash,
     get_path,
     get_search_path,
-    is_vulnerable_location,
+    is_temporary_location,
 )
 from .remote import get_remote_metadata
 
@@ -368,7 +368,7 @@ def backup_tos_configs() -> Path:
                     BackupFileInfo(
                         file_path=tos_file,
                         source_location=str(search_path),
-                        is_vulnerable=is_vulnerable_location(search_path),
+                        is_temporary=is_temporary_location(search_path),
                     )
                 )
 
@@ -404,17 +404,17 @@ def backup_tos_configs() -> Path:
         "backup_type": "comprehensive",
         "files_count": len(file_info),
         "source_locations": list({info.source_location for info in file_info}),
-        "vulnerable_locations": list(
-            {info.source_location for info in file_info if info.is_vulnerable}
+        "temporary_locations": list(
+            {info.source_location for info in file_info if info.is_temporary}
         ),
-        "safe_locations": list(
-            {info.source_location for info in file_info if not info.is_vulnerable}
+        "persistent_locations": list(
+            {info.source_location for info in file_info if not info.is_temporary}
         ),
         "files": [
             {
                 "path": str(info.file_path),
                 "source_location": info.source_location,
-                "is_vulnerable": info.is_vulnerable,
+                "is_temporary": info.is_temporary,
             }
             for info in file_info
         ],

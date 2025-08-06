@@ -214,13 +214,13 @@ Each backup includes comprehensive metadata:
 {
   "timestamp": "2024-01-01T12:00:00Z",
   "version": "1.2.3",
-  "vulnerable_locations": ["/path/to/vulnerable/tos"],
-  "safe_locations": ["/path/to/safe/tos"],
+  "temporary_locations": ["/path/to/temporary/tos"],
+  "persistent_locations": ["/path/to/persistent/tos"],
   "files": [
     {
       "source_location": "/path/to/tos",
       "relative_path": "acceptance.json",
-      "is_vulnerable": false
+      "is_temporary": false
     }
   ]
 }

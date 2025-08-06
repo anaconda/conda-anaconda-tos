@@ -49,8 +49,9 @@ SAFE_TOS_ROOTS: Final = tuple(
     ),
 )
 
-#: Locations vulnerable to conda package updates (conda installation and environment).
-VULNERABLE_TOS_ROOTS: Final = (
+#: Locations that may be affected by conda package updates
+#: (conda installation and environment).
+TEMPORARY_TOS_ROOTS: Final = (
     SYSTEM_TOS_ROOT,  # $CONDA_ROOT/conda-meta/tos
     ENV_TOS_ROOT,  # $CONDA_PREFIX/conda-meta/tos
 )
@@ -183,12 +184,12 @@ def get_cache_paths() -> Iterator[Path]:
     yield from sorted(CACHE_DIR.glob("*.cache"))
 
 
-def is_vulnerable_location(path: str | os.PathLike[str] | Path) -> bool:
-    """Check if a path is in a location vulnerable to conda package updates."""
+def is_temporary_location(path: str | os.PathLike[str] | Path) -> bool:
+    """Check if a path is in a location that may be affected by conda updates."""
     path_str = str(get_path(path))
     return any(
-        str(get_path(vulnerable_root)) in path_str
-        for vulnerable_root in VULNERABLE_TOS_ROOTS
+        str(get_path(temporary_root)) in path_str
+        for temporary_root in TEMPORARY_TOS_ROOTS
     )
 
 
