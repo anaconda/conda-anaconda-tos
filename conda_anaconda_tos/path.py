@@ -34,6 +34,41 @@ USER_TOS_ROOT: Final = "~/.conda/tos"
 #: Environment metadata directory. Located in the current conda environment.
 ENV_TOS_ROOT: Final = "$CONDA_PREFIX/conda-meta/tos"
 
+#: Locations safe from conda package updates (system-wide and user directories).
+SAFE_TOS_ROOTS: Final = tuple(
+    filter(
+        None,
+        (
+            SITE_TOS_ROOT,
+            "/var/lib/conda/tos" if not on_win else None,
+            "$XDG_CONFIG_HOME/conda/tos",
+            "~/.config/conda/tos",
+            USER_TOS_ROOT,
+            "$CONDATOS",
+        ),
+    ),
+)
+
+#: Locations vulnerable to conda package updates (conda installation and environment).
+VULNERABLE_TOS_ROOTS: Final = (
+    SYSTEM_TOS_ROOT,  # $CONDA_ROOT/conda-meta/tos
+    ENV_TOS_ROOT,  # $CONDA_PREFIX/conda-meta/tos
+)
+
+#: Preferred restore locations (safe, in priority order).
+RESTORE_PRIORITY: Final = tuple(
+    filter(
+        None,
+        (
+            SITE_TOS_ROOT,  # Highest priority, system-wide
+            "/var/lib/conda/tos" if not on_win else None,
+            USER_TOS_ROOT,  # User-writable fallback
+            "$XDG_CONFIG_HOME/conda/tos",
+            "~/.config/conda/tos",
+        ),
+    ),
+)
+
 #: Search path for metadata directories.
 SEARCH_PATH: Final = tuple(
     filter(
@@ -58,6 +93,9 @@ TOS_GLOB: Final = "*.json"
 #: OS and user specific metadata cache directory.
 CACHE_DIR: Final = Path(user_cache_dir(APP_NAME, appauthor=APP_NAME))
 
+#: Directory for backup/restore operations.
+TOS_BACKUP_DIR: Final = CACHE_DIR / "backup"
+
 
 @cache
 def hash_channel(channel: str | Channel) -> str:
@@ -73,6 +111,11 @@ def hash_channel(channel: str | Channel) -> str:
     hasher.update(channel.channel_location.encode("utf-8"))
     hasher.update(channel.channel_name.encode("utf-8"))
     return hasher.hexdigest()
+
+
+def get_location_hash(location: str | Path) -> str:
+    """Get a short hash for a location path for backup directory naming."""
+    return hashlib.md5(str(location).encode()).hexdigest()[:8]  # noqa: S324
 
 
 def get_path(path: str | os.PathLike[str] | Path) -> Path:
@@ -138,3 +181,30 @@ def get_cache_path(channel: str | Channel) -> Path:
 def get_cache_paths() -> Iterator[Path]:
     """Get all local metadata cache file paths."""
     yield from sorted(CACHE_DIR.glob("*.cache"))
+
+
+def is_vulnerable_location(path: str | os.PathLike[str] | Path) -> bool:
+    """Check if a path is in a location vulnerable to conda package updates."""
+    path_str = str(get_path(path))
+    return any(
+        str(get_path(vulnerable_root)) in path_str
+        for vulnerable_root in VULNERABLE_TOS_ROOTS
+    )
+
+
+def find_best_restore_location() -> Path:
+    """Find the highest priority location where we can write for safe restoration."""
+    for location in RESTORE_PRIORITY:
+        try:
+            path = get_path(location)
+            # Test if writable by creating and removing a test file
+            path.mkdir(parents=True, exist_ok=True)
+            test_file = path / ".write_test"
+            test_file.touch()
+            test_file.unlink()
+            return path
+        except (PermissionError, OSError):
+            continue
+
+    # Fallback to user directory if all else fails
+    return get_path(USER_TOS_ROOT)

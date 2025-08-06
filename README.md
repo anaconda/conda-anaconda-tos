@@ -48,6 +48,8 @@ conda tos view    # Display full Terms of Service text
 conda tos accept  # Accept Terms of Service
 conda tos reject  # Reject Terms of Service
 conda tos interactive  # Interactive ToS management
+conda tos backup  # Create backup of ToS configuration files
+conda tos restore # Restore ToS files from recent backup
 ```
 
 ### Interactive ToS Acceptance
@@ -175,6 +177,67 @@ The plugin operates transparently during normal conda operations:
 5. **Compliance**: Provides GDPR-compliant consent management with data minimization
 6. **HTTP Headers**: Uses the `Anaconda-ToS-Accept` header to transmit acceptance tokens to repositories
 7. **Environment Detection**: Automatically adjusts behavior in CI/CD and Jupyter environments
+
+## Plugin Updates and Configuration Backup
+
+### Automatic Configuration Backup
+
+When the plugin is updated or packages are removed, it automatically backs up your ToS configuration files to prevent data loss:
+
+```bash
+# Manual backup (same as automatic backup during package updates)
+conda tos backup
+
+# Manual backup with custom timeout (default: 1 hour = 3600 seconds)
+conda tos backup --max-age 7200  # 2 hours
+
+# Restore from recent backup (within 1 hour by default)
+conda tos restore
+
+# Restore with custom timeout
+conda tos restore --max-age 7200  # Look for backups up to 2 hours old
+```
+
+### How Backup/Restore Works
+
+- **Automatic Backup**: During package updates, the plugin automatically backs up all ToS acceptance files
+- **Timestamped Backups**: Each backup is stored with a timestamp for easy identification
+- **Location-Aware**: Backups preserve the exact original locations of your ToS files
+- **Safe Restoration**: Restore only attempts to use recent backups (within the specified `--max-age`)
+- **Backup Location**: Backups are stored in your conda user directory under `.conda/backup/tos/`
+
+### Backup Metadata
+
+Each backup includes comprehensive metadata:
+
+```json
+{
+  "timestamp": "2024-01-01T12:00:00Z",
+  "version": "1.2.3",
+  "vulnerable_locations": ["/path/to/vulnerable/tos"],
+  "safe_locations": ["/path/to/safe/tos"],
+  "files": [
+    {
+      "source_location": "/path/to/tos",
+      "relative_path": "acceptance.json",
+      "is_vulnerable": false
+    }
+  ]
+}
+```
+
+### Manual Cleanup
+
+```bash
+# Clean old backups and ToS cache
+conda tos clean --all
+
+# View backup directory contents
+ls ~/.conda/backup/tos/
+```
+
+> [!NOTE]
+> The backup system ensures your ToS acceptance records are preserved during plugin updates and package management operations.
 
 ## Privacy and Compliance
 

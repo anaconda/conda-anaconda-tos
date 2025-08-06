@@ -5,10 +5,12 @@
 from .render import (  # noqa: F401
     noop_printer,
     render_accept,
+    render_backup,
     render_clean,
     render_info,
     render_interactive,
     render_list,
     render_reject,
+    render_restore,
     render_view,
 )
