@@ -8,3 +8,5 @@ pytest-cov ==6.0.0
 pytest-mock ==3.14.0
 # renovate: datasource=conda depName=main/pytest-xdist
 pytest-xdist ==3.6.1
+# renovate: datasource=conda depName=conda-forge/pytest-docker-tools
+conda-forge::pytest-docker-tools ==3.1.9

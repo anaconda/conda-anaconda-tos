@@ -416,3 +416,44 @@ def test_render_list(
     assert str(tos_channel) in out
     assert TOS_OUTDATED in out
     # assert not err  # server log is output to stderr
+
+
+def test_conda_tos_non_interactive_error_message_format() -> None:
+    """Test that CondaToSNonInteractiveError provides targeted guidance.
+
+    Guidance should be based on channel type.
+    """
+    # Test with default channels from issue #247
+    default_channels = [
+        "https://repo.anaconda.com/pkgs/main",
+        "https://repo.anaconda.com/pkgs/r",
+    ]
+
+    # Create the exception for default channels
+    exception = CondaToSNonInteractiveError(*default_channels)
+    message = str(exception)
+
+    # Check that it contains the actual URLs
+    assert "https://repo.anaconda.com/pkgs/main" in message
+    assert "https://repo.anaconda.com/pkgs/r" in message
+
+    # Check that it contains specific commands for accepting ToS
+    assert (
+        "conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main"
+        in message
+    )
+    assert (
+        "conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r"
+        in message
+    )
+
+    # Should provide link to official documentation
+    assert "https://www.anaconda.com/docs/tools/working-with-conda/channels" in message
+
+    # Test with non-default channels should have same guidance
+    other_channels = ["https://conda.anaconda.org/conda-forge"]
+    exception2 = CondaToSNonInteractiveError(*other_channels)
+    message2 = str(exception2)
+
+    # Should also provide link to official documentation
+    assert "https://www.anaconda.com/docs/tools/working-with-conda/channels" in message2

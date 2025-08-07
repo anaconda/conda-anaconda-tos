@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.auxlib.type_coercion import boolify
@@ -18,43 +19,129 @@ from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-    from pathlib import Path
     from typing import Final
 
 
 #: Boolean CI environment variables (checked with boolify)
+#: Sources: Official CI platform documentation and community knowledge base
 CI_BOOLEAN_VARS: Final = (
-    "APPVEYOR",  # AppVeyor CI
-    "BITRISE_IO",  # Bitrise
-    "BUDDY",  # Buddy CI/CD
-    "BUILDKITE",  # Buildkite
+    "APPVEYOR",  # AppVeyor CI (https://www.appveyor.com/docs/environment-variables/)
+    "BITRISE_IO",  # Bitrise (https://devcenter.bitrise.io/en/references/available-environment-variables.html)
+    "BUDDY",  # Buddy CI/CD (https://buddy.works/docs/pipelines/environment-variables)
+    "BUILDKITE",  # Buildkite (https://buildkite.com/docs/pipelines/environment-variables)
     "CI",  # Generic CI indicator (many platforms)
-    "CIRCLECI",  # CircleCI
-    "CIRRUS_CI",  # Cirrus CI
-    "CONCOURSE_CI",  # Concourse CI
-    "DRONE",  # Drone CI
-    "GITHUB_ACTIONS",  # GitHub Actions
-    "GITLAB_CI",  # GitLab CI/CD
+    "CIRCLECI",  # CircleCI (https://circleci.com/docs/variables/#built-in-environment-variables)
+    "CIRRUS_CI",  # Cirrus CI (https://cirrus-ci.org/guide/environment-variables/)
+    "CONCOURSE_CI",  # Concourse CI (https://concourse-ci.org/implementing-resource-types.html#environment)
+    "DRONE",  # Drone CI (https://docs.drone.io/pipeline/environment/reference/)
+    "GITHUB_ACTIONS",  # GitHub Actions (https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables)
+    "GITLAB_CI",  # GitLab CI/CD (https://docs.gitlab.com/ee/ci/variables/predefined_variables.html)
     "SAIL_CI",  # Sail CI
-    "SEMAPHORE",  # Semaphore CI
-    "TF_BUILD",  # Azure DevOps (Team Foundation)
-    "TRAVIS",  # Travis CI
+    "SEMAPHORE",  # Semaphore CI (https://docs.semaphoreci.com/ci-cd-environment/environment-variables/)
+    "TF_BUILD",  # Azure DevOps (Team Foundation) (https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables)
+    "TRAVIS",  # Travis CI (https://docs.travis-ci.com/user/environment-variables/#default-environment-variables)
     "WERCKER",  # Wercker (deprecated)
-    "WOODPECKER_CI",  # Woodpecker CI
+    "WOODPECKER_CI",  # Woodpecker CI (https://woodpecker-ci.org/docs/usage/environment)
 )
 
 #: Presence-based CI environment variables (checked for existence)
+#: Sources: Official CI platform documentation
 CI_PRESENCE_VARS: Final = (
-    "BAMBOO_BUILDKEY",  # Atlassian Bamboo
-    "CODEBUILD_BUILD_ID",  # AWS CodeBuild
-    "HEROKU_TEST_RUN_ID",  # Heroku CI
-    "JENKINS_URL",  # Jenkins
-    "TEAMCITY_VERSION",  # JetBrains TeamCity
+    "BAMBOO_BUILDKEY",  # Atlassian Bamboo (https://confluence.atlassian.com/bamboo/bamboo-variables-289277087.html)
+    "CODEBUILD_BUILD_ID",  # AWS CodeBuild (https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html)
+    "HEROKU_TEST_RUN_ID",  # Heroku CI (https://devcenter.heroku.com/articles/heroku-ci#environment-variables)
+    "JENKINS_URL",  # Jenkins (https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables)
+    "TEAMCITY_VERSION",  # JetBrains TeamCity (https://www.jetbrains.com/help/teamcity/predefined-build-parameters.html)
 )
 
 
+#: Container indicators for cgroup detection
+#: Reference: https://github.com/containers/podman/issues/3586,
+#: Docker/containerd documentation
+CONTAINER_INDICATORS: Final = (
+    "containerd",  # containerd runtime
+    "docker",  # Docker containers
+    "kubepods",  # Kubernetes pods (https://kubernetes.io/docs/tasks/administer-cluster/migrating-from-dockershim/find-out-runtime-you-use/)
+    "lxc",  # Linux Containers
+    "podman",  # Podman containers
+)
+
+#: Partial CI environment variables (used with container detection)
+#: These variables may be present in containerized CI environments that don't
+#: set full CI variables
+PARTIAL_CI_VARS: Final = (
+    "AZURE_HTTP_USER_AGENT",  # Azure DevOps user agent
+    "BUILD_ID",  # Generic build identifier (Jenkins, etc.)
+    "BUILD_NUMBER",  # Generic build number (Jenkins, etc.)
+    "BUILD_URL",  # Generic build URL (Jenkins, etc.)
+    "BUILDKITE_BUILD_ID",  # Buildkite build identifier
+    "CIRCLE_BUILD_NUM",  # CircleCI build number
+    "CIRCLE_PROJECT_REPONAME",  # CircleCI repository name
+    "GITHUB_JOB",  # GitHub Actions job name
+    "GITHUB_REPOSITORY",  # GitHub repository name
+    "GITHUB_WORKFLOW",  # GitHub Actions workflow name
+    "GITLAB_PROJECT_ID",  # GitLab project identifier
+    "GITLAB_USER_ID",  # GitLab user identifier
+    "JOB_NAME",  # Generic job name (Jenkins, etc.)
+    "RUNNER_ARCH",  # GitHub Actions runner architecture
+    "RUNNER_OS",  # GitHub Actions runner OS
+    "WORKSPACE",  # Generic workspace path (Jenkins, etc.)
+)
+
+
+def _in_ci_container() -> bool:
+    """Detect if running in a containerized CI environment.
+
+    This function combines container detection with partial CI environment variables
+    to address cases where CI systems run jobs in containers but don't set complete
+    CI environment variables (see GitHub issue #232). This is a workaround for
+    https://github.com/anaconda/conda-anaconda-tos/issues/232.
+
+    Returns:
+        bool: True if both container indicators and partial CI variables are present
+
+    """
+    # Check documented container indicators
+    container_checks = [
+        os.getpid() == 1,  # Process ID 1 (init process in containers)
+        bool(os.environ.get("CONTAINER")),  # Generic container environment variable
+    ]
+
+    # Check cgroup for container runtime identifiers (Docker official method)
+    # Reference: https://docs.docker.com/engine/containers/runmetrics/#find-the-cgroup-for-a-given-container
+    try:
+        with Path("/proc/self/cgroup").open() as f:
+            cgroup_content = f.read()
+            # Container runtime signatures in cgroups (documented by Docker):
+            # - "docker": Docker containers
+            # - "containerd": containerd runtime
+            # - "kubepods": Kubernetes pods
+            # - "lxc": Linux Containers
+            # - "podman": Podman containers
+            if any(indicator in cgroup_content for indicator in CONTAINER_INDICATORS):
+                container_checks.append(True)
+    except OSError:
+        # Ignore errors (e.g., on non-Linux systems or restricted access)
+        pass
+
+    # Return True only if we detect container AND partial CI indicators
+    # This prevents false positives from containers without CI context
+    return any(container_checks) and any(os.getenv(var) for var in PARTIAL_CI_VARS)
+
+
 def _is_ci() -> bool:
-    """Determine if running in a CI environment."""
+    """Determine if running in a CI environment.
+
+    This function uses a multi-layered approach to detect CI environments:
+    1. First checks if any CI variables are explicitly set to false
+       (respects user override)
+    2. Then checks boolean CI variables for true values
+    3. Finally checks presence-based variables and container environments
+
+    Returns:
+        bool: True if running in a detected CI environment
+
+    """
     # Check all boolean CI variables for explicit false values first
     # If any CI variable is explicitly set to false, respect that
     for var_value in map(os.getenv, CI_BOOLEAN_VARS):
@@ -67,7 +154,7 @@ def _is_ci() -> bool:
             return True
 
     # Check presence-based CI environment variables
-    return any(os.getenv(var) for var in CI_PRESENCE_VARS)
+    return any(os.getenv(var) for var in CI_PRESENCE_VARS) or _in_ci_container()
 
 
 #: Whether the current environment is a CI environment

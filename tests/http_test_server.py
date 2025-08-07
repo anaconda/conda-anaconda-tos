@@ -51,7 +51,7 @@ def run_test_server(
         metadatas = metadata
 
     class CustomRequestHandler(http.server.SimpleHTTPRequestHandler):
-        def do_GET(self: Self) -> None:  # noqa: N802
+        def do_GET(self: Self) -> None:
             if (metadata := next(metadatas)) and self.path.startswith(f"/{ENDPOINT}"):
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
