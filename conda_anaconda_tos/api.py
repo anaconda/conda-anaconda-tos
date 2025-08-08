@@ -4,24 +4,35 @@
 
 from __future__ import annotations
 
+import json
 import os
+import shutil
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.auxlib.type_coercion import boolify
 from conda.models.channel import Channel
 
-from .exceptions import CondaToSMissingError
+from . import APP_VERSION
+from .exceptions import CondaToSBackupError, CondaToSMissingError
 from .local import get_local_metadata, get_local_metadatas, write_metadata
-from .models import LocalPair, RemotePair
-from .path import get_all_channel_paths, get_cache_paths
+from .models import BackupFileInfo, LocalPair, RemotePair
+from .path import (
+    TOS_BACKUP_DIR,
+    get_all_channel_paths,
+    get_cache_paths,
+    get_location_hash,
+    get_path,
+    get_search_path,
+    is_temporary_location,
+)
 from .remote import get_remote_metadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
     from typing import Final
-
-
 #: Boolean CI environment variables (checked with boolify)
 #: Sources: Official CI platform documentation and community knowledge base
 CI_BOOLEAN_VARS: Final = (
@@ -53,8 +64,6 @@ CI_PRESENCE_VARS: Final = (
     "JENKINS_URL",  # Jenkins (https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables)
     "TEAMCITY_VERSION",  # JetBrains TeamCity (https://www.jetbrains.com/help/teamcity/predefined-build-parameters.html)
 )
-
-
 #: Container indicators for cgroup detection
 #: Reference: https://github.com/containers/podman/issues/3586,
 #: Docker/containerd documentation
@@ -325,3 +334,251 @@ def clean_tos(tos_root: str | os.PathLike[str] | Path) -> Iterator[Path]:
             pass
         else:
             yield path
+
+
+def backup_tos_configs() -> Path:
+    """Backup ToS configuration files from all search path locations.
+
+    Returns:
+        Path to the created backup directory
+
+    Raises:
+        CondaToSBackupError: If backup directory cannot be created or files
+            cannot be copied.
+
+    """
+    backup_timestamp = datetime.now(tz=timezone.utc)
+    timestamped_backup_dir = TOS_BACKUP_DIR / (
+        f"backup_{int(backup_timestamp.timestamp())}"
+    )
+
+    # Create backup directory
+    try:
+        timestamped_backup_dir.mkdir(parents=True, exist_ok=True)
+    except (PermissionError, OSError) as e:
+        raise CondaToSBackupError("create", timestamped_backup_dir, str(e)) from e
+
+    # Collect ToS files with location metadata from all search path locations
+    file_info: list[BackupFileInfo] = []
+
+    for search_path in get_search_path():
+        for tos_file in search_path.glob("*/*.json"):
+            if tos_file.is_file():
+                file_info.append(
+                    BackupFileInfo(
+                        file_path=tos_file,
+                        source_location=str(search_path),
+                        is_temporary=is_temporary_location(search_path),
+                    )
+                )
+
+    if file_info:
+        # Create backup structure preserving source information
+        backup_configs_dir = timestamped_backup_dir / "configs"
+        try:
+            backup_configs_dir.mkdir(exist_ok=True)
+        except (PermissionError, OSError) as e:
+            raise CondaToSBackupError(
+                "create configs directory", backup_configs_dir, str(e)
+            ) from e
+
+        for info in file_info:
+            source_location = Path(info.source_location).expanduser().resolve()
+
+            try:
+                tos_file_resolved = info.file_path.resolve()
+                # Create a path structure that preserves source location info
+                rel_path = tos_file_resolved.relative_to(source_location)
+                # Include source identifier in backup path
+                source_hash = get_location_hash(source_location)
+                backup_file = backup_configs_dir / source_hash / rel_path
+                backup_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(info.file_path, backup_file)
+            except (ValueError, PermissionError, OSError):
+                # File issues, skip but continue with other files
+                continue
+
+    # Create metadata file
+    metadata = {
+        "timestamp": backup_timestamp.isoformat(),
+        "backup_type": "comprehensive",
+        "files_count": len(file_info),
+        "source_locations": list({info.source_location for info in file_info}),
+        "temporary_locations": list(
+            {info.source_location for info in file_info if info.is_temporary}
+        ),
+        "persistent_locations": list(
+            {info.source_location for info in file_info if not info.is_temporary}
+        ),
+        "files": [
+            {
+                "path": str(info.file_path),
+                "source_location": info.source_location,
+                "is_temporary": info.is_temporary,
+            }
+            for info in file_info
+        ],
+        "version": APP_VERSION,
+    }
+
+    metadata_file = timestamped_backup_dir / "metadata.json"
+    try:
+        with metadata_file.open("w") as f:
+            json.dump(metadata, f, indent=2)
+    except (PermissionError, OSError) as e:
+        raise CondaToSBackupError("write metadata", metadata_file, str(e)) from e
+
+    return timestamped_backup_dir
+
+
+def restore_tos_configs(
+    timeout_hours: float = 1.0,
+) -> tuple[bool, list[Path]]:
+    """Restore ToS configuration files from recent backup to exact original locations.
+
+    Args:
+        timeout_hours: Timeout in hours for considering backups recent
+
+    Returns:
+        - bool: True if any restore was performed, False otherwise
+        - list[Path]: List of successfully restored files
+
+    Raises:
+        FileNotFoundError: If the backup directory does not exist
+
+    """
+    backup_dir = TOS_BACKUP_DIR
+
+    if not backup_dir.exists():
+        raise FileNotFoundError(f"Backup directory does not exist: {backup_dir}")
+
+    # Find recent backups within timeout period
+    timeout_cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=timeout_hours)
+    recent_backups = []
+
+    for individual_backup_dir in backup_dir.iterdir():
+        if (
+            not individual_backup_dir.is_dir()
+            or not individual_backup_dir.name.startswith("backup_")
+        ):
+            continue
+
+        metadata_file = individual_backup_dir / "metadata.json"
+        if not metadata_file.exists():
+            continue
+
+        try:
+            with metadata_file.open() as f:
+                metadata = json.load(f)
+
+            backup_time = datetime.fromisoformat(metadata["timestamp"])
+            if backup_time >= timeout_cutoff:
+                recent_backups.append((backup_time, individual_backup_dir, metadata))
+        except (json.JSONDecodeError, KeyError, ValueError):
+            # Invalid metadata, skip this backup
+            continue
+
+    if not recent_backups:
+        return False, []
+
+    # Use the most recent backup
+    _, latest_backup_dir, metadata = max(recent_backups, key=lambda x: x[0])
+
+    # Restore files using enhanced metadata for exact location restoration
+    configs_dir = latest_backup_dir / "configs"
+    restored_files = []
+
+    if (
+        configs_dir.exists()
+        and metadata.get("version") is not None
+        and "files" in metadata
+    ):
+        restored_files = _restore_with_metadata(configs_dir, metadata)
+
+    return bool(restored_files), restored_files
+
+
+def _restore_with_metadata(configs_dir: Path, metadata: dict) -> list[Path]:
+    """Restore files using enhanced metadata to their exact original locations."""
+    restored_files = []
+
+    # Group files by their original source locations
+    files_by_source: dict[str, list[dict]] = defaultdict(list)
+    for file_info in metadata.get("files", []):
+        files_by_source[file_info["source_location"]].append(file_info)
+
+    for source_location in files_by_source:
+        # Always try to restore to the exact original location
+        try:
+            original_path = get_path(source_location)
+            # Test if we can write to the original location
+            original_path.mkdir(parents=True, exist_ok=True)
+            test_file = original_path / ".write_test"
+            test_file.touch()
+            test_file.unlink()
+
+            # Original location is writable, restore files there
+            source_hash = get_location_hash(source_location)
+            source_backup_dir = configs_dir / source_hash
+
+            if source_backup_dir.exists():
+                for backup_file in source_backup_dir.rglob("*"):
+                    if backup_file.is_file():
+                        try:
+                            # Calculate relative path from source backup dir
+                            rel_path = backup_file.relative_to(source_backup_dir)
+                            target_file = original_path / rel_path
+
+                            # Create target directory if needed
+                            target_file.parent.mkdir(parents=True, exist_ok=True)
+
+                            # Restore file to exact original location
+                            shutil.copy2(backup_file, target_file)
+                            restored_files.append(target_file)
+                        except (PermissionError, OSError, ValueError):
+                            # Skip individual files that cannot be restored
+                            continue
+
+        except (PermissionError, OSError):
+            # Cannot write to original location - skip all files from this source
+            # This is intentional: better to require re-consent than restore to
+            # wrong location
+            continue
+
+    return restored_files
+
+
+def clean_backup_dir(older_than_hours: float = 24.0) -> Iterator[Path]:
+    """Clean old backup files from backup directory.
+
+    Args:
+        older_than_hours: Remove backups older than this many hours
+
+    Yields:
+        Path: Paths of removed backup directories
+
+    """
+    backup_dir = TOS_BACKUP_DIR
+
+    if not backup_dir.exists():
+        return
+
+    cutoff_time = datetime.now(tz=timezone.utc) - timedelta(hours=older_than_hours)
+
+    for individual_backup_dir in backup_dir.iterdir():
+        if (
+            not individual_backup_dir.is_dir()
+            or not individual_backup_dir.name.startswith("backup_")
+        ):
+            continue
+
+        try:
+            timestamp_str = individual_backup_dir.name.replace("backup_", "")
+            backup_time = datetime.fromtimestamp(float(timestamp_str), tz=timezone.utc)
+
+            if backup_time < cutoff_time:
+                shutil.rmtree(individual_backup_dir)
+                yield individual_backup_dir
+        except (ValueError, OSError):
+            # Invalid timestamp or removal failed, skip
+            continue
