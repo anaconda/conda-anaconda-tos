@@ -5,6 +5,9 @@
 
 A conda plugin for handling Terms of Service (ToS) acceptance in commercial software repositories, providing auditable consent management and GDPR compliance.
 
+> [!NOTE]
+> If you have an enterprise license agreement with Anaconda, that agreement governs your use of the applicable Anaconda products and supersedes any terms presented to your licensed users through the plugin during your subscription term.
+
 ## What is conda-anaconda-tos?
 
 The `conda-anaconda-tos` plugin enables conda to automatically detect and manage Terms of Service acceptance when accessing commercial repositories. It provides auditable records of user consent, handles ToS updates transparently, and ensures compliance with legal requirements for commercial software distribution.
