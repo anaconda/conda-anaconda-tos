@@ -371,9 +371,6 @@ def conda_pre_commands() -> Iterator[CondaPreCommand]:
 
 @cache
 def _get_tos_acceptance_header() -> str:
-    if CI:
-        return "CI=true"
-
     values = []
     for channel in get_channels(*context.channels):
         try:
@@ -394,6 +391,8 @@ def _get_tos_acceptance_header() -> str:
                     )
                 )
             )
+    if CI:
+        values.append("CI=true")
     return FIELD_SEPARATOR.join(values)
 
 

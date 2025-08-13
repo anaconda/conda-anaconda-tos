@@ -243,20 +243,18 @@ def test_request_headers(
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     _cache_clear()
     request = get_session(url).get(url).request
+    value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=accepted="
+    assert request.headers["Anaconda-ToS-Accept"].startswith(value)
     if ci:
-        assert request.headers["Anaconda-ToS-Accept"] == "CI=true"
-    else:
-        value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=accepted="
-        assert request.headers["Anaconda-ToS-Accept"].startswith(value)
+        assert request.headers["Anaconda-ToS-Accept"].endswith(";CI=true")
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     _cache_clear()
     request = get_session(url).get(url).request
+    value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=rejected="
+    assert request.headers["Anaconda-ToS-Accept"].startswith(value)
     if ci:
-        assert request.headers["Anaconda-ToS-Accept"] == "CI=true"
-    else:
-        value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=rejected="
-        assert request.headers["Anaconda-ToS-Accept"].startswith(value)
+        assert request.headers["Anaconda-ToS-Accept"].endswith(";CI=true")
 
 
 def test_conda_search_interactive(
