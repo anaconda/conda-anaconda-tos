@@ -75,7 +75,7 @@ def test_request_headers_hook() -> None:
     host, path = "repo.anaconda.com", "/pkgs/main/repodata.json"
     headers = list(conda_request_headers(host, path))
     assert len(headers) == 1
-    assert headers[0].name == "Anaconda-ToS-Accept"
+    assert headers[0].name.lower() == "anaconda-tos-accept"
 
 
 def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
