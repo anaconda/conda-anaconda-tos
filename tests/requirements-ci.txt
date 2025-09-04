@@ -1,5 +1,5 @@
 # renovate: datasource=conda depName=main/requests
-requests ==2.32.4
+requests ==2.32.5
 # renovate: datasource=conda depName=main/pytest
 pytest ==8.4.1
 # renovate: datasource=conda depName=main/pytest-cov
