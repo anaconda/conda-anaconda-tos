@@ -15,6 +15,7 @@ from rich.table import Table
 
 from ..api import (
     CI,
+    AUTH,
     JUPYTER,
     accept_tos,
     clean_cache,
@@ -145,6 +146,8 @@ def render_list(
         printer(table)
         if outdated:
             printer(f"[bold yellow]{TOS_OUTDATED}")
+        if AUTH:
+            printer("User is logged in, so TOS acceptance is assumed.")
     return 0
 
 
@@ -402,6 +405,11 @@ def render_interactive(
     json_printer: Callable[..., None],
 ) -> int:
     """Prompt user to accept or reject Terms of Service for channels."""
+    if AUTH:
+        if verbose:
+            printer("[bold green]Authenticated Anaconda user found.")
+        return
+
     if verbose:
         printer("[bold blue]Gathering channels...")
 

@@ -136,6 +136,7 @@ def test_render_reject(
 
 
 @pytest.mark.parametrize("ci", [True, False])
+@pytest.mark.parametrize("auth", [True, False])
 @pytest.mark.parametrize("verbose", [True, False])
 def test_render_interactive(
     monkeypatch: MonkeyPatch,
@@ -145,10 +146,12 @@ def test_render_interactive(
     tmp_path: Path,
     tos_metadata: RemoteToSMetadata,
     ci: bool,
+    auth: bool,
     verbose: bool,
     terminal_width: int,  # noqa: ARG001
 ) -> None:
     monkeypatch.setattr(render, "CI", ci)
+    monkeypatch.setattr(render, "AUTH", "user" if auth else "")
     monkeypatch.setattr(render, "IS_INTERACTIVE", True)
 
     render_interactive(
@@ -160,14 +163,22 @@ def test_render_interactive(
         verbose=verbose,
     )
     out, err = capsys.readouterr()
+
+    # Authentication short-circuits a lot of the printing
+    p_auth = verbose and auth
+    p_verb = verbose and not auth
+    p_ci = ci and not auth
+    p_yes = not auth
+
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
-        *(["CI detected..."] if ci else []),
-        *(["0 channel Terms of Service accepted"] if verbose else []),
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
+        *(["CI detected..."] if p_ci else []),
+        *(["0 channel Terms of Service accepted"] if p_verb else []),
     ]
 
-    with nullcontext() if ci else pytest.raises(CondaToSNonInteractiveError):
+    with nullcontext() if ci or auth else pytest.raises(CondaToSNonInteractiveError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "always_yes",
@@ -178,8 +189,9 @@ def test_render_interactive(
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
         *(
             [
                 "CI detected...",
@@ -189,7 +201,7 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else []
         ),
     ]
@@ -205,8 +217,9 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
         *(
             [
                 "CI detected...",
@@ -216,13 +229,15 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 (
                     f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
                     "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted"
                 )
             ]
+            if p_yes
+            else []
         ),
     ]
     render_interactive(
@@ -235,14 +250,15 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
-        *(["CI detected..."] if ci else []),
-        "1 channel Terms of Service accepted",
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
+        *(["CI detected..."] if p_ci else []),
+        *(["1 channel Terms of Service accepted"] if p_yes else []),
     ]
 
     monkeypatch.setattr(sys, "stdin", StringIO("reject\n"))
-    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci or auth else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -253,8 +269,9 @@ def test_render_interactive(
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
         *(
             [
                 "CI detected...",
@@ -264,16 +281,18 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 (
                     f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
                     "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service rejected"
                 )
             ]
+            if p_yes
+            else []
         ),
     ]
-    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci or auth else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -284,15 +303,18 @@ def test_render_interactive(
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
         *(
             [
                 "CI detected...",
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else ["1 channel Terms of Service rejected"]
+            if p_yes
+            else []
         ),
     ]
 
@@ -307,8 +329,9 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
         *(
             [
                 "CI detected...",
@@ -318,7 +341,7 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 *(
                     f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
@@ -329,6 +352,8 @@ def test_render_interactive(
                     "[(a)ccept/(r)eject]: 1 channel Terms of Service accepted"
                 ),
             ]
+            if p_yes
+            else []
         ),
     ]
 
@@ -344,8 +369,9 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Gathering channels..."] if verbose else []),
-        *(["Reviewing channels..."] if verbose else []),
+        *(["Authenticated Anaconda user found."] if p_auth else []),
+        *(["Gathering channels..."] if p_verb else []),
+        *(["Reviewing channels..."] if p_verb else []),
         *(
             [
                 "CI detected...",
@@ -355,7 +381,7 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 f"The Terms of Service for {tos_channel} was previously accepted. "
                 "An updated Terms of Service is now available.",
@@ -364,6 +390,8 @@ def test_render_interactive(
                     "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted"
                 ),
             ]
+            if p_yes
+            else []
         ),
     ]
 

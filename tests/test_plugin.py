@@ -26,6 +26,7 @@ from conda_anaconda_tos.plugin import (
     conda_settings,
     conda_subcommands,
     configure_parser,
+    FIELD_SEPARATOR,
 )
 
 if TYPE_CHECKING:
@@ -213,15 +214,17 @@ def _cache_clear() -> None:
     context.plugin_manager.get_cached_request_headers.cache_clear()
 
 
-@pytest.mark.parametrize("ci", [True, False])
+@pytest.mark.parametrize("ci,auth", [(True, True), (True, False), (False, True), (False, False)])
 def test_request_headers(
     monkeypatch: MonkeyPatch,
     tos_channel: Channel,
     mock_search_path: tuple[Path, Path],
     tos_metadata: RemoteToSMetadata,
     ci: bool,
+    auth: bool,
 ) -> None:
     monkeypatch.setattr(plugin, "CI", ci)
+    monkeypatch.setattr(plugin, "AUTH", auth)
     monkeypatch.setattr(plugin, "HOSTS", {urlparse(tos_channel.base_url).netloc})
     system_tos_root, user_tos_root = mock_search_path
 
@@ -233,28 +236,32 @@ def test_request_headers(
 
     url = f"{tos_channel}/repodata.json"
 
+    tail = []
+    if ci:
+        tail.append("CI=true")
+    if auth:
+        tail.append("AUTH=true")
+    tail = FIELD_SEPARATOR.join(tail)
+
     _cache_clear()
     request = get_session(url).get(url).request
-    if ci:
-        assert request.headers["Anaconda-ToS-Accept"] == "CI=true"
-    else:
-        assert request.headers["Anaconda-ToS-Accept"] == ""
+    assert request.headers["Anaconda-ToS-Accept"] == tail
 
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     _cache_clear()
     request = get_session(url).get(url).request
     value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=accepted="
     assert request.headers["Anaconda-ToS-Accept"].startswith(value)
-    if ci:
-        assert request.headers["Anaconda-ToS-Accept"].endswith(";CI=true")
+    if tail:
+        assert request.headers["Anaconda-ToS-Accept"].endswith(";" + tail)
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     _cache_clear()
     request = get_session(url).get(url).request
     value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=rejected="
     assert request.headers["Anaconda-ToS-Accept"].startswith(value)
-    if ci:
-        assert request.headers["Anaconda-ToS-Accept"].endswith(";CI=true")
+    if tail:
+        assert request.headers["Anaconda-ToS-Accept"].endswith(";" + tail)
 
 
 def test_conda_search_interactive(

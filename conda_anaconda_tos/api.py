@@ -157,8 +157,34 @@ def _is_ci() -> bool:
     return any(os.getenv(var) for var in CI_PRESENCE_VARS) or _in_ci_container()
 
 
+def _logged_in() -> str:
+    """Determine if a valid Anaconda authentication is present.
+
+    This function utilizes anaconda_anon_usage to determine if the user
+    is logged into Anaconda services. It does so by using the function
+    tokens.anaconda_{cloud,auth}_token. If this token is non-empty, it
+    is the username of the authenticated user. For authenticated users,
+    we may assume the TOS acceptance has been obtained elsewhere.
+
+    Returns:
+        str: a base64 encoding of the Anaconda UID, or the empty string.
+
+    """
+    try:
+        from anaconda_anon_usage import tokens
+        if hasattr(tokens, 'anaconda_cloud_token'):
+            return tokens.anaconda_cloud_token()
+        if hasattr(tokens, 'anaconda_auth_token'):
+            return tokens.anaconda_auth_token()
+    except Exception:
+        ""
+
+
 #: Whether the current environment is a CI environment
 CI: Final = _is_ci()
+
+# Whether the user is logged into Anaconda
+AUTH: Final = _logged_in()
 
 #: Whether the current environment is a Jupyter environment
 JUPYTER: Final = os.getenv("JPY_SESSION_NAME") and os.getenv("JPY_PARENT_PID")
