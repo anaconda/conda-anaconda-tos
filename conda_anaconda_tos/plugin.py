@@ -22,7 +22,7 @@ from conda.plugins.types import (
 from rich.console import Console
 
 from . import APP_NAME, APP_VERSION
-from .api import CI, AUTH, get_channels
+from .api import AUTH, CI, get_channels
 from .console import (
     noop_printer,
     render_accept,

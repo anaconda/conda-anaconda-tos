@@ -411,17 +411,23 @@ def test_render_info_json(capsys: CaptureFixture) -> None:
         assert path in out
 
 
+@pytest.mark.parametrize("auth", [True, False])
 def test_render_list(
     tos_channel: Channel,
     tos_metadata: RemoteToSMetadata,
     tmp_path: Path,
     capsys: CaptureFixture,
     terminal_width: int,  # noqa: ARG001
+    auth: bool,
 ) -> None:
+    u_msg = "Authenticated Anaconda user found."
+
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
+    if auth:
+        assert u_msg in out
     # assert not err  # server log is output to stderr
 
     accept_tos(tos_channel, tos_root=tmp_path, cache_timeout=None)
@@ -429,6 +435,8 @@ def test_render_list(
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
+    if auth:
+        assert u_msg in out
     # assert not err  # server log is output to stderr
 
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
@@ -443,6 +451,8 @@ def test_render_list(
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED in out
+    if auth:
+        assert u_msg in out
     # assert not err  # server log is output to stderr
 
 

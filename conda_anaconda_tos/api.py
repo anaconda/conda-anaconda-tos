@@ -172,12 +172,14 @@ def _logged_in() -> str:
     """
     try:
         from anaconda_anon_usage import tokens
-        if hasattr(tokens, 'anaconda_cloud_token'):
+
+        if hasattr(tokens, "anaconda_cloud_token"):
             return tokens.anaconda_cloud_token()
-        if hasattr(tokens, 'anaconda_auth_token'):
+        if hasattr(tokens, "anaconda_auth_token"):
             return tokens.anaconda_auth_token()
-    except Exception:
-        ""
+    except Exception:  # noqa: S110
+        pass
+    return ""
 
 
 #: Whether the current environment is a CI environment

@@ -21,12 +21,12 @@ from conda_anaconda_tos.api import accept_tos, reject_tos
 from conda_anaconda_tos.console import render
 from conda_anaconda_tos.path import USER_TOS_ROOT
 from conda_anaconda_tos.plugin import (
+    FIELD_SEPARATOR,
     _get_tos_acceptance_header,
     conda_request_headers,
     conda_settings,
     conda_subcommands,
     configure_parser,
-    FIELD_SEPARATOR,
 )
 
 if TYPE_CHECKING:
@@ -214,7 +214,9 @@ def _cache_clear() -> None:
     context.plugin_manager.get_cached_request_headers.cache_clear()
 
 
-@pytest.mark.parametrize("ci,auth", [(True, True), (True, False), (False, True), (False, False)])
+@pytest.mark.parametrize(
+    "ci,auth", [(True, True), (True, False), (False, True), (False, False)]
+)
 def test_request_headers(
     monkeypatch: MonkeyPatch,
     tos_channel: Channel,
@@ -236,12 +238,12 @@ def test_request_headers(
 
     url = f"{tos_channel}/repodata.json"
 
-    tail = []
+    tail_l = []
     if ci:
-        tail.append("CI=true")
+        tail_l.append("CI=true")
     if auth:
-        tail.append("AUTH=true")
-    tail = FIELD_SEPARATOR.join(tail)
+        tail_l.append("AUTH=username")
+    tail = FIELD_SEPARATOR.join(tail_l)
 
     _cache_clear()
     request = get_session(url).get(url).request
