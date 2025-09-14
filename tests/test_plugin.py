@@ -226,7 +226,7 @@ def test_request_headers(
     auth: bool,
 ) -> None:
     monkeypatch.setattr(plugin, "CI", ci)
-    monkeypatch.setattr(plugin, "AUTH", auth)
+    monkeypatch.setattr(plugin, "AUTH", "username" if auth else "")
     monkeypatch.setattr(plugin, "HOSTS", {urlparse(tos_channel.base_url).netloc})
     system_tos_root, user_tos_root = mock_search_path
 
@@ -242,7 +242,7 @@ def test_request_headers(
     if ci:
         tail_l.append("CI=true")
     if auth:
-        tail_l.append("AUTH=username")
+        tail_l.append("AUTH=" + plugin.AUTH)
     tail = FIELD_SEPARATOR.join(tail_l)
 
     _cache_clear()

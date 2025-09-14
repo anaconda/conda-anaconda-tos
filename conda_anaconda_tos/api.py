@@ -163,8 +163,8 @@ def _logged_in() -> str:
     This function utilizes anaconda_anon_usage to determine if the user
     is logged into Anaconda services. It does so by using the function
     tokens.anaconda_{cloud,auth}_token. If this token is non-empty, it
-    is the username of the authenticated user. For authenticated users,
-    we may assume the TOS acceptance has been obtained elsewhere.
+    is the encoded user ID of the authenticated user. For authenticated
+    users, we may assume TOS acceptance has been obtained elsewhere.
 
     Returns:
         str: a base64 encoding of the Anaconda UID, or the empty string.
