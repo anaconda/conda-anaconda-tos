@@ -413,6 +413,7 @@ def test_render_info_json(capsys: CaptureFixture) -> None:
 
 @pytest.mark.parametrize("auth", [True, False])
 def test_render_list(
+    monkeypatch: MonkeyPatch,
     tos_channel: Channel,
     tos_metadata: RemoteToSMetadata,
     tmp_path: Path,
@@ -421,6 +422,7 @@ def test_render_list(
     auth: bool,
 ) -> None:
     u_msg = "Authenticated Anaconda user found."
+    monkeypatch.setattr(render, "AUTH", "user" if auth else "")
 
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
