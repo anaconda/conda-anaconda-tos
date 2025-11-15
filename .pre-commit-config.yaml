@@ -54,7 +54,7 @@ repos:
             recipe/meta.yaml
           )
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.2
+    rev: 0.35.0
     hooks:
       # verify github syntaxes
       - id: check-github-workflows
