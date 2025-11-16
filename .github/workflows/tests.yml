@@ -80,6 +80,10 @@ jobs:
             python-version: '3.12'
           - os: macos-13
             python-version: '3.13'
+          # macOS x86_64: no conda 25.9 for Python 3.9
+          - os: macos-13
+            python-version: '3.9'
+            conda-version: '25.9'
           # macOS arm64: only test highest Python version
           - os: macos-latest
             python-version: '3.9'
