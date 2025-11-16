@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import functools
+from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,12 +18,14 @@ from ..api import (
     CI,
     JUPYTER,
     accept_tos,
+    backup_tos_configs,
     clean_cache,
     clean_tos,
     get_all_tos,
     get_channels,
     get_one_tos,
     reject_tos,
+    restore_tos_configs,
 )
 from ..exceptions import (
     CondaToSMissingError,
@@ -47,6 +50,9 @@ if TYPE_CHECKING:
     NonInteractiveType = list[Channel]
     ChannelPairsType = list[tuple[Channel, RemotePair | LocalPair]]
 
+
+#: Default restore TTL in seconds.
+DEFAULT_RESTORE_TTL_SECONDS = int(timedelta(hours=1).total_seconds())
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
@@ -514,3 +520,102 @@ def render_clean(
     if json:
         json_printer(data=json_output)
     return 0
+
+
+@printable
+def render_backup(
+    *,
+    tos_root: str | os.PathLike[str] | Path,
+    restore_ttl: int = DEFAULT_RESTORE_TTL_SECONDS,
+    all_locations: bool = False,  # noqa: ARG001
+    json: bool = False,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
+) -> int:
+    """Backup ToS configuration files with enhanced location awareness."""
+    try:
+        backup_dir = backup_tos_configs()
+
+        json_output = {
+            "backup_created": True,
+            "backup_directory": str(backup_dir),
+            "tos_root": str(tos_root),
+            "restore_ttl_seconds": restore_ttl,
+        }
+
+        if json:
+            json_printer(data=json_output)
+        else:
+            printer(f"ToS configurations backed up to: {backup_dir}")
+            printer(f"Restore TTL: {restore_ttl} seconds")
+
+        return 0
+
+    except Exception as e:
+        json_output = {
+            "backup_created": False,
+            "error": str(e),
+            "tos_root": str(tos_root),
+        }
+
+        if json:
+            json_printer(data=json_output)
+        else:
+            printer(f"Error creating backup: {e}")
+
+        return 1
+
+
+@printable
+def render_restore(
+    *,
+    tos_root: str | os.PathLike[str] | Path | None = None,
+    restore_ttl: int = DEFAULT_RESTORE_TTL_SECONDS,
+    json: bool = False,
+    console: Console | None = None,  # noqa: ARG001
+    printer: Callable[..., None],
+    json_printer: Callable[..., None],
+) -> int:
+    """Restore ToS configs to their exact original locations."""
+    try:
+        # Convert seconds to hours for the API function
+        timeout_hours = restore_ttl / 3600.0
+        restored, restored_files = restore_tos_configs(timeout_hours)
+
+        json_output = {
+            "restore_performed": restored,
+            "files_restored": len(restored_files),
+            "restored_files": [str(f) for f in restored_files],
+            "tos_root": str(tos_root),
+            "restore_ttl_seconds": restore_ttl,
+        }
+
+        if json:
+            json_printer(data=json_output)
+        else:
+            if restored:
+                printer(f"Restored {len(restored_files)} ToS configuration files")
+                if restored_files:
+                    printer("Restored files:")
+                    for file_path in restored_files:
+                        printer(f"  - {file_path}")
+            else:
+                printer("No recent backup found within TTL - no restore performed")
+                printer(f"Restore TTL: {restore_ttl} seconds")
+
+        return 0
+
+    except Exception as e:
+        json_output = {
+            "restore_performed": False,
+            "error": str(e),
+            "tos_root": str(tos_root),
+        }
+
+        if json:
+            json_printer(data=json_output)
+        else:
+            printer(f"Error during restore: {e}")
+
+        return 1

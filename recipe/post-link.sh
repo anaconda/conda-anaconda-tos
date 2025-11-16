@@ -3,4 +3,4 @@
 _PREFIX="${CONDA_PREFIX:-${PREFIX:-}}"
 _PYTHON="${_PREFIX}/python.exe"
 [ -f "${_PYTHON}" ] || _PYTHON="${_PREFIX}/bin/python"
-"${_PYTHON}" -m conda tos backup --max-age 604800 --all-locations >>"${_PREFIX}/.messages.txt" 2>&1 || :
+"${_PYTHON}" -m conda tos restore >>"${_PREFIX}/.messages.txt" 2>&1 || :

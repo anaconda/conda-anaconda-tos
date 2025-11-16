@@ -21,6 +21,7 @@ dependencies = [
   "conda >=24.11",
   "rich",
   "pydantic",
+  "platformdirs",
 ]
 description = "Conda subcommand to view, accept, and interact with a channel's Terms of Service (ToS)."
 dynamic = ["version"]
