@@ -14,6 +14,7 @@ import pytest
 from conda_anaconda_tos.api import accept_tos
 from conda_anaconda_tos.console import render
 from conda_anaconda_tos.console.render import (
+    TOS_AUTH,
     TOS_CI_ACCEPTED_TEMPLATE,
     TOS_OUTDATED,
     render_accept,
@@ -104,12 +105,17 @@ def test_render_accept(
     # assert not err  # server log is output to stderr
 
 
+@pytest.mark.parametrize("ci", [True, False])
+@pytest.mark.parametrize("auth", [True, False])
 def test_render_reject(
     capsys: CaptureFixture,
     tos_channel: Channel,
     sample_channel: Channel,
     tmp_path: Path,
+    ci: bool,  # noqa: ARG001
+    auth: bool,  # noqa: ARG001
 ) -> None:
+    # Explicit rejections override CI and auth
     render_reject(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
@@ -164,16 +170,16 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
 
-    # Authentication short-circuits a lot of the printing
+    # Authentication short-circuits some printing
     p_auth = verbose and auth
     p_verb = verbose and not auth
     p_ci = ci and not auth
     p_yes = not auth
 
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(["CI detected..."] if p_ci else []),
         *(["0 channel Terms of Service accepted"] if p_verb else []),
     ]
@@ -189,9 +195,9 @@ def test_render_interactive(
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -217,9 +223,9 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -250,9 +256,9 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(["CI detected..."] if p_ci else []),
         *(["1 channel Terms of Service accepted"] if p_yes else []),
     ]
@@ -269,9 +275,9 @@ def test_render_interactive(
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -303,9 +309,9 @@ def test_render_interactive(
         )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -329,9 +335,9 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -369,9 +375,9 @@ def test_render_interactive(
     )
     out, err = capsys.readouterr()
     assert out.splitlines() == [
-        *(["Authenticated Anaconda user found."] if p_auth else []),
-        *(["Gathering channels..."] if p_verb else []),
-        *(["Reviewing channels..."] if p_verb else []),
+        *(["Gathering channels..."] if verbose else []),
+        *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -421,7 +427,7 @@ def test_render_list(
     terminal_width: int,  # noqa: ARG001
     auth: bool,
 ) -> None:
-    u_msg = "Authenticated Anaconda user found."
+    u_msg = TOS_AUTH
     monkeypatch.setattr(render, "AUTH", "user" if auth else "")
 
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)

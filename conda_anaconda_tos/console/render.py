@@ -51,7 +51,9 @@ if TYPE_CHECKING:
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
-TOS_AUTH: Final = "[bold green]Authenticated Anaconda user found."
+TOS_AUTH: Final = (
+    "Authenticated Anaconda user found; Terms of Service accepted by default."
+)
 
 TOS_AUTO_ACCEPTED_TEMPLATE: Final = (
     "By accessing {channel} with auto acceptance enabled (auto_accept_tos=True) "
@@ -149,7 +151,7 @@ def render_list(
         if outdated:
             printer(f"[bold yellow]{TOS_OUTDATED}")
         if AUTH:
-            printer(TOS_AUTH)
+            printer(f"[bold green]{TOS_AUTH}")
     return 0
 
 
@@ -407,11 +409,6 @@ def render_interactive(  # noqa: C901
     json_printer: Callable[..., None],
 ) -> int:
     """Prompt user to accept or reject Terms of Service for channels."""
-    if AUTH:
-        if verbose:
-            printer(TOS_AUTH)
-        return 0
-
     if verbose:
         printer("[bold blue]Gathering channels...")
 
@@ -428,6 +425,11 @@ def render_interactive(  # noqa: C901
     if rejected:
         printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
+
+    if AUTH:
+        if verbose:
+            printer(f"[bold green]{TOS_AUTH}")
+        return 0
 
     if CI:
         printer("[bold yellow]CI detected...")

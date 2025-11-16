@@ -226,7 +226,7 @@ def test_request_headers(
     auth: bool,
 ) -> None:
     monkeypatch.setattr(plugin, "CI", ci)
-    monkeypatch.setattr(plugin, "AUTH", "username" if auth else "")
+    monkeypatch.setattr(plugin, "AUTH", "user" if auth else "")
     monkeypatch.setattr(plugin, "HOSTS", {urlparse(tos_channel.base_url).netloc})
     system_tos_root, user_tos_root = mock_search_path
 
@@ -248,22 +248,22 @@ def test_request_headers(
     _cache_clear()
     request = get_session(url).get(url).request
     assert request.headers["Anaconda-ToS-Accept"] == tail
+    if tail:
+        tail = ";" + tail
 
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     _cache_clear()
     request = get_session(url).get(url).request
     value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=accepted="
     assert request.headers["Anaconda-ToS-Accept"].startswith(value)
-    if tail:
-        assert request.headers["Anaconda-ToS-Accept"].endswith(";" + tail)
+    assert request.headers["Anaconda-ToS-Accept"].endswith(tail)
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
     _cache_clear()
     request = get_session(url).get(url).request
     value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=rejected="
     assert request.headers["Anaconda-ToS-Accept"].startswith(value)
-    if tail:
-        assert request.headers["Anaconda-ToS-Accept"].endswith(";" + tail)
+    assert request.headers["Anaconda-ToS-Accept"].endswith(tail)
 
 
 def test_conda_search_interactive(
