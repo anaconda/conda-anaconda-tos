@@ -75,6 +75,10 @@ filterwarnings = [
   "error::FutureWarning",
   # ignore conda binstar deprecation warning
   "ignore:conda.env.specs.binstar is deprecated:DeprecationWarning:conda",
+  # ignore the deprecation warnings from other modules
+  "ignore:conda.plugins.CondaSubcommand:PendingDeprecationWarning:conda_libmamba_solver",
+  "ignore:conda.plugins.CondaSubcommand:PendingDeprecationWarning:conda_content_trust",
+  "ignore:conda.plugins.CondaPreCommand:PendingDeprecationWarning:conda",
 ]
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
