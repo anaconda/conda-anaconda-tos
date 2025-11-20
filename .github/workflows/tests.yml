@@ -62,7 +62,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
-        conda-version: ['24.11', '25.1', '25.3', '25.5', '25.7']
+        conda-version: ['24.11', '25.1', '25.3', '25.5', '25.7', '25.9']
         exclude:
           # Windows: only test lowest and highest Python versions
           - os: windows-latest
@@ -80,6 +80,10 @@ jobs:
             python-version: '3.12'
           - os: macos-13
             python-version: '3.13'
+          # macOS x86_64: no conda 25.9 for Python 3.9
+          - os: macos-13
+            python-version: '3.9'
+            conda-version: '25.9'
           # macOS arm64: only test highest Python version
           - os: macos-latest
             python-version: '3.9'

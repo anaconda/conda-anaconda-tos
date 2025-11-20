@@ -12,12 +12,12 @@ from conda.base.context import context
 from conda.cli.helpers import add_parser_prefix, add_parser_verbose
 from conda.common.configuration import PrimitiveParameter
 from conda.common.constants import NULL
-from conda.plugins import (
+from conda.plugins import hookimpl
+from conda.plugins.types import (
     CondaPreCommand,
     CondaRequestHeader,
     CondaSetting,
     CondaSubcommand,
-    hookimpl,
 )
 from rich.console import Console
 
