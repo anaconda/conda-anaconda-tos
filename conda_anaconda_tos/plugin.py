@@ -22,7 +22,7 @@ from conda.plugins.types import (
 from rich.console import Console
 
 from . import APP_NAME, APP_VERSION
-from .api import CI, get_channels
+from .api import AUTH, CI, get_channels
 from .console import (
     noop_printer,
     render_accept,
@@ -393,6 +393,8 @@ def _get_tos_acceptance_header() -> str:
             )
     if CI:
         values.append("CI=true")
+    if AUTH:
+        values.append("AUTH=" + AUTH)
     return FIELD_SEPARATOR.join(values)
 
 
