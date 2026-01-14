@@ -283,7 +283,7 @@ def test_conda_search_interactive(
     assert "small-executable" in out
 
     # search for package with TOS plugin disabled
-    monkeypatch.setenv("CONDA_NO_PLUINS", "true")
+    monkeypatch.setenv("CONDA_NO_PLUGINS", "true")
     reset_context()
     assert not context.no_plugins
     out, _, code = conda_cli("search", "small-executable")
@@ -316,7 +316,7 @@ def test_conda_search_json(
         pytest.fail(f"Invalid JSON: {out}")
 
     # search for package with TOS plugin disabled
-    monkeypatch.setenv("CONDA_NO_PLUINS", "true")
+    monkeypatch.setenv("CONDA_NO_PLUGINS", "true")
     reset_context()
     assert not context.no_plugins
     out, _, code = conda_cli("search", "small-executable", "--json")
