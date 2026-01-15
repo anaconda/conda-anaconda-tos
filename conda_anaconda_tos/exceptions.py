@@ -74,6 +74,19 @@ class CondaToSRejectedError(CondaToSError):
         )
 
 
+class CondaToSBackupError(CondaToSError):
+    """Error class for backup/restore operation failures."""
+
+    def __init__(
+        self: Self,
+        operation: str,
+        path: str | os.PathLike[str] | Path,
+        reason: str,
+    ) -> None:
+        """Format error message with operation, path, and reason."""
+        super().__init__(f"Failed to {operation} backup at {path}: {reason}")
+
+
 class CondaToSNonInteractiveError(CondaToSError):
     """Error class when Terms of Service are not actionable in non-interactive mode."""
 

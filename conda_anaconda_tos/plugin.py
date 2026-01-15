@@ -26,11 +26,13 @@ from .api import CI, get_channels
 from .console import (
     noop_printer,
     render_accept,
+    render_backup,
     render_clean,
     render_info,
     render_interactive,
     render_list,
     render_reject,
+    render_restore,
     render_view,
 )
 from .exceptions import CondaToSMissingError
@@ -49,6 +51,9 @@ DEFAULT_TOS_ROOT = USER_TOS_ROOT
 
 #: Default cache timeout in seconds.
 DEFAULT_CACHE_TIMEOUT = timedelta(hours=1).total_seconds()
+
+#: Default restore TTL in seconds.
+DEFAULT_RESTORE_TTL = timedelta(hours=1).total_seconds()
 
 #: Field separator for request header
 FIELD_SEPARATOR = ";"
@@ -128,6 +133,28 @@ def _add_json(parser: ArgumentParser) -> None:
         action="store_true",
         default=NULL,
         help="Report all output as json. Suitable for using conda programmatically.",
+    )
+
+
+def _add_max_age(parser: ArgumentParser) -> None:
+    restore_group = parser.add_argument_group("Backup/Restore Options")
+    restore_group.add_argument(
+        "--max-age",
+        type=int,
+        default=int(DEFAULT_RESTORE_TTL),
+        help=(
+            f"Maximum age in seconds for backups to be considered recent "
+            f"enough for restoration (default: {int(DEFAULT_RESTORE_TTL)})."
+        ),
+    )
+
+
+def _add_backup_options(parser: ArgumentParser) -> None:
+    backup_group = parser.add_argument_group("Enhanced Backup Options")
+    backup_group.add_argument(
+        "--all-locations",
+        action="store_true",
+        help="Backup from all search path locations, not just specified root.",
     )
 
 
@@ -247,8 +274,34 @@ def configure_parser(parser: ArgumentParser) -> None:
     )
     _add_json(clean_parser)
 
+    # conda tos backup
+    backup_parser = subparsers.add_parser(
+        "backup",
+        help=(
+            "Backup ToS configuration files to staging directory. "
+            "Used in pre-unlink scripts to preserve configs during package updates."
+        ),
+    )
+    _add_location(backup_parser)
+    _add_max_age(backup_parser)
+    _add_backup_options(backup_parser)
+    _add_json(backup_parser)
 
-def execute(args: Namespace) -> int:
+    # conda tos restore
+    restore_parser = subparsers.add_parser(
+        "restore",
+        help=(
+            "Restore ToS configuration files from staging directory if recent "
+            "backup exists. Used in post-link scripts to restore configs "
+            "after package updates."
+        ),
+    )
+    _add_location(restore_parser)
+    _add_max_age(restore_parser)
+    _add_json(restore_parser)
+
+
+def execute(args: Namespace) -> int:  # noqa: C901
     """Execute the `tos` subcommand."""
     try:
         # FUTURE: update once we only support conda 25.5+
@@ -288,6 +341,21 @@ def execute(args: Namespace) -> int:
             tos=args.tos,
             all=args.all,
             tos_root=args.tos_root,
+            json=context.json,
+            console=console,
+        )
+    elif args.cmd == "backup":
+        return render_backup(
+            tos_root=args.tos_root,
+            restore_ttl=args.max_age,
+            all_locations=getattr(args, "all_locations", False),
+            json=context.json,
+            console=console,
+        )
+    elif args.cmd == "restore":
+        return render_restore(
+            tos_root=args.tos_root,
+            restore_ttl=args.max_age,
             json=context.json,
             console=console,
         )
