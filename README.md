@@ -350,6 +350,19 @@ Use `conda tos accept` to accept Terms of Service for all channels that require 
 </details>
 
 <details>
+<summary><h3>If I have a multi-user install, can I accept Terms of Service for all users?</h3></summary>
+
+If you are setting up Anaconda Distribution or Miniconda on behalf of members of your company, you can globally accept the Terms of Service for all users on a system.
+
+```bash
+conda tos accept --system
+```
+
+If unrelated individual users are accessing Anaconda Distribution or Miniconda on the system, instead instruct users to accept the Terms of Service on an individual basis.
+
+</details>
+
+<details>
 <summary><h3>Is my personal information shared when I accept the ToS?</h3></summary>
 
 No, the plugin uses anonymous tokens rather than personal identifiers. Only the acceptance record with timestamp is stored locally and transmitted to the repository.
