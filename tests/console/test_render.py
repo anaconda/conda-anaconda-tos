@@ -14,6 +14,7 @@ import pytest
 from conda_anaconda_tos.api import accept_tos
 from conda_anaconda_tos.console import render
 from conda_anaconda_tos.console.render import (
+    TOS_AUTH,
     TOS_CI_ACCEPTED_TEMPLATE,
     TOS_OUTDATED,
     render_accept,
@@ -104,12 +105,17 @@ def test_render_accept(
     # assert not err  # server log is output to stderr
 
 
+@pytest.mark.parametrize("ci", [True, False])
+@pytest.mark.parametrize("auth", [True, False])
 def test_render_reject(
     capsys: CaptureFixture,
     tos_channel: Channel,
     sample_channel: Channel,
     tmp_path: Path,
+    ci: bool,  # noqa: ARG001
+    auth: bool,  # noqa: ARG001
 ) -> None:
+    # Explicit rejections override CI and auth
     render_reject(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     tos_lines = out.splitlines()
@@ -136,6 +142,7 @@ def test_render_reject(
 
 
 @pytest.mark.parametrize("ci", [True, False])
+@pytest.mark.parametrize("auth", [True, False])
 @pytest.mark.parametrize("verbose", [True, False])
 def test_render_interactive(
     monkeypatch: MonkeyPatch,
@@ -145,10 +152,12 @@ def test_render_interactive(
     tmp_path: Path,
     tos_metadata: RemoteToSMetadata,
     ci: bool,
+    auth: bool,
     verbose: bool,
     terminal_width: int,  # noqa: ARG001
 ) -> None:
     monkeypatch.setattr(render, "CI", ci)
+    monkeypatch.setattr(render, "AUTH", "user" if auth else "")
     monkeypatch.setattr(render, "IS_INTERACTIVE", True)
 
     render_interactive(
@@ -160,14 +169,22 @@ def test_render_interactive(
         verbose=verbose,
     )
     out, err = capsys.readouterr()
+
+    # Authentication short-circuits some printing
+    p_auth = verbose and auth
+    p_verb = verbose and not auth
+    p_ci = ci and not auth
+    p_yes = not auth
+
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
-        *(["CI detected..."] if ci else []),
-        *(["0 channel Terms of Service accepted"] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
+        *(["CI detected..."] if p_ci else []),
+        *(["0 channel Terms of Service accepted"] if p_verb else []),
     ]
 
-    with nullcontext() if ci else pytest.raises(CondaToSNonInteractiveError):
+    with nullcontext() if ci or auth else pytest.raises(CondaToSNonInteractiveError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "always_yes",
@@ -180,6 +197,7 @@ def test_render_interactive(
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -189,7 +207,7 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else []
         ),
     ]
@@ -207,6 +225,7 @@ def test_render_interactive(
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -216,13 +235,15 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 (
                     f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
                     "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted"
                 )
             ]
+            if p_yes
+            else []
         ),
     ]
     render_interactive(
@@ -237,12 +258,13 @@ def test_render_interactive(
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
-        *(["CI detected..."] if ci else []),
-        "1 channel Terms of Service accepted",
+        *([TOS_AUTH] if p_auth else []),
+        *(["CI detected..."] if p_ci else []),
+        *(["1 channel Terms of Service accepted"] if p_yes else []),
     ]
 
     monkeypatch.setattr(sys, "stdin", StringIO("reject\n"))
-    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci or auth else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -255,6 +277,7 @@ def test_render_interactive(
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -264,16 +287,18 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 (
                     f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
                     "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service rejected"
                 )
             ]
+            if p_yes
+            else []
         ),
     ]
-    with nullcontext() if ci else pytest.raises(CondaToSRejectedError):
+    with nullcontext() if ci or auth else pytest.raises(CondaToSRejectedError):
         render_interactive(
             tos_channel,
             tos_root=tmp_path / "rejected",
@@ -286,13 +311,16 @@ def test_render_interactive(
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else ["1 channel Terms of Service rejected"]
+            if p_yes
+            else []
         ),
     ]
 
@@ -309,6 +337,7 @@ def test_render_interactive(
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -318,7 +347,7 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 *(
                     f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
@@ -329,6 +358,8 @@ def test_render_interactive(
                     "[(a)ccept/(r)eject]: 1 channel Terms of Service accepted"
                 ),
             ]
+            if p_yes
+            else []
         ),
     ]
 
@@ -346,6 +377,7 @@ def test_render_interactive(
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
+        *([TOS_AUTH] if p_auth else []),
         *(
             [
                 "CI detected...",
@@ -355,7 +387,7 @@ def test_render_interactive(
                 ).splitlines(),
                 "1 channel Terms of Service accepted",
             ]
-            if ci
+            if p_ci
             else [
                 f"The Terms of Service for {tos_channel} was previously accepted. "
                 "An updated Terms of Service is now available.",
@@ -364,6 +396,8 @@ def test_render_interactive(
                     "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted"
                 ),
             ]
+            if p_yes
+            else []
         ),
     ]
 
@@ -383,17 +417,25 @@ def test_render_info_json(capsys: CaptureFixture) -> None:
         assert path in out
 
 
+@pytest.mark.parametrize("auth", [True, False])
 def test_render_list(
+    monkeypatch: MonkeyPatch,
     tos_channel: Channel,
     tos_metadata: RemoteToSMetadata,
     tmp_path: Path,
     capsys: CaptureFixture,
     terminal_width: int,  # noqa: ARG001
+    auth: bool,
 ) -> None:
+    u_msg = TOS_AUTH
+    monkeypatch.setattr(render, "AUTH", "user" if auth else "")
+
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
+    if auth:
+        assert u_msg in out
     # assert not err  # server log is output to stderr
 
     accept_tos(tos_channel, tos_root=tmp_path, cache_timeout=None)
@@ -401,6 +443,8 @@ def test_render_list(
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
+    if auth:
+        assert u_msg in out
     # assert not err  # server log is output to stderr
 
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
@@ -415,6 +459,8 @@ def test_render_list(
     out, err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED in out
+    if auth:
+        assert u_msg in out
     # assert not err  # server log is output to stderr
 
 

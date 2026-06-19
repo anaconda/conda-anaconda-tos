@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ..api import (
+    AUTH,
     CI,
     JUPYTER,
     accept_tos,
@@ -49,6 +50,10 @@ if TYPE_CHECKING:
 
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
+
+TOS_AUTH: Final = (
+    "Authenticated Anaconda user found; Terms of Service accepted by default."
+)
 
 TOS_AUTO_ACCEPTED_TEMPLATE: Final = (
     "By accessing {channel} with auto acceptance enabled (auto_accept_tos=True) "
@@ -145,6 +150,8 @@ def render_list(
         printer(table)
         if outdated:
             printer(f"[bold yellow]{TOS_OUTDATED}")
+        if AUTH:
+            printer(f"[bold green]{TOS_AUTH}")
     return 0
 
 
@@ -389,7 +396,7 @@ def _process_channel_pairs(
 
 
 @printable
-def render_interactive(
+def render_interactive(  # noqa: C901
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
@@ -418,6 +425,11 @@ def render_interactive(
     if rejected:
         printer(f"[bold red]{len(rejected)} channel Terms of Service rejected")
         raise CondaToSRejectedError(*rejected)
+
+    if AUTH:
+        if verbose:
+            printer(f"[bold green]{TOS_AUTH}")
+        return 0
 
     if CI:
         printer("[bold yellow]CI detected...")
