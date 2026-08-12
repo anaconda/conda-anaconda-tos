@@ -149,7 +149,7 @@ def test_render_interactive(
     terminal_width: int,  # noqa: ARG001
 ) -> None:
     monkeypatch.setattr(render, "CI", ci)
-    monkeypatch.setattr(render, "IS_INTERACTIVE", True)
+    monkeypatch.setattr(render, "is_tty", lambda: True)
 
     render_interactive(
         sample_channel,

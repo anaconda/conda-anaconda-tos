@@ -176,7 +176,7 @@ def test_subcommand_tos_interactive(
     sample_channel: Channel,
     mock_search_path: tuple[Path, Path],
 ) -> None:
-    monkeypatch.setattr(render, "IS_INTERACTIVE", True)
+    monkeypatch.setattr(render, "is_tty", lambda: True)
 
     system_tos_root, user_tos_root = mock_search_path
 
@@ -266,7 +266,7 @@ def test_conda_search_interactive(
     # FUTURE: conda 25.1+, remove special reset_context
     reset_context()
 
-    monkeypatch.setattr(render, "IS_INTERACTIVE", True)
+    monkeypatch.setattr(render, "is_tty", lambda: True)
     monkeypatch.setattr(plugin, "DEFAULT_TOS_ROOT", tmp_path)
 
     # interactive accept
