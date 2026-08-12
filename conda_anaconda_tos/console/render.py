@@ -8,7 +8,7 @@ import functools
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from conda.common.io import IS_INTERACTIVE
+from conda.common.terminal import is_tty
 from conda.exceptions import ArgumentError
 from rich.console import Console
 from rich.table import Table
@@ -336,7 +336,7 @@ def _is_tos_accepted(
         return True
 
     # Non-interactive environments exits before prompt
-    if json_mode or always_yes or JUPYTER or not IS_INTERACTIVE:
+    if json_mode or always_yes or JUPYTER or not is_tty():
         raise CondaToSNonInteractiveError
 
     # Interactive prompt
