@@ -47,11 +47,11 @@ if TYPE_CHECKING:
     ChannelPairsType = list[tuple[Channel, RemotePair | LocalPair]]
 
 try:
+    from conda.common.io import IS_INTERACTIVE
+except ImportError:
     from conda.common.terminal import is_tty
 
     IS_INTERACTIVE = is_tty()
-except ImportError:
-    from conda.common.io import IS_INTERACTIVE
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
