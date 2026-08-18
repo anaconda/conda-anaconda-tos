@@ -24,7 +24,7 @@ requirements:
     - hatch-vcs >=0.2.0
   run:
     - python >=3.9
-    - conda >=26.7
+    - conda >=24.11
     - rich
     - pydantic
 

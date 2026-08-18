@@ -8,7 +8,6 @@ import functools
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from conda.common.terminal import is_tty
 from conda.exceptions import ArgumentError
 from rich.console import Console
 from rich.table import Table
@@ -47,6 +46,11 @@ if TYPE_CHECKING:
     NonInteractiveType = list[Channel]
     ChannelPairsType = list[tuple[Channel, RemotePair | LocalPair]]
 
+try:
+    from conda.common.terminal import is_tty
+    IS_INTERACTIVE = is_tty()
+except ImportError:
+    from conda.common.io import IS_INTERACTIVE
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
@@ -336,7 +340,7 @@ def _is_tos_accepted(
         return True
 
     # Non-interactive environments exits before prompt
-    if json_mode or always_yes or JUPYTER or not is_tty():
+    if json_mode or always_yes or JUPYTER or not IS_INTERACTIVE:
         raise CondaToSNonInteractiveError
 
     # Interactive prompt
