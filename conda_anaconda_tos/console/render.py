@@ -34,8 +34,8 @@ from .prompt import FuzzyPrompt
 
 if TYPE_CHECKING:
     import os
-    from collections.abc import Iterable
-    from typing import Any, Callable, Final
+    from collections.abc import Callable, Iterable
+    from typing import Any, Final
 
     from conda.models.channel import Channel
 
@@ -481,7 +481,7 @@ def render_info(
         table.add_column("Key")
         table.add_column("Value")
         for key, value in data.items():
-            if isinstance(value, (tuple, list)):
+            if isinstance(value, tuple | list):
                 value = "\n".join(map(str, value))
             else:
                 value = str(value)

@@ -33,7 +33,7 @@ def write_metadata(
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError("`channel` must have a base URL.")
-    if not isinstance(metadata, (LocalToSMetadata, RemoteToSMetadata)):
+    if not isinstance(metadata, LocalToSMetadata | RemoteToSMetadata):
         raise TypeError("`metadata` must be a LocalToSMetadata or RemoteToSMetadata.")
 
     # create/update ToSMetadata object
