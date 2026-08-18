@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 try:
     from conda.common.terminal import is_tty
+
     IS_INTERACTIVE = is_tty()
 except ImportError:
     from conda.common.io import IS_INTERACTIVE
