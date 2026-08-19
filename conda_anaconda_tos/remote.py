@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from json import JSONDecodeError
 from typing import TYPE_CHECKING
 
@@ -91,7 +91,7 @@ def get_cached_endpoint(
         return None
 
     # check if cache is stale
-    now = datetime.now().timestamp()  # noqa: DTZ005
+    now = datetime.now(tz=timezone.utc).timestamp()
     if (now - mtime) >= cache_timeout:
         return None
     return path
