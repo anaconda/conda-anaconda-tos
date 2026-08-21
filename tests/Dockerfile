@@ -1,5 +1,5 @@
 # Use miniconda base image to match GitHub Actions setup
-FROM continuumio/miniconda3:latest@sha256:4a2425c3ca891633e5a27280120f3fb6d5960a0f509b7594632cdd5bb8cbaea8
+FROM continuumio/miniconda3:latest@sha256:1808b31ef43e9c521cde5884ba4df9ec26d8d503a314cea787590f8550358a63
 
 # Set working directory
 WORKDIR /workspace
