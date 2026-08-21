@@ -40,8 +40,7 @@ from .remote import ENDPOINT
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
-    from collections.abc import Iterator
-    from typing import Callable
+    from collections.abc import Callable, Iterator
 
 
 #: Default metadata storage location.

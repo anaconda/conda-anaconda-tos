@@ -80,7 +80,7 @@ def get_cached_endpoint(
 
     # argument validation/coercion
     path = get_cache_path(channel)
-    if not isinstance(cache_timeout, (int, float)):
+    if not isinstance(cache_timeout, int | float):
         raise TypeError("`cache_timeout` must be an integer, float, or falsy.")
 
     # get mtime of cache
