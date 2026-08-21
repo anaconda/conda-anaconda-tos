@@ -5,7 +5,7 @@ pytest ==8.4.1
 # renovate: datasource=conda depName=main/pytest-cov
 pytest-cov ==6.0.0
 # renovate: datasource=conda depName=main/pytest-mock
-pytest-mock ==3.14.0
+pytest-mock ==3.15.1
 # renovate: datasource=conda depName=main/pytest-xdist
 pytest-xdist ==3.8.0
 # renovate: datasource=conda depName=conda-forge/pytest-docker-tools
