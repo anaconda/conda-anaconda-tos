@@ -45,7 +45,7 @@ def run_test_server(
 
     # convert single metadata to an infinite iterator
     metadatas: Iterator[MetadataType]
-    if isinstance(metadata, (RemoteToSMetadata, str)) or metadata is None:
+    if isinstance(metadata, RemoteToSMetadata | str) or metadata is None:
         metadatas = repeat(metadata)
     else:
         metadatas = metadata
@@ -98,7 +98,7 @@ class MutableToSMetadata(RemoteToSMetadata):
 
     def __eq__(self: Self, other: object) -> bool:
         return (
-            isinstance(other, (MutableToSMetadata, RemoteToSMetadata))
+            isinstance(other, MutableToSMetadata | RemoteToSMetadata)
             and self.model_dump() == other.model_dump()
         )
 
