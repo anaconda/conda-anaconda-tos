@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 import functools
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from conda.common.io import IS_INTERACTIVE
 from conda.exceptions import ArgumentError
 from rich.console import Console
 from rich.table import Table
@@ -47,6 +47,12 @@ if TYPE_CHECKING:
     NonInteractiveType = list[Channel]
     ChannelPairsType = list[tuple[Channel, RemotePair | LocalPair]]
 
+try:
+    from conda.common.terminal import is_tty
+
+    IS_INTERACTIVE = is_tty() and hasattr(sys.stdin, "isatty") and sys.stdin.isatty()
+except ImportError:
+    from conda.common.io import IS_INTERACTIVE  # type: ignore[no-redef]
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
