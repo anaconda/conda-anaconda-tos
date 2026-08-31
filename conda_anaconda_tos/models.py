@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime  # noqa: TC003 # needed for Pydantic model
 from pathlib import Path  # noqa: TC003 # needed for Pydantic model
 from typing import TYPE_CHECKING, Optional
@@ -12,6 +13,15 @@ from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     from typing import Self
+
+
+@dataclass
+class BackupFileInfo:
+    """Information about a ToS file for backup purposes."""
+
+    file_path: Path
+    source_location: str
+    is_temporary: bool
 
 
 class _ToSMetadata(BaseModel):
