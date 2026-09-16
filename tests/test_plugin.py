@@ -251,7 +251,6 @@ def test_request_headers(
         assert request.headers["Anaconda-ToS-Accept"] == ""
 
     accept_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
-    context.plugin_manager.get_cached_request_headers.cache_clear()
     request = get_session(url).get(url).request
     value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=accepted="
     assert request.headers["Anaconda-ToS-Accept"].startswith(value)
@@ -259,7 +258,6 @@ def test_request_headers(
         assert request.headers["Anaconda-ToS-Accept"].endswith(";CI=true")
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
-    context.plugin_manager.get_cached_request_headers.cache_clear()
     request = get_session(url).get(url).request
     value = f"{tos_channel}={int(tos_metadata.version.timestamp())}=rejected="
     assert request.headers["Anaconda-ToS-Accept"].startswith(value)
@@ -390,25 +388,12 @@ def test_request_headers_include_unconfigured_channel(
     monkeypatch.setattr(plugin, "DEFAULT_TOS_ROOT", tmp_path)
     channel = Channel(f"https://repo.anaconda.com/pkgs/{name}")
     write_metadata(tmp_path, channel, tos_metadata, tos_accepted=True)
-    write_metadata(
-        tmp_path,
-        Channel("https://repo.anaconda.com/pkgs/unrelated"),
-        tos_metadata,
-        tos_accepted=True,
-    )
-
-    write_metadata(
-        tmp_path,
-        Channel("https://repo.anaconda.com/pkgs"),
-        tos_metadata,
-        tos_accepted=True,
-    )
-    write_metadata(
-        tmp_path,
-        Channel("https://repo.anaconda.com:8443/pkgs/related"),
-        tos_metadata,
-        tos_accepted=True,
-    )
+    for url in (
+        "https://repo.anaconda.com/pkgs/unrelated",
+        "https://repo.anaconda.com/pkgs",
+        "https://repo.anaconda.com:8443/pkgs/related",
+    ):
+        write_metadata(tmp_path, url, tos_metadata, tos_accepted=True)
 
     headers = list(conda_request_headers("repo.anaconda.com", path))
     assert headers[0].value.startswith(
