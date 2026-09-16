@@ -5,14 +5,16 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from functools import cache
+from functools import partial
 from typing import TYPE_CHECKING
 
 from conda.base.context import context
 from conda.cli.helpers import add_parser_prefix, add_parser_verbose
 from conda.common.configuration import PrimitiveParameter
 from conda.common.constants import NULL
-from conda.plugins import hookimpl
+from conda.common.url import split_anaconda_token, urlparse
+from conda.models.channel import Channel
+from conda.plugins import hookimpl, types
 from conda.plugins.types import (
     CondaPreCommand,
     CondaRequestHeader,
@@ -22,7 +24,7 @@ from conda.plugins.types import (
 from rich.console import Console
 
 from . import APP_NAME, APP_VERSION
-from .api import CI, get_channels
+from .api import CI
 from .console import (
     noop_printer,
     render_accept,
@@ -33,8 +35,7 @@ from .console import (
     render_reject,
     render_view,
 )
-from .exceptions import CondaToSMissingError
-from .local import get_local_metadata
+from .local import get_local_metadatas
 from .path import ENV_TOS_ROOT, SITE_TOS_ROOT, SYSTEM_TOS_ROOT, USER_TOS_ROOT
 from .remote import ENDPOINT
 
@@ -368,18 +369,45 @@ def conda_pre_commands() -> Iterator[CondaPreCommand]:
     )
 
 
-@cache
-def _get_tos_acceptance_header() -> str:
-    values = []
-    for channel in get_channels(*context.channels):
-        try:
-            local_pair = get_local_metadata(
-                channel,
-                extend_search_path=[DEFAULT_TOS_ROOT],
-            )
-        except CondaToSMissingError:
-            pass
-        else:
+@hookimpl(optionalhook=True)
+def conda_pre_channel_fetches() -> Iterator:
+    """Check each acquired channel when conda provides the fetch hook."""
+    if pre_channel_fetch := getattr(types, "CondaPreChannelFetch", None):
+        yield pre_channel_fetch(
+            name="check_tos",
+            action=partial(
+                render_interactive,
+                tos_root=DEFAULT_TOS_ROOT,
+                cache_timeout=DEFAULT_CACHE_TIMEOUT,
+                json=context.json,
+                verbose=context.verbose,
+                auto_accept_tos=context.plugins.auto_accept_tos,
+                always_yes=context.always_yes,
+                json_printer=noop_printer,
+                strict=True,
+            ),
+        )
+
+
+@hookimpl
+def conda_request_headers(host: str, path: str) -> Iterator[CondaRequestHeader]:
+    """Return acceptance metadata for the channel receiving this request."""
+    if host in HOSTS and not path.endswith(f"/{ENDPOINT}"):
+        path, _ = split_anaconda_token(path)
+        parts = path.rsplit("/", 1)[0].split("/")
+        for index in range(len(parts) - 1, -1, -1):
+            if parts[index] in context.known_subdirs:
+                parts = parts[:index]
+                break
+        request_channel = Channel.from_url(f"https://{host}{'/'.join(parts)}")
+        channel_path = urlparse(request_channel.base_url).path.rstrip("/")
+        values = []
+        for channel, local_pair in get_local_metadatas(
+            extend_search_path=[DEFAULT_TOS_ROOT],
+        ):
+            url = urlparse(channel.base_url)
+            if url.netloc != host or url.path.rstrip("/") != channel_path:
+                continue
             values.append(
                 KEY_SEPARATOR.join(
                     (
@@ -387,24 +415,12 @@ def _get_tos_acceptance_header() -> str:
                         str(int(local_pair.metadata.version.timestamp())),
                         "accepted" if local_pair.metadata.tos_accepted else "rejected",
                         str(int(local_pair.metadata.acceptance_timestamp.timestamp())),
-                    )
-                )
+                    ),
+                ),
             )
-    if CI:
-        values.append("CI=true")
-    return FIELD_SEPARATOR.join(values)
-
-
-@hookimpl
-def conda_request_headers(host: str, path: str) -> Iterator[CondaRequestHeader]:
-    """Return a list of request headers for the plugin."""
-    if (
-        # only add the header to anaconda.com endpoints
-        host in HOSTS
-        # only add the Terms of Service header for non-Terms of Service endpoints
-        and not path.endswith(f"/{ENDPOINT}")
-    ):
+        if CI:
+            values.append("CI=true")
         yield CondaRequestHeader(
             name=TOS_ACCEPT_HEADER,
-            value=_get_tos_acceptance_header(),
+            value=FIELD_SEPARATOR.join(values),
         )
