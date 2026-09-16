@@ -189,7 +189,9 @@ def get_remote_metadata(  # noqa: C901
         raise
     except RuntimeError as exc:
         # RuntimeError: potentially raised by CondaSession due to --offline
-        if "offline mode" in exc.args[0]:
+        if "offline mode" in str(exc):
+            if strict:
+                raise CondaToSUnavailableError(channel) from exc
             write_cached_endpoint(channel, None)
             raise CondaToSMissingError(channel) from exc
         raise

@@ -12,6 +12,7 @@ from requests.exceptions import ConnectionError as RequestConnectionError
 from requests.exceptions import HTTPError, Timeout
 from rich.console import Console
 
+from conda_anaconda_tos import remote
 from conda_anaconda_tos.api import collect_channel_consent
 from conda_anaconda_tos.console import render
 from conda_anaconda_tos.exceptions import (
@@ -187,6 +188,22 @@ def test_network_failure_does_not_fall_back_to_local_acceptance(
 
     with pytest.raises(CondaToSUnavailableError):
         collect_channel_consent(tos_channel, tos_root=tmp_path, cache_timeout=0)
+
+
+def test_session_offline_failure_does_not_cache_missing_terms(
+    tos_channel: Channel,
+    tmp_path: Path,
+    mocker: MockerFixture,
+) -> None:
+    mocker.patch(
+        "conda_anaconda_tos.remote.get_session"
+    ).return_value.get.side_effect = RuntimeError("EnforceUnusedAdapter offline mode")
+    write_cache = mocker.spy(remote, "write_cached_endpoint")
+
+    with pytest.raises(CondaToSUnavailableError):
+        collect_channel_consent(tos_channel, tos_root=tmp_path, cache_timeout=0)
+
+    write_cache.assert_not_called()
 
 
 @pytest.mark.parametrize("status", (401, 403, 407, 500, 503))
