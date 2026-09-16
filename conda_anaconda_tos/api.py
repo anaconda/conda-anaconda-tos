@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from conda.auxlib.type_coercion import boolify
+from conda.base.context import context
 from conda.models.channel import Channel
 
 from .exceptions import CondaToSMissingError
@@ -359,4 +360,5 @@ def clean_tos(tos_root: str | os.PathLike[str] | Path) -> Iterator[Path]:
             # IsADirectoryError: the path is a directory
             pass
         else:
+            context.plugin_manager.get_cached_request_headers.cache_clear()
             yield path

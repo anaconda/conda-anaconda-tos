@@ -8,6 +8,7 @@ import functools
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from conda.base.context import context
 from conda.common.io import IS_INTERACTIVE
 from conda.exceptions import ArgumentError
 from rich.console import Console
@@ -318,6 +319,7 @@ def _gather_tos(
     *channels: str | Channel,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    strict: bool = False,
 ) -> tuple[
     AcceptedType,
     RejectedType,
@@ -328,7 +330,12 @@ def _gather_tos(
     channel_pairs = []
     for channel in get_channels(*channels):
         try:
-            pair = get_one_tos(channel, tos_root=tos_root, cache_timeout=cache_timeout)
+            pair = get_one_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+                strict=strict,
+            )
         except CondaToSMissingError:
             # CondaToSMissingError: no metadata found
             continue
@@ -439,6 +446,7 @@ def render_interactive(
     verbose: bool = False,
     auto_accept_tos: bool,
     always_yes: bool,
+    strict: bool = False,
     console: Console | None = None,
     printer: Callable[..., None],
     json_printer: Callable[..., None],
@@ -451,6 +459,7 @@ def render_interactive(
         *channels,
         tos_root=tos_root,
         cache_timeout=cache_timeout,
+        strict=strict,
     )
 
     if verbose:
@@ -490,6 +499,7 @@ def render_interactive(
 
     if json:
         json_printer(data=accepted)
+    context.plugin_manager.get_cached_request_headers.cache_clear()
     return 0
 
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
+from conda.base.context import context
 from conda.models.channel import Channel
 from pydantic import ValidationError
 
@@ -56,6 +57,7 @@ def write_metadata(
         # PermissionError: can't write metadata path
         raise CondaToSPermissionError(path, channel) from exc
 
+    context.plugin_manager.get_cached_request_headers.cache_clear()
     return LocalPair(metadata=metadata, path=path)
 
 
