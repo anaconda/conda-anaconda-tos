@@ -12,7 +12,8 @@ from conda.base.context import context
 from conda.cli.helpers import add_parser_prefix, add_parser_verbose
 from conda.common.configuration import PrimitiveParameter
 from conda.common.constants import NULL
-from conda.common.url import urlparse
+from conda.common.url import split_anaconda_token, urlparse
+from conda.models.channel import Channel
 from conda.plugins import hookimpl, types
 from conda.plugins.types import (
     CondaPreCommand,
@@ -392,12 +393,14 @@ def conda_pre_channel_fetches() -> Iterator:
 def conda_request_headers(host: str, path: str) -> Iterator[CondaRequestHeader]:
     """Return acceptance metadata for the channel receiving this request."""
     if host in HOSTS and not path.endswith(f"/{ENDPOINT}"):
+        path, _ = split_anaconda_token(path)
         parts = path.rsplit("/", 1)[0].split("/")
         for index in range(len(parts) - 1, -1, -1):
             if parts[index] in context.known_subdirs:
                 parts = parts[:index]
                 break
-        channel_path = "/".join(parts).rstrip("/")
+        request_channel = Channel.from_url(f"https://{host}{'/'.join(parts)}")
+        channel_path = urlparse(request_channel.base_url).path.rstrip("/")
         values = []
         for channel, local_pair in get_local_metadatas(
             extend_search_path=[DEFAULT_TOS_ROOT],

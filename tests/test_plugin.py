@@ -367,12 +367,16 @@ def test_location_flags_ordering_fix() -> None:
 
 
 @pytest.mark.parametrize(
-    "path",
+    ("name", "path"),
     (
-        "/pkgs/related/linux-64/repodata.json",
-        "/pkgs/related/noarch/repodata_shards.msgpack.zst",
-        "/pkgs/related/noarch/shards/abc.msgpack.zst",
-        "/pkgs/related/linux-64/example-1-0.conda",
+        ("related", "/pkgs/related/linux-64/repodata.json"),
+        ("related", "/pkgs/related/noarch/repodata_shards.msgpack.zst"),
+        ("related", "/pkgs/related/noarch/shards/abc.msgpack.zst"),
+        ("related", "/pkgs/related/linux-64/example-1-0.conda"),
+        ("related", "/t/synthetic-token/pkgs/related/noarch/repodata.json"),
+        ("related%3Atest", "/pkgs/related%3Atest/noarch/repodata.json"),
+        ("related%20test", "/pkgs/related%20test/noarch/repodata.json"),
+        ("related%2Ftest", "/pkgs/related%2Ftest/noarch/repodata.json"),
     ),
 )
 @pytest.mark.usefixtures("mock_search_path")
@@ -380,10 +384,11 @@ def test_request_headers_include_unconfigured_channel(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
     tos_metadata: RemoteToSMetadata,
+    name: str,
     path: str,
 ) -> None:
     monkeypatch.setattr(plugin, "DEFAULT_TOS_ROOT", tmp_path)
-    channel = Channel("https://repo.anaconda.com/pkgs/related")
+    channel = Channel(f"https://repo.anaconda.com/pkgs/{name}")
     write_metadata(tmp_path, channel, tos_metadata, tos_accepted=True)
     write_metadata(
         tmp_path,
@@ -409,6 +414,7 @@ def test_request_headers_include_unconfigured_channel(
     assert headers[0].value.startswith(
         f"{channel}={int(tos_metadata.version.timestamp())}=accepted="
     )
+    assert "synthetic-token" not in headers[0].value
     assert "unrelated" not in headers[0].value
     assert ":8443" not in headers[0].value
     assert "https://repo.anaconda.com/pkgs=" not in headers[0].value
