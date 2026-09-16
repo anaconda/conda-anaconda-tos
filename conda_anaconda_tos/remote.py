@@ -123,7 +123,7 @@ def write_cached_endpoint(
         if metadata:
             path.write_text(metadata.model_dump_json())
         else:
-            path.touch()
+            path.write_text("")
     except PermissionError as exc:
         # PermissionError: can't write to cache path
         raise CondaToSPermissionError(path, channel) from exc

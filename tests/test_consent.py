@@ -270,6 +270,28 @@ def test_empty_legacy_cache_is_rechecked(tos_channel: Channel, tmp_path: Path) -
     ) == {tos_channel.base_url: "required"}
 
 
+def test_invalid_response_cannot_refresh_old_accepted_metadata(
+    tos_channel: Channel,
+    tos_metadata: RemoteToSMetadata,
+    tmp_path: Path,
+    mocker: MockerFixture,
+) -> None:
+    write_metadata(tmp_path, tos_channel, tos_metadata, tos_accepted=True)
+    write_cached_endpoint(tos_channel, tos_metadata)
+    response = Response()
+    response.status_code = 200
+    response._content = b"invalid-json"
+    mocker.patch(
+        "conda_anaconda_tos.remote.get_session"
+    ).return_value.get.return_value = response
+
+    for timeout in (0, float("inf")):
+        with pytest.raises(CondaToSInvalidError):
+            collect_channel_consent(
+                tos_channel, tos_root=tmp_path, cache_timeout=timeout
+            )
+
+
 @pytest.mark.parametrize("status", (404, 410))
 def test_confirmed_missing_endpoint_does_not_require_consent(
     tmp_path: Path,
