@@ -21,6 +21,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
     from typing import Final
 
+    from rich.console import Console
+
 
 #: Boolean CI environment variables (checked with boolify)
 #: Sources: Official CI platform documentation and community knowledge base
@@ -182,13 +184,20 @@ def get_one_tos(
     *,
     tos_root: str | os.PathLike[str] | Path,
     cache_timeout: int | float | None,
+    strict: bool = False,
 ) -> LocalPair | RemotePair:
-    """Get the Terms of Service metadata for the given channel."""
+    """Get metadata, optionally refusing unavailable current terms or local fallback."""
     # fetch remote metadata
     remote_metadata = remote_exc = None
     try:
-        remote_metadata = get_remote_metadata(channel, cache_timeout=cache_timeout)
+        remote_metadata = (
+            get_remote_metadata(channel, cache_timeout=cache_timeout, strict=True)
+            if strict
+            else get_remote_metadata(channel, cache_timeout=cache_timeout)
+        )
     except CondaToSMissingError as exc:
+        if strict:
+            raise
         # CondaToSMissingError: no remote metadata
         remote_exc = exc
 
@@ -210,6 +219,32 @@ def get_one_tos(
             path=local_pair.path,
             remote=remote_metadata,
         )
+
+
+def collect_channel_consent(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike[str] | Path,
+    cache_timeout: int | float | None,
+    interactive: bool = False,
+    console: Console | None = None,
+) -> dict[str, str]:
+    """Collect explicit consent for only the supplied channels.
+
+    Return accepted, rejected, required, or not-required for each channel URL.
+    CI, automatic acceptance settings, and conda's automatic confirmation flag
+    never grant consent. Interactive mode uses the provider's existing prompt.
+    Network failures and invalid metadata raise their own provider exceptions.
+    """
+    # Console rendering already depends on this API for metadata operations.
+    from .console.render import _collect_channel_consent
+
+    return _collect_channel_consent(
+        *channels,
+        tos_root=tos_root,
+        cache_timeout=cache_timeout,
+        interactive=interactive,
+        console=console,
+    )
 
 
 def get_stored_tos(

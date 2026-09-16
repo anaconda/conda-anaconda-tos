@@ -25,10 +25,12 @@ from ..api import (
     reject_tos,
 )
 from ..exceptions import (
+    CondaToSInvalidError,
     CondaToSMissingError,
     CondaToSNonInteractiveError,
     CondaToSRejectedError,
 )
+from ..local import write_metadata
 from ..path import CACHE_DIR, SEARCH_PATH
 from .mappers import NULL_CHAR, accepted_mapping, location_mapping, version_mapping
 from .prompt import FuzzyPrompt
@@ -270,6 +272,46 @@ def _prompt_acceptance(
     else:
         console.print(pair.latest_text)
         return _prompt_acceptance(channel, pair, console, ("(a)ccept", "(r)eject"))
+
+
+def _collect_channel_consent(
+    *channels: str | Channel,
+    tos_root: str | os.PathLike[str] | Path,
+    cache_timeout: int | float | None,
+    interactive: bool,
+    console: Console | None,
+) -> dict[str, str]:
+    """Inspect selected channels and persist only explicitly prompted decisions."""
+    result = {}
+    console = console or Console()
+    for channel in get_channels(*channels):
+        try:
+            pair = get_one_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+                strict=True,
+            )
+        except CondaToSInvalidError:
+            raise
+        except CondaToSMissingError:
+            result[channel.base_url] = "not-required"
+            continue
+        accepted = getattr(pair.metadata, "tos_accepted", None)
+        if not pair.remote and accepted is not None:
+            result[channel.base_url] = "accepted" if accepted else "rejected"
+        elif interactive and IS_INTERACTIVE and not JUPYTER:
+            accepted = _prompt_acceptance(channel, pair, console)
+            write_metadata(
+                tos_root,
+                channel,
+                pair.remote or pair.metadata,
+                tos_accepted=accepted,
+            )
+            result[channel.base_url] = "accepted" if accepted else "rejected"
+        else:
+            result[channel.base_url] = "required"
+    return result
 
 
 def _gather_tos(
