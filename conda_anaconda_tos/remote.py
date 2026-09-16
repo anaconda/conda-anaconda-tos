@@ -178,10 +178,7 @@ def get_remote_metadata(  # noqa: C901
     if strict and context.offline:
         raise CondaToSUnavailableError(channel)
     try:
-        response = (
-            get_endpoint(channel, strict=True) if strict else get_endpoint(channel)
-        )
-        metadata = RemoteToSMetadata(**response.json())
+        metadata = RemoteToSMetadata(**get_endpoint(channel, strict=strict).json())
     except CondaToSMissingError:
         # CondaToSMissingError: no Terms of Service for this channel
         # create an empty cache to prevent repeated requests

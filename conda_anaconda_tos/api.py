@@ -10,9 +10,11 @@ from typing import TYPE_CHECKING
 
 from conda.auxlib.type_coercion import boolify
 from conda.base.context import context
+from conda.common.io import IS_INTERACTIVE
 from conda.models.channel import Channel
+from rich.console import Console
 
-from .exceptions import CondaToSMissingError
+from .exceptions import CondaToSInvalidError, CondaToSMissingError
 from .local import get_local_metadata, get_local_metadatas, write_metadata
 from .models import LocalPair, RemotePair
 from .path import get_all_channel_paths, get_cache_paths
@@ -21,8 +23,6 @@ from .remote import get_remote_metadata
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
     from typing import Final
-
-    from rich.console import Console
 
 
 #: Boolean CI environment variables (checked with boolify)
@@ -191,10 +191,8 @@ def get_one_tos(
     # fetch remote metadata
     remote_metadata = remote_exc = None
     try:
-        remote_metadata = (
-            get_remote_metadata(channel, cache_timeout=cache_timeout, strict=True)
-            if strict
-            else get_remote_metadata(channel, cache_timeout=cache_timeout)
+        remote_metadata = get_remote_metadata(
+            channel, cache_timeout=cache_timeout, strict=strict
         )
     except CondaToSMissingError as exc:
         if strict:
@@ -237,15 +235,38 @@ def collect_channel_consent(
     Network failures and invalid metadata raise their own provider exceptions.
     """
     # Console rendering already depends on this API for metadata operations.
-    from .console.render import _collect_channel_consent
+    from .console.render import _prompt_acceptance
 
-    return _collect_channel_consent(
-        *channels,
-        tos_root=tos_root,
-        cache_timeout=cache_timeout,
-        interactive=interactive,
-        console=console,
-    )
+    result = {}
+    console = console or Console()
+    for channel in get_channels(*channels):
+        try:
+            pair = get_one_tos(
+                channel,
+                tos_root=tos_root,
+                cache_timeout=cache_timeout,
+                strict=True,
+            )
+        except CondaToSInvalidError:
+            raise
+        except CondaToSMissingError:
+            result[channel.base_url] = "not-required"
+            continue
+        accepted = getattr(pair.metadata, "tos_accepted", None)
+        if not pair.remote and accepted is not None:
+            result[channel.base_url] = "accepted" if accepted else "rejected"
+        elif interactive and IS_INTERACTIVE and not JUPYTER:
+            accepted = _prompt_acceptance(channel, pair, console)
+            write_metadata(
+                tos_root,
+                channel,
+                pair.remote or pair.metadata,
+                tos_accepted=accepted,
+            )
+            result[channel.base_url] = "accepted" if accepted else "rejected"
+        else:
+            result[channel.base_url] = "required"
+    return result
 
 
 def get_stored_tos(
