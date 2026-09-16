@@ -206,6 +206,41 @@ Solution:
 conda install --name base --force-reinstall conda-anaconda-tos
 ```
 
+## Explicit Channel Consent API
+
+Applications can inspect or collect consent for a supplied channel list through `conda_anaconda_tos.api.collect_channel_consent`:
+
+```python
+from conda_anaconda_tos.api import collect_channel_consent
+
+states = collect_channel_consent(
+    "https://repo.anaconda.com/pkgs/main",
+    tos_root="/path/to/consent-records",
+    cache_timeout=0,
+    interactive=True,
+)
+```
+
+The result maps channel URLs to `accepted`, `rejected`, `required`, or `not-required`.
+Only the supplied channels are considered, with native multichannel expansion and deduplication.
+Without `interactive=True`, the call reports pending consent as `required` and does not write acceptance or rejection records.
+Interactive mode requires a terminal and uses the existing provider prompt, including its terms-viewing option.
+CI detection, `auto_accept_tos`, and conda's automatic confirmation setting never grant consent through this API.
+Existing rejection is reported without prompting again.
+
+Consent records remain owned by this provider and are separate from any caller's configuration transaction.
+A prompted decision records exactly the terms version shown to the user.
+Cancelling a later configuration change does not undo an explicit consent decision.
+
+Retrieval failures are distinct from absent terms.
+Network failures, authentication errors, and server errors raise `CondaToSUnavailableError`, while malformed metadata raises `CondaToSInvalidError`.
+A confirmed HTTP 404 or 410 means `not-required` for an ordinary channel.
+The provider requires a working terms endpoint on `repo.anaconda.com`, so its absence raises `CondaToSUnavailableError`.
+An empty legacy metadata cache is rechecked because it does not record why terms were unavailable.
+The API uses the requested cache timeout for valid cached metadata and refuses an offline lookup when no valid cache is available.
+It does not fall back to a local acceptance after a failed current-metadata lookup.
+The existing command and automatic-acceptance policies are unchanged.
+
 ## Testing
 
 ### Development Environment Setup

@@ -7,6 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from json import JSONDecodeError
 from typing import TYPE_CHECKING
+from urllib.parse import urlsplit
 
 from conda.base.context import context
 from conda.common.url import join_url
@@ -19,6 +20,7 @@ from .exceptions import (
     CondaToSInvalidError,
     CondaToSMissingError,
     CondaToSPermissionError,
+    CondaToSUnavailableError,
 )
 from .models import RemoteToSMetadata
 from .path import get_cache_path
@@ -31,9 +33,12 @@ if TYPE_CHECKING:
 
 ENDPOINT: Final = "terms.json"
 
+#: Repositories whose Terms of Service endpoint is required by this provider.
+REQUIRED_TOS_HOSTS: Final = frozenset(("repo.anaconda.com",))
 
-def get_endpoint(channel: str | Channel) -> Response:
-    """Get the metadata endpoint for the given channel."""
+
+def get_endpoint(channel: str | Channel, *, strict: bool = False) -> Response:
+    """Get the endpoint, optionally distinguishing absence from retrieval failures."""
     channel = Channel(channel)
     if not channel.base_url:
         raise ValueError(
@@ -61,6 +66,11 @@ def get_endpoint(channel: str | Channel) -> Response:
         )
         response.raise_for_status()
     except RequestException as exc:
+        if strict and (
+            getattr(exc.response, "status_code", None) not in {404, 410}
+            or urlsplit(channel.base_url).hostname in REQUIRED_TOS_HOSTS
+        ):
+            raise CondaToSUnavailableError(channel) from exc
         # RequestException: failed to get metadata endpoint
         raise CondaToSMissingError(channel) from exc
     finally:
@@ -113,7 +123,7 @@ def write_cached_endpoint(
         if metadata:
             path.write_text(metadata.model_dump_json())
         else:
-            path.touch()
+            path.write_text("")
     except PermissionError as exc:
         # PermissionError: can't write to cache path
         raise CondaToSPermissionError(path, channel) from exc
@@ -125,37 +135,50 @@ def get_remote_metadata(  # noqa: C901
     channel: str | Channel,
     *,
     cache_timeout: int | float | None = None,
+    strict: bool = False,
 ) -> RemoteToSMetadata:
-    """Get the metadata metadata for the given channel."""
+    """Get remote metadata, optionally rejecting ambiguous or expired cached absence."""
     # argument validation/coercion
     cache = get_cached_endpoint(
         channel,
-        # when in offline mode cache_timeout is ignored
-        cache_timeout=float("inf") if context.offline else cache_timeout,
+        # Preserve legacy offline cache behavior unless strict retrieval is requested.
+        cache_timeout=(
+            float("inf") if context.offline and not strict else cache_timeout
+        ),
     )
 
     # return cached metadata
     if cache:
+        cache_path = cache
         try:
-            text = cache.read_text().strip()
+            text = cache_path.read_text().strip()
             if not text:
-                raise CondaToSMissingError(channel)
+                if strict:
+                    cache = None
+                else:
+                    raise CondaToSMissingError(channel)
         except FileNotFoundError as exc:
             # FileNotFoundError: cache path doesn't exist
-            raise CondaToSMissingError(channel) from exc
+            if strict:
+                cache = None
+            else:
+                raise CondaToSMissingError(channel) from exc
         except PermissionError as exc:
             # PermissionError: can't read cache path
-            raise CondaToSPermissionError(cache, channel) from exc
+            raise CondaToSPermissionError(cache_path, channel) from exc
 
-        try:
-            return RemoteToSMetadata.model_validate_json(text)
-        except ValidationError as exc:
-            # ValidationError: invalid JSON schema
-            raise CondaToSInvalidError(channel) from exc
+        if cache:
+            try:
+                return RemoteToSMetadata.model_validate_json(text)
+            except ValidationError as exc:
+                # ValidationError: invalid JSON schema
+                raise CondaToSInvalidError(channel) from exc
 
     # return remote metadata
+    if strict and context.offline:
+        raise CondaToSUnavailableError(channel)
     try:
-        metadata = RemoteToSMetadata(**get_endpoint(channel).json())
+        metadata = RemoteToSMetadata(**get_endpoint(channel, strict=strict).json())
     except CondaToSMissingError:
         # CondaToSMissingError: no Terms of Service for this channel
         # create an empty cache to prevent repeated requests
@@ -163,7 +186,9 @@ def get_remote_metadata(  # noqa: C901
         raise
     except RuntimeError as exc:
         # RuntimeError: potentially raised by CondaSession due to --offline
-        if "offline mode" in exc.args[0]:
+        if "offline mode" in str(exc):
+            if strict:
+                raise CondaToSUnavailableError(channel) from exc
             write_cached_endpoint(channel, None)
             raise CondaToSMissingError(channel) from exc
         raise

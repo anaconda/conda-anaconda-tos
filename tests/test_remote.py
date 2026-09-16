@@ -121,6 +121,9 @@ def test_write_cached_endpoint(
     assert path.exists()
     assert RemoteToSMetadata.model_validate_json(path.read_text()) == REMOTE_METADATA
 
+    write_cached_endpoint(sample_channel, None)
+    assert path.read_text() == ""
+
     with pytest.raises(TypeError):
         write_cached_endpoint(sample_channel, object())  # type: ignore[arg-type]
 
