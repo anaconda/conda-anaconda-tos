@@ -12,9 +12,8 @@ from requests.exceptions import ConnectionError as RequestConnectionError
 from requests.exceptions import HTTPError, Timeout
 from rich.console import Console
 
-from conda_anaconda_tos import remote
+from conda_anaconda_tos import api, remote
 from conda_anaconda_tos.api import collect_channel_consent
-from conda_anaconda_tos.console import render
 from conda_anaconda_tos.exceptions import (
     CondaToSInvalidError,
     CondaToSMissingError,
@@ -40,7 +39,7 @@ def test_empty_selection_does_not_inherit_context_channels(
     tmp_path: Path,
     mocker: MockerFixture,
 ) -> None:
-    inspect = mocker.spy(render, "get_one_tos")
+    inspect = mocker.spy(api, "get_one_tos")
     assert collect_channel_consent(tos_root=tmp_path, cache_timeout=0) == {}
     inspect.assert_not_called()
 
@@ -64,8 +63,8 @@ def test_ci_and_automatic_settings_do_not_grant_consent(
     interactive: bool,
 ) -> None:
     monkeypatch.setenv("CONDA_PLUGINS_AUTO_ACCEPT_TOS", "true")
-    mocker.patch("conda_anaconda_tos.console.render.CI", True)
-    mocker.patch("conda_anaconda_tos.console.render.IS_INTERACTIVE", False)
+    mocker.patch("conda_anaconda_tos.api.CI", True)
+    mocker.patch("conda_anaconda_tos.api.IS_INTERACTIVE", False)
     mocker.patch(
         "conda.base.context.Context.always_yes",
         new_callable=mocker.PropertyMock,
@@ -114,9 +113,9 @@ def test_interactive_consent_uses_provider_prompt_and_persists_exact_version(
     accepted: bool,
 ) -> None:
     reviewed_version = tos_metadata.version
-    mocker.patch("conda_anaconda_tos.console.render.IS_INTERACTIVE", True)
-    mocker.patch("conda_anaconda_tos.console.render.JUPYTER", False)
-    mocker.patch("conda_anaconda_tos.console.render.CI", True)
+    mocker.patch("conda_anaconda_tos.api.IS_INTERACTIVE", True)
+    mocker.patch("conda_anaconda_tos.api.JUPYTER", False)
+    mocker.patch("conda_anaconda_tos.api.CI", True)
 
     def answer(*_args: object, **_kwargs: object) -> str:
         monkeypatch.setattr(
@@ -152,8 +151,8 @@ def test_interactive_view_shows_terms_before_acceptance(
     tmp_path: Path,
     mocker: MockerFixture,
 ) -> None:
-    mocker.patch("conda_anaconda_tos.console.render.IS_INTERACTIVE", True)
-    mocker.patch("conda_anaconda_tos.console.render.JUPYTER", False)
+    mocker.patch("conda_anaconda_tos.api.IS_INTERACTIVE", True)
+    mocker.patch("conda_anaconda_tos.api.JUPYTER", False)
     prompt = mocker.patch(
         "conda_anaconda_tos.console.render.FuzzyPrompt.ask",
         side_effect=["view", "accept"],
