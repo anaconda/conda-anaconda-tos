@@ -61,12 +61,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-        conda-version: ['24.11', '25.1', '25.3', '25.5', '25.7', '25.9']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        conda-version: ['24.11', '25.1', '25.3', '25.5', '25.7', '25.9', '26.1', '26.3', '26.5', '26.7']
         include:
-          - os: ubuntu-latest
-            python-version: '3.14'
-            conda-version: latest
           - os: ubuntu-latest
             python-version: '3.14'
             conda-version: canary
@@ -76,6 +73,8 @@ jobs:
             python-version: '3.11'
           - os: windows-latest
             python-version: '3.12'
+          - os: windows-latest
+            python-version: '3.13'
           # macOS arm64: only test highest Python version
           - os: macos-latest
             python-version: '3.10'
@@ -83,12 +82,27 @@ jobs:
             python-version: '3.11'
           - os: macos-latest
             python-version: '3.12'
+          - os: macos-latest
+            python-version: '3.13'
           # conda 24.11 doesn't support Python 3.13
           - python-version: '3.13'
             conda-version: '24.11'
           # conda 25.1 doesn't support Python 3.13
           - python-version: '3.13'
             conda-version: '25.1'
+          # conda versions before 26.1 don't support Python 3.14
+          - python-version: '3.14'
+            conda-version: '24.11'
+          - python-version: '3.14'
+            conda-version: '25.1'
+          - python-version: '3.14'
+            conda-version: '25.3'
+          - python-version: '3.14'
+            conda-version: '25.5'
+          - python-version: '3.14'
+            conda-version: '25.7'
+          - python-version: '3.14'
+            conda-version: '25.9'
     runs-on: ${{ matrix.os }}
     env:
       ErrorActionPreference: Stop  # powershell exit immediately on error
@@ -130,7 +144,7 @@ jobs:
           --file tests/requirements.txt
           --file tests/requirements-ci.txt
           python=${{ matrix.python-version }}
-          ${{ matrix.conda-version == 'canary' && 'conda-canary/label/dev::conda' || matrix.conda-version == 'latest' && 'conda' || format('conda={0}', matrix.conda-version) }}
+          ${{ matrix.conda-version == 'canary' && 'conda-canary/label/dev::conda' || format('conda={0}', matrix.conda-version) }}
 
       # TODO: how can we remove this step?
       - name: Install Self
