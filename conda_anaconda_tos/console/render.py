@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import functools
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -48,9 +47,9 @@ if TYPE_CHECKING:
     ChannelPairsType = list[tuple[Channel, RemotePair | LocalPair]]
 
 try:
-    from conda.common.terminal import is_tty
+    from conda.common.terminal import is_interactive_tty
 
-    IS_INTERACTIVE = is_tty() and hasattr(sys.stdin, "isatty") and sys.stdin.isatty()
+    IS_INTERACTIVE = is_interactive_tty()
 except ImportError:
     from conda.common.io import IS_INTERACTIVE  # type: ignore[no-redef]
 
