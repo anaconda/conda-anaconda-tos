@@ -63,6 +63,13 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.10', '3.11', '3.12', '3.13']
         conda-version: ['24.11', '25.1', '25.3', '25.5', '25.7', '25.9']
+        include:
+          - os: ubuntu-latest
+            python-version: '3.14'
+            conda-version: latest
+          - os: ubuntu-latest
+            python-version: '3.14'
+            conda-version: canary
         exclude:
           # Windows: only test lowest and highest Python versions
           - os: windows-latest
@@ -123,7 +130,7 @@ jobs:
           --file tests/requirements.txt
           --file tests/requirements-ci.txt
           python=${{ matrix.python-version }}
-          ${{ matrix.conda-version != 'latest' && format('conda={0}', matrix.conda-version) || ''}}
+          ${{ matrix.conda-version == 'canary' && 'conda-canary/label/dev::conda' || matrix.conda-version == 'latest' && 'conda' || format('conda={0}', matrix.conda-version) }}
 
       # TODO: how can we remove this step?
       - name: Install Self
@@ -222,66 +229,9 @@ jobs:
           -v
           -m "integration"
 
-  # release compatibility tests - cover current conda and the next release
-  compatibility-tests:
-    needs: changes
-    if: github.event_name == 'schedule' || needs.changes.outputs.code == 'true'
-
-    defaults:
-      run:
-        shell: bash -el {0}  # bash exit immediately on error + login shell
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: stable
-            conda-spec: conda
-          - name: canary
-            conda-spec: conda-canary/label/dev::conda
-    name: compatibility (${{ matrix.name }}, Python 3.14)
-    runs-on: ubuntu-latest
-    env:
-      CONDA_PKGS_DIR: ~/conda_pkgs_dir
-
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f # v3.2.0
-        with:
-          run-post: false  # skip post cleanup
-          pkgs-dirs: ${{ env.CONDA_PKGS_DIR }}
-          channels: defaults
-
-      - name: Conda Install
-        run: >
-          conda install
-          --yes
-          --file tests/requirements.txt
-          --file tests/requirements-ci.txt
-          python=3.14
-          ${{ matrix.conda-spec }}
-
-      - name: Install Self
-        run: pip install -e .
-
-      - name: Verify Plugin Entry Point
-        run: conda tos --version
-
-      - name: Run Tests
-        run: >
-          pytest
-          --cov=conda_anaconda_tos
-          --basetemp=${{ runner.temp }}
-          -n auto
-          -m "not integration"
-
   # required check
   analyze:
-    needs: [tests, integration-tests, compatibility-tests]
+    needs: [tests, integration-tests]
     if: '!cancelled()'
 
     runs-on: ubuntu-latest
