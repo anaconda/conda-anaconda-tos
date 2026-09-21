@@ -33,12 +33,14 @@ test_container = container(
     command=[
         "python",
         "-c",
-        "from conda_anaconda_tos.api import _in_ci_container; "
-        "import sys; "
-        "result = _in_ci_container(); "
-        "print('Container CI detection:', result); "
-        "print('SUCCESS!' if result else 'FAILED!'); "
-        "sys.exit(0 if result else 1)",
+        (
+            "from conda_anaconda_tos.api import _in_ci_container; "
+            "import sys; "
+            "result = _in_ci_container(); "
+            "print('Container CI detection:', result); "
+            "print('SUCCESS!' if result else 'FAILED!'); "
+            "sys.exit(0 if result else 1)"
+        ),
     ],
 )
 
