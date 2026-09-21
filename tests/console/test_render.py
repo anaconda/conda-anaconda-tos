@@ -46,7 +46,7 @@ def test_render_view(
     tmp_path: Path,
 ) -> None:
     render_view(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [
         f"viewing Terms of Service for {tos_channel}:",
@@ -55,20 +55,20 @@ def test_render_view(
     # assert not err  # server log is output to stderr
 
     render_view(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     view_json = json.loads(out)
     for tos in view_json.values():
         assert tos["text"] == tos_metadata.text
     # assert not err  # server log is output to stderr
 
     render_view(sample_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     sample_lines = out.splitlines()
     assert sample_lines == [f"no Terms of Service for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
     render_view(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
 
@@ -80,26 +80,26 @@ def test_render_accept(
     tmp_path: Path,
 ) -> None:
     render_accept(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [f"accepted Terms of Service for {tos_channel}"]
     # assert not err  # server log is output to stderr
 
     render_accept(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     accept_json = json.loads(out)
     for tos in accept_json.values():
         assert tos["tos_accepted"] is True
     # assert not err  # server log is output to stderr
 
     render_accept(sample_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     sample_lines = out.splitlines()
     assert sample_lines == [f"Terms of Service not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
     render_accept(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
 
@@ -111,26 +111,26 @@ def test_render_reject(
     tmp_path: Path,
 ) -> None:
     render_reject(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     tos_lines = out.splitlines()
     assert tos_lines == [f"rejected Terms of Service for {tos_channel}"]
     # assert not err  # server log is output to stderr
 
     render_reject(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     reject_json = json.loads(out)
     for tos in reject_json.values():
         assert tos["tos_accepted"] is False
     # assert not err  # server log is output to stderr
 
     render_reject(sample_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     sample_lines = out.splitlines()
     assert sample_lines == [f"Terms of Service not found for {sample_channel}"]
     # assert not err  # server log is output to stderr
 
     render_reject(tos_channel, sample_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [*tos_lines, *sample_lines]
     # assert not err  # server log is output to stderr
 
@@ -159,7 +159,7 @@ def test_render_interactive(
         always_yes=False,
         verbose=verbose,
     )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -176,7 +176,7 @@ def test_render_interactive(
             always_yes=True,
             verbose=verbose,
         )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -203,7 +203,7 @@ def test_render_interactive(
         always_yes=False,
         verbose=verbose,
     )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -233,7 +233,7 @@ def test_render_interactive(
         always_yes=False,
         verbose=verbose,
     )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -251,7 +251,7 @@ def test_render_interactive(
             always_yes=False,
             verbose=verbose,
         )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -282,7 +282,7 @@ def test_render_interactive(
             always_yes=False,
             verbose=verbose,
         )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -305,7 +305,7 @@ def test_render_interactive(
         always_yes=False,
         verbose=verbose,
     )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -342,7 +342,7 @@ def test_render_interactive(
         always_yes=False,
         verbose=verbose,
     )
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert out.splitlines() == [
         *(["Gathering channels..."] if verbose else []),
         *(["Reviewing channels..."] if verbose else []),
@@ -357,8 +357,10 @@ def test_render_interactive(
             ]
             if ci
             else [
-                f"The Terms of Service for {tos_channel} was previously accepted. "
-                "An updated Terms of Service is now available.",
+                (
+                    f"The Terms of Service for {tos_channel} was previously accepted. "
+                    "An updated Terms of Service is now available."
+                ),
                 (
                     f"Do you accept the Terms of Service (ToS) for {tos_channel}? "
                     "[(a)ccept/(r)eject/(v)iew]: 1 channel Terms of Service accepted"
@@ -370,14 +372,14 @@ def test_render_interactive(
 
 def test_render_info(capsys: CaptureFixture) -> None:
     render_info()
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     for path in SEARCH_PATH:
         assert path in out
 
 
 def test_render_info_json(capsys: CaptureFixture) -> None:
     render_info(json=True)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     info_json = json.loads(out)
     for path in info_json["SEARCH_PATH"]:
         assert path in out
@@ -391,20 +393,20 @@ def test_render_list(
     terminal_width: int,  # noqa: ARG001
 ) -> None:
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
     # assert not err  # server log is output to stderr
 
     accept_tos(tos_channel, tos_root=tmp_path, cache_timeout=None)
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED not in out
     # assert not err  # server log is output to stderr
 
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None, json=True)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     list_json = json.loads(out)
     for tos in list_json.values():
         assert "path" in tos
@@ -412,7 +414,7 @@ def test_render_list(
 
     tos_metadata.version += timedelta(days=1)
     render_list(tos_channel, tos_root=tmp_path, cache_timeout=None)
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
     assert str(tos_channel) in out
     assert TOS_OUTDATED in out
     # assert not err  # server log is output to stderr
