@@ -53,7 +53,9 @@ except ImportError:
     try:
         from conda.common.terminal import is_tty
 
-        IS_INTERACTIVE = is_tty() and sys.stdin.isatty()
+        IS_INTERACTIVE = (
+            is_tty() and hasattr(sys.stdin, "isatty") and sys.stdin.isatty()
+        )
     except ImportError:
         from conda.common.io import IS_INTERACTIVE  # type: ignore[no-redef]
 else:
