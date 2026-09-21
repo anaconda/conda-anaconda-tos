@@ -82,7 +82,7 @@ def test_request_headers_hook() -> None:
 
 
 def test_subcommand_tos(conda_cli: CondaCLIFixture) -> None:
-    out, err, code = conda_cli("tos")
+    out, _err, code = conda_cli("tos")
     assert out
     # assert not err  # server log is output to stderr
     assert not code
@@ -97,7 +97,7 @@ def test_subcommand_tos_view(
 ) -> None:
     tos_channel, sample_channel = mock_channels
 
-    out, err, code = conda_cli("tos", "view")
+    out, _err, code = conda_cli("tos", "view")
     assert out.splitlines() == [
         f"viewing Terms of Service for {tos_channel}:",
         *tos_metadata.text.splitlines(),
@@ -114,7 +114,7 @@ def test_subcommand_tos_accept(
 ) -> None:
     tos_channel, sample_channel = mock_channels
 
-    out, err, code = conda_cli("tos", "accept", f"--tos-root={tmp_path}")
+    out, _err, code = conda_cli("tos", "accept", f"--tos-root={tmp_path}")
     assert out.splitlines() == [
         f"accepted Terms of Service for {tos_channel}",
         f"Terms of Service not found for {sample_channel}",
@@ -130,7 +130,7 @@ def test_subcommand_tos_reject(
 ) -> None:
     tos_channel, sample_channel = mock_channels
 
-    out, err, code = conda_cli("tos", "reject", f"--tos-root={tmp_path}")
+    out, _err, code = conda_cli("tos", "reject", f"--tos-root={tmp_path}")
     assert out.splitlines() == [
         f"rejected Terms of Service for {tos_channel}",
         f"Terms of Service not found for {sample_channel}",
@@ -148,21 +148,21 @@ def test_subcommand_tos_list(
     system_tos_root, user_tos_root = mock_search_path
     tos_channel, sample_channel = mock_channels
 
-    out, err, code = conda_cli("tos")
+    out, _err, code = conda_cli("tos")
     assert tos_channel.base_url in out
     assert sample_channel.base_url in out
     # assert not err  # server log is output to stderr
     assert not code
 
     accept_tos(tos_channel, tos_root=system_tos_root, cache_timeout=None)
-    out, err, code = conda_cli("tos")
+    out, _err, code = conda_cli("tos")
     assert tos_channel.base_url in out
     assert sample_channel.base_url in out
     # assert not err  # server log is output to stderr
     assert not code
 
     reject_tos(tos_channel, tos_root=user_tos_root, cache_timeout=None)
-    out, err, code = conda_cli("tos")
+    out, _err, code = conda_cli("tos")
     assert tos_channel.base_url in out
     assert sample_channel.base_url in out
     # assert not err  # server log is output to stderr
@@ -178,10 +178,10 @@ def test_subcommand_tos_interactive(
 ) -> None:
     monkeypatch.setattr(render, "IS_INTERACTIVE", True)
 
-    system_tos_root, user_tos_root = mock_search_path
+    _system_tos_root, user_tos_root = mock_search_path
 
     monkeypatch.setattr(sys, "stdin", StringIO("accept\n"))
-    out, err, code = conda_cli("tos", "interactive", f"--tos-root={user_tos_root}")
+    out, _err, code = conda_cli("tos", "interactive", f"--tos-root={user_tos_root}")
     assert tos_channel.base_url in out
     assert sample_channel.base_url not in out
     # assert not err  # server log is output to stderr
@@ -196,13 +196,13 @@ def test_subcommand_tos_interactive_offline(
     # FUTURE: conda 25.1+, remove special reset_context
     reset_context()
 
-    system_tos_root, user_tos_root = mock_search_path
+    _system_tos_root, user_tos_root = mock_search_path
 
     monkeypatch.setenv("CONDA_OFFLINE", "true")
     reset_context()
     assert context.offline
 
-    out, err, code = conda_cli("tos", "interactive", f"--tos-root={user_tos_root}")
+    out, _err, code = conda_cli("tos", "interactive", f"--tos-root={user_tos_root}")
     assert not out
     # assert not err  # server log is output to stderr
     assert not code
@@ -223,7 +223,7 @@ def test_request_headers(
 ) -> None:
     monkeypatch.setattr(plugin, "CI", ci)
     monkeypatch.setattr(plugin, "HOSTS", {urlparse(tos_channel.base_url).netloc})
-    system_tos_root, user_tos_root = mock_search_path
+    _system_tos_root, user_tos_root = mock_search_path
 
     url = f"{tos_channel}/terms.json"
 
