@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import functools
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -48,10 +49,15 @@ if TYPE_CHECKING:
 
 try:
     from conda.common.terminal import is_interactive_tty
-
-    IS_INTERACTIVE = is_interactive_tty()
 except ImportError:
-    from conda.common.io import IS_INTERACTIVE  # type: ignore[no-redef]
+    try:
+        from conda.common.terminal import is_tty
+
+        IS_INTERACTIVE = is_tty() and sys.stdin.isatty()
+    except ImportError:
+        from conda.common.io import IS_INTERACTIVE  # type: ignore[no-redef]
+else:
+    IS_INTERACTIVE = is_interactive_tty()
 
 TOS_OUTDATED: Final = "* Terms of Service version(s) are outdated."
 
