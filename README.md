@@ -386,6 +386,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - Report any typos or improvements for documentation
 - Engage in discussions and add new ideas
 
+See [Maintainer information](MAINTAINERS.md) for the versioning scheme,
+vulnerability reporting, and coordinated disclosure policy.
+
 ## License
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
