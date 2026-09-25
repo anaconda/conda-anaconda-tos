@@ -36,6 +36,14 @@ class CondaToSInvalidError(CondaToSMissingError):
         super().__init__(f"Invalid Terms of Service for {_url(channel)}.")
 
 
+class CondaToSUnavailableError(CondaToSError):
+    """Error when current Terms of Service cannot be determined."""
+
+    def __init__(self: Self, channel: str | Channel) -> None:
+        """Format an unavailable status without treating it as missing terms."""
+        super().__init__(f"Unable to determine Terms of Service for {_url(channel)}.")
+
+
 class CondaToSPermissionError(PermissionError, CondaToSError):
     """Error class for when the metadata file cannot be written."""
 
