@@ -386,6 +386,20 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - Report any typos or improvements for documentation
 - Engage in discussions and add new ideas
 
+### Versioning
+
+`conda-anaconda-tos` follows the
+[Python versioning scheme](https://packaging.python.org/en/latest/specifications/version-specifiers/#version-scheme).
+Final releases use increasing `MAJOR.MINOR.PATCH` versions, for example `0.3.0`.
+Git release tags have no `v` prefix.
+`hatch-vcs` derives the package version from Git tags, as configured in
+[`pyproject.toml`](pyproject.toml).
+
+### Vulnerability reporting and coordinated disclosure
+
+For vulnerability reporting instructions and the coordinated disclosure policy,
+see [Anaconda's `security.txt`](https://www.anaconda.com/.well-known/security.txt).
+
 ## License
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
