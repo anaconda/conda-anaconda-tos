@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -78,7 +78,7 @@ def test_get_tos_dir(tmp_path: Path, sample_channel: Channel) -> None:
 
 
 def test_get_metadata_path(tmp_path: Path, sample_channel: Channel) -> None:
-    timestamp = datetime.now(tz=timezone.utc)
+    timestamp = datetime.now(tz=UTC)
     expected = get_tos_dir(tmp_path, sample_channel) / f"{timestamp.timestamp()}.json"
     assert get_metadata_path(tmp_path, sample_channel, timestamp) == expected
 

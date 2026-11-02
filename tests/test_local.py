@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 
 
 CHANNEL = Channel("someplace")
-TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
-NOW = datetime.now(tz=timezone.utc)
+TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=UTC)  # "version 1"
+NOW = datetime.now(tz=UTC)
 REMOTE_METADATA = RemoteToSMetadata(
     version=TIMESTAMP1,
     text=f"Terms of Service full text\n\n{uuid4().hex}",

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -48,7 +48,7 @@ def test_get_channels() -> None:
 def remote_metadata_pair() -> RemotePair:
     return RemotePair(
         metadata=RemoteToSMetadata(
-            version=datetime(2024, 11, 1, tzinfo=timezone.utc),
+            version=datetime(2024, 11, 1, tzinfo=UTC),
             text="new Terms of Service",
             support="support.com",
         ),
@@ -65,7 +65,7 @@ def local_metadata_pair(
             **remote_metadata_pair.metadata.model_dump(),
             base_url=sample_channel.base_url,
             tos_accepted=True,
-            acceptance_timestamp=datetime.now(tz=timezone.utc),
+            acceptance_timestamp=datetime.now(tz=UTC),
         ),
         path=uuid4().hex,
     )
@@ -78,12 +78,12 @@ def old_metadata_pair(
 ) -> LocalPair:
     return LocalPair(
         metadata=LocalToSMetadata(
-            version=datetime(2024, 10, 1, tzinfo=timezone.utc),
+            version=datetime(2024, 10, 1, tzinfo=UTC),
             text="old Terms of Service",
             support="support.com",
             base_url=sample_channel.base_url,
             tos_accepted=True,
-            acceptance_timestamp=datetime.now(tz=timezone.utc),
+            acceptance_timestamp=datetime.now(tz=UTC),
         ),
         path=uuid4().hex,
         remote=remote_metadata_pair.metadata,

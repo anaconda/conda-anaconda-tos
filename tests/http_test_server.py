@@ -10,7 +10,7 @@ import http.server
 import queue
 import socket
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from itertools import repeat
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -105,7 +105,7 @@ class MutableToSMetadata(RemoteToSMetadata):
 
 def generate_metadata() -> RemoteToSMetadata:
     return MutableToSMetadata(
-        version=datetime.now(tz=timezone.utc),
+        version=datetime.now(tz=UTC),
         text=f"Terms of Service Text\n\n{uuid4().hex}",
         support="support.com",
     )
@@ -176,7 +176,7 @@ def main() -> None:
             except StopIteration:
                 # StopIteration: metadata iterator exhausted, reuse previous metadata
                 if isinstance(metadata, RemoteToSMetadata):
-                    metadata.version = datetime.now(tz=timezone.utc)
+                    metadata.version = datetime.now(tz=UTC)
             version = "n/a"
             if isinstance(metadata, RemoteToSMetadata):
                 version = timestamp_mapping(metadata.version)

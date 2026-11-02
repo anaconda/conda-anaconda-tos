@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from http_test_server import MetadataType
     from pytest_mock import MockerFixture
 
-TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
+TIMESTAMP1 = datetime(2024, 10, 1, tzinfo=UTC)  # "version 1"
 REMOTE_METADATA = RemoteToSMetadata(
     version=TIMESTAMP1,
     text=f"ToS full text\n\n{uuid4().hex}",
