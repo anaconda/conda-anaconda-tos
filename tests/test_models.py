@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import pytest
@@ -20,9 +20,9 @@ if TYPE_CHECKING:
     from typing import Any, Final
 
 
-NOW: Final = datetime.now(tz=timezone.utc)
-TIMESTAMP1: Final = datetime(2024, 10, 1, tzinfo=timezone.utc)  # "version 1"
-TIMESTAMP2: Final = datetime(2024, 11, 1, tzinfo=timezone.utc)  # "version 2"
+NOW: Final = datetime.now(tz=UTC)
+TIMESTAMP1: Final = datetime(2024, 10, 1, tzinfo=UTC)  # "version 1"
+TIMESTAMP2: Final = datetime(2024, 11, 1, tzinfo=UTC)  # "version 2"
 REMOTE_METADATA = RemoteToSMetadata(
     version=TIMESTAMP2,
     text="Terms of Service",
